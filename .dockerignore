@@ -1,0 +1,6 @@
+.idea/
+.git
+.env
+.env.example
+docker-compose.yml
+postgres/

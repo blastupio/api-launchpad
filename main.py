@@ -16,7 +16,7 @@ environment = APP_ENV
 
 if SENTRY_DSN is not None:
     sentry_sdk.init(dsn=SENTRY_DSN, enable_tracing=True)
-app = FastAPI(debug=environment.startswith("prod"))
+app = FastAPI(debug=not environment.startswith("prod"))
 app.include_router(router)
 
 app.add_middleware(
@@ -28,9 +28,14 @@ app.add_middleware(
 )
 
 
+class RootResponseData(BaseModel):
+    name: str
+    version: str
+
+
 class RootResponse(BaseModel):
     ok: bool
-    data: str
+    data: RootResponseData
 
 
 @app.get("/", tags=["root"], response_model=RootResponse)
@@ -41,7 +46,7 @@ async def root():
     }}
 
 
-@router.get("/rpm")
+@router.get("/internal/rpm")
 async def get_current_rpm(redis: Redis = Depends(get_redis)):
     stats = []
     for i in range(10):

@@ -34,7 +34,7 @@ apps:
         port: 8000
     readiness_probe:
       httpGet:
-        path: /internal/rpm
+        path: /
         port: 8000
     resources:
       memory: 512M

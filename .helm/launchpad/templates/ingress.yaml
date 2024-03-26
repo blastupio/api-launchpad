@@ -1,0 +1,23 @@
+{{- if $.Values.ingresses }}
+{{- range $name, $ingress := $.Values.ingresses }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    {{- if $ingress.annotations }}
+    {{- toYaml $ingress.annotations | nindent 4 }}
+    {{- end }}
+spec:
+  ingressClassName: traefik
+  rules:
+    - host: '{{ $ingress.domain}}'
+      http:
+        paths:
+          {{- if $ingress.rules }}
+          {{- toYaml $ingress.rules | nindent 10 }}
+          {{- end }}
+---
+{{- end }}
+{{- end }}

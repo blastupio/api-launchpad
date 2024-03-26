@@ -2,7 +2,8 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
 
 jobs:
   docker:
@@ -21,10 +22,27 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set env
+        run: echo "RELEASE_VERSION=${GITHUB_REF#refs/*/}" >> $GITHUB_ENV
       -
         name: Build and push
         uses: docker/build-push-action@v5
         with:
           file: .docker/Dockerfile
           push: true
-          tags: ghcr.io/${{ github.repository }}:latest,ghcr.io/${{ github.repository }}:${{ github.sha }}
+          tags: ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}
+      - name: Prepare secrets
+        shell: bash
+        working-directory: ./.helm
+        env:
+          VAULT_ADDR: ${{ secrets.VAULT_ADDRESS }}
+        run: |
+          ./install_vault.sh
+          vault login token="${{ secrets.VAULT_TOKEN }}"
+          ./prepare_values.sh
+      - name: Deploy
+        uses: WyriHaximus/github-action-helm3@v3
+        with:
+          exec: helm upgrade launchpad ./.helm/launchpad -n prod --set env.APP_ENV=prod --set env.APP_VERSION=${{ env.RELEASE_VERSION }} --set image.tag=${{ env.RELEASE_VERSION }}
+          kubeconfig: '${{ secrets.KUBECONFIG }}'
+          overrule_existing_kubeconfig: true

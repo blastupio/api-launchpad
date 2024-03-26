@@ -2,5 +2,6 @@
 .git
 .env
 .env.example
+.helm/
 docker-compose.yml
 postgres/

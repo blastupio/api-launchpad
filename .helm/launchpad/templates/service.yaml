@@ -1,0 +1,24 @@
+{{- range $name, $app := $.Values.apps }}
+{{- if and $app.service $app.service.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: "{{ $name }}"
+  namespace: "{{ $.Release.Namespace }}"
+  labels:
+    app: {{ $name }}
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  ports:
+  {{- range $key, $val := $app.service.ports }}
+    -
+      {{- range $pkey, $pval := $val }}
+      {{ $pkey}}: {{ $pval }}
+      {{- end }}
+  {{- end }}
+  selector:
+    app: "{{ $name }}"
+---
+{{- end }}
+{{- end }}

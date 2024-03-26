@@ -12,7 +12,7 @@ environment = APP_ENV
 
 if SENTRY_DSN is not None:
     sentry_sdk.init(dsn=SENTRY_DSN, enable_tracing=True)
-app = FastAPI(debug=environment == "production")
+app = FastAPI(debug=environment.startswith("prod"))
 app.include_router(router)
 
 app.add_middleware(

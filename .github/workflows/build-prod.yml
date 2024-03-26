@@ -33,7 +33,7 @@ jobs:
           tags: ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}
       - name: Prepare secrets
         shell: bash
-        working-directory: ./.helm
+        working-directory: .helm
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDRESS }}
         run: |

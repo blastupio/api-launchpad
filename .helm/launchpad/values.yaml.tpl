@@ -28,11 +28,11 @@ apps:
     liveness_probe:
       httpGet:
         path: /
-        port: http
+        port: 8000
     readiness_probe:
       httpGet:
         path: /internal/rpm
-        port: http
+        port: 8000
     resources:
       memory: 512M
       memory_limit: 1G

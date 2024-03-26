@@ -32,13 +32,12 @@ jobs:
           push: true
           tags: ghcr.io/${{ github.repository }}:${{ env.RELEASE_VERSION }}
       - name: Prepare secrets
+        uses: actions/checkout@v4
         shell: bash
+        working-directory: .helm
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDRESS }}
         run: |
-          pwd
-          ls -la .
-          cd .helm
           ./install_vault.sh
           vault login token="${{ secrets.VAULT_TOKEN }}"
           ./prepare_values.sh

@@ -1,10 +1,14 @@
+from time import time
+
 import sentry_sdk
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from redis.asyncio import Redis
 
 from app import router
+from app.dependencies import get_redis
 from app.env import APP_ENV, SENTRY_DSN, ALLOWED_ORIGINS, APP_VERSION
 
 load_dotenv()

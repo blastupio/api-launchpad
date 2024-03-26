@@ -30,7 +30,7 @@ apps:
       - uvicorn main:app --proxy-headers --workers 1 --host 0.0.0.0 --port 8000 --forwarded-allow-ips '*'
     liveness_probe:
       httpGet:
-        path: /
+        path: /internal/rpm
         port: 8000
     readiness_probe:
       httpGet:

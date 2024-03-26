@@ -11,7 +11,7 @@ metadata:
     app.kubernetes.io/component: {{ $name }}
 spec:
   revisionHistoryLimit: 2
-  replicas: {{ $app.replicaCount }}
+  replicas: {{ $app.replica_count }}
   selector:
     matchLabels:
       app: {{ $name }}
@@ -34,7 +34,7 @@ spec:
       affinity:
       {{- toYaml $.Values.affinity | nindent 8 }}
       {{- end }}
-      terminationGracePeriodSeconds: 300
+      terminationGracePeriodSeconds: 30
       {{- with $.Values.image.secrets }}
       imagePullSecrets:
         {{- toYaml . | nindent 8 }}
@@ -89,13 +89,13 @@ spec:
             requests:
               cpu: "{{ $app.resources.cpu }}"
               memory: "{{ $app.resources.memory }}"
-          {{- if $app.livenessProbe }}
+          {{- if $app.liveness_probe }}
           livenessProbe:
-          {{- toYaml $app.livenessProbe | nindent 12 }}
+          {{- toYaml $app.liveness_probe | nindent 12 }}
           {{- end -}}
-          {{- if $app.readinessProbe }}
+          {{- if $app.readiness_probe }}
           readinessProbe:
-          {{- toYaml $app.readinessProbe | nindent 12 }}
+          {{- toYaml $app.readiness_probe | nindent 12 }}
           {{- end }}
 ---
 {{- end }}

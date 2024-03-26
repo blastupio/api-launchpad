@@ -14,7 +14,7 @@ apps:
   launchpad:
     has_hook: true
     deployment_enabled: true
-    replicaCount: 8
+    replica_count: 8
     service:
       enabled: true
       ports:
@@ -25,6 +25,14 @@ apps:
       - /bin/bash
       - -c
       - uvicorn main:app --proxy-headers --workers 1 --host 0.0.0.0 --port 8000 --forwarded-allow-ips '*'
+    liveness_probe:
+      httpGet:
+        path: /
+        port: http
+    readiness_probe:
+      httpGet:
+        path: /internal/rpm
+        port: http
     resources:
       memory: 512M
       memory_limit: 1G

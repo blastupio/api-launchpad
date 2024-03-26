@@ -52,6 +52,12 @@ spec:
           {{- with $app.lifecycle }}
           {{- toYaml . | nindent 12 }}
           {{- end }}
+          {{- if and $app.pods $app.pods.expose_ports }}
+          ports:
+            {{- range $app.pods.expose_ports }}
+            - containerPort: {{ . }}
+            {{- }}
+          {{- end }}
           env:
           {{- range $commonEnvKey, $commonEnvValue := $.Values.env }}
             - name: "{{ $commonEnvKey }}"

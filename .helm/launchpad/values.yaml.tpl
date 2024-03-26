@@ -15,6 +15,9 @@ apps:
     has_hook: true
     deployment_enabled: true
     replica_count: 8
+    pods:
+      expose_ports:
+        - 8000
     service:
       enabled: true
       ports:

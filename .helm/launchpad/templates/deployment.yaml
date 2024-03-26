@@ -56,7 +56,7 @@ spec:
           ports:
             {{- range $app.pods.expose_ports }}
             - containerPort: {{ . }}
-            {{- }}
+            {{- end }}
           {{- end }}
           env:
           {{- range $commonEnvKey, $commonEnvValue := $.Values.env }}

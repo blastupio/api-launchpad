@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 set -e
-set -x
+set +x
 
 PRODUCTION_SECRETS_RAW=$(vault kv get -format json "kv/production")
 cat ./launchpad/values.yaml.tpl > ./launchpad/values.yaml

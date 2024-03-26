@@ -36,6 +36,7 @@ jobs:
         env:
           VAULT_ADDR: ${{ secrets.VAULT_ADDRESS }}
         run: |
+          pwd
           ls -la .
           cd .helm
           ./install_vault.sh

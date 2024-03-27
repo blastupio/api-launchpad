@@ -63,7 +63,7 @@ spec:
             - name: "{{ $commonEnvKey }}"
               value: "{{ $commonEnvValue }}"
           {{- end }}
-          {{- if or  (hasKey $.Values.config $name) (hasKey $.Values.secrets $name) }}
+          {{- if or (and $.Values.config $.Values.config.data) (and $.Values.secrets $.Values.secrets.data) }}
           envFrom:
             {{- if and $.Values.config $.Values.config.data }}
             - configMapRef:

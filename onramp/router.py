@@ -84,6 +84,6 @@ async def webhook_handler(munzen: Munzen = Depends(get_munzen),
 
     if payload.get('eventType') == "order_complete" and order.status != ONRAMP_STATUS_COMPLETE:
         logger.info(f"[onramp webhook] Scheduled job for id {order.id}")
-        # process_munzen_order.apply_async(args=[str(order.id)])
+        process_munzen_order.apply_async(args=[str(order.id)])
 
     return {"ok": True}

@@ -27,15 +27,15 @@ spec:
         args:
           - "-c"
           - "alembic upgrade head"
-        {{- if or  (hasKey $.Values.config $name) (hasKey $.Values.secrets $name) }}
+        {{- if or (and $.Values.config $.Values.config.data) (and $.Values.secrets $.Values.secrets.data) }}
         envFrom:
-        {{- if (hasKey $.Values.config $name)}}
+        {{- if (and $.Values.config $.Values.config.data)}}
           - configMapRef:
-              name: {{ $name }}-config
+              name: {{ $.Chart.Name }}-config
         {{- end }}
-        {{- if (hasKey $.Values.secrets $name) }}
+        {{- if (and $.Values.secrets $.Values.secrets.data) }}
           - secretRef:
-              name: {{ $name }}-secret
+              name: {{ $.Chart.Name }}-secret
         {{- end }}
         {{- end }}
 {{- end }}

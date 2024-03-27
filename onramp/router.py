@@ -54,7 +54,7 @@ async def get_payment_link(
         amount=f"{int(amount * 1e18)}",
         currency="ETH",
         status=ONRAMP_STATUS_NEW,
-        address=payload.address.lower(),
+        address=payload.recipient.lower(),
     ))
 
     payment_link = await munzen.generate_link(order.id, f"{amount:.8f}", order.currency)

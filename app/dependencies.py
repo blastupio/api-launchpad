@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base import async_session
 from app.env import REDIS_URL
 from app.services import Lock
+from app.crud import LaunchpadProjectCrud
 
 
 async def get_redis() -> Redis:
@@ -18,3 +19,9 @@ async def get_lock(redis: Redis = Depends(get_redis)) -> Lock:
 async def get_session() -> AsyncSession:
     async with async_session() as session, session.begin():
         yield session
+
+
+async def get_launchpad_projects_crud(session: AsyncSession = Depends(get_session)) -> \
+        LaunchpadProjectCrud:
+
+    return LaunchpadProjectCrud(session)

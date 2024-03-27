@@ -1,25 +1,42 @@
 import hashlib
 import hmac
+import json
 import statistics
 from collections import OrderedDict
+from datetime import timedelta
 from urllib.parse import urlencode
 from uuid import UUID
 
 from eth_account import Account
 from eth_account.hdaccount import seed_from_mnemonic, key_from_seed
 from httpx import AsyncClient
+from redis.asyncio import Redis
 from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
 
 from app.base import logger
+from onramp.abi import PRICE_FEED_ABI
 
 
 class Crypto:
-    def __init__(self, api_key: str, sender_seed_phrase: str):
+    def __init__(self, api_key: str, sender_seed_phrase: str, eth_price_feed_addr: str):
         self.web3 = AsyncWeb3(AsyncHTTPProvider(api_key))
 
         seed = seed_from_mnemonic(sender_seed_phrase, passphrase="")
         self.private_key = key_from_seed(seed, account_path="m/44'/60'/0'/0/0")
         self.address = Account.from_key(self.private_key).address
+
+        self.eth_price_feed_addr = eth_price_feed_addr
+
+    async def get_price_feed(self, token) -> dict[str, float | int]:
+        if token.lower() not in ["eth"]:
+            return {}
+
+        price_feed_contract = self.web3.eth.contract(self.web3.to_checksum_address(self.eth_price_feed_addr),
+                                                     abi=PRICE_FEED_ABI)
+        return {
+            "latestAnswer": await price_feed_contract.functions.latestAnswer().call(),
+            "decimals": int(await price_feed_contract.functions.decimals().call())
+        }
 
     async def send_eth(self, recipient: str, amount: str) -> str | None:
         async def estimate_gas() -> int:
@@ -45,6 +62,36 @@ class Crypto:
         tx_hash = await self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
 
         return tx_hash.hex()
+
+
+class AmountConverter:
+    def __init__(self, redis: Redis, crypto: Crypto):
+        self.redis = redis
+        self.crypto = crypto
+        self.price_cache = {}
+
+    async def convert(self, currency: str, amount: float) -> float:
+        try:
+            return amount * (await self._get_rate(currency))
+        except ValueError as e:
+            logger.warning(f"[AmountConverter({currency}, {amount})] Cannot convert amount: {e}")
+            return 0
+
+    async def _get_rate(self, currency: str) -> float:
+        if not any(["USDB" in currency]):
+            if self.price_cache.get(currency.split("-")[0].upper()) is None:
+                token = currency.split("-")[0].upper()
+                if await self.redis.exists(f"price-feed:{token}"):
+                    price_feed = json.loads(await self.redis.get(f"price-feed:{token}"))
+                else:
+                    price_feed = await self.crypto.get_price_feed(token.lower())
+                    await self.redis.setex(f"price-feed:{token}", value=json.dumps(price_feed),
+                                           time=timedelta(seconds=10))
+
+                return price_feed["latestAnswer"] / (10 ** price_feed["decimals"])
+            else:
+                return self.price_cache.get(currency.split("-")[0].upper())
+        return 1.
 
 
 class Munzen:

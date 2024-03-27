@@ -5,9 +5,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base import async_session
 from app.crud import OnRampCrud
 from app.env import REDIS_URL, MUNZEN_API_KEY, MUNZEN_API_SECRET, MUNZEN_ENVIRONMENT, ONRAMP_RECIPIENT_ADDR, \
-    CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE
+    CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE, ETH_PRICE_FEED_ADDR
 from app.services import Lock
-from onramp.services import Munzen, Crypto
+from onramp.services import Munzen, Crypto, AmountConverter
 
 
 async def get_redis() -> Redis:
@@ -32,4 +32,8 @@ async def get_munzen() -> Munzen:
 
 
 async def get_crypto() -> Crypto:
-    return Crypto(CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE)
+    return Crypto(CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE, ETH_PRICE_FEED_ADDR)
+
+
+async def get_amount_converter(redis: Redis = Depends(get_redis), crypto: Crypto = Depends(get_crypto)) -> AmountConverter:
+    return AmountConverter(redis, crypto)

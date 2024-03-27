@@ -5,12 +5,12 @@ from fastapi import APIRouter, Depends, Body, HTTPException, Path
 
 from app.base import logger
 from app.crud import OnRampCrud
-from app.dependencies import get_onramp_crud, get_munzen
+from app.dependencies import get_onramp_crud, get_munzen, get_amount_converter
 from app.env import ONRAMP_RECIPIENT_ADDR
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
 from app.utils import validation_error
-from onramp.services import Munzen
+from onramp.services import Munzen, AmountConverter
 from onramp.schema import OnRampPayload, OnRampResponse, OnRampResponseData, OnrampOrderResponse, ErrorResponse
 
 router = APIRouter(prefix="/onramp", tags=["onramp"])
@@ -35,6 +35,7 @@ async def get_order_data(munzen: Munzen = Depends(get_munzen), order_id: UUID = 
 async def get_payment_link(
         crud: OnRampCrud = Depends(get_onramp_crud),
         munzen: Munzen = Depends(get_munzen),
+        amount_converter: AmountConverter = Depends(get_amount_converter),
         payload: OnRampPayload = Body(embed=False)
 ):
     amount = 0.
@@ -46,8 +47,8 @@ async def get_payment_link(
         except ValueError:
             raise validation_error(error_message="Invalid amount", location=("body", "amount"))
 
-    if amount < 0.0062:  # 20 eur
-        raise validation_error(error_message="Amount should be greater than 20 eur equivalent",
+    if await amount_converter.convert("ETH", amount) < 11:  # 11 usd
+        raise validation_error(error_message="Amount should be greater than 11 usd equivalent",
                                location=("body", "amount"))
 
     order = await crud.persist(OnRampOrder(

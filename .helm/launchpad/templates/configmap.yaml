@@ -1,0 +1,16 @@
+{{- range $name, $app := $.Values.config }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ $name }}-config
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $name }}
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/component: {{ $name }}
+data:
+  {{- range $k, $v := $app.data }}
+  {{ $k }}: {{ $v | quote }}
+  {{- end }}
+---
+{{- end }}

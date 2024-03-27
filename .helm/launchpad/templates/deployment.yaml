@@ -1,0 +1,108 @@
+{{- range $name, $app := .Values.apps }}
+{{- if $app.deployment_enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ $name }}
+  namespace: {{ $.Release.Namespace }}
+  labels:
+    app: {{ $name }}
+    app.kubernetes.io/name: {{ $name }}
+    app.kubernetes.io/component: {{ $name }}
+spec:
+  revisionHistoryLimit: 2
+  replicas: {{ $app.replica_count }}
+  selector:
+    matchLabels:
+      app: {{ $name }}
+  template:
+    metadata:
+      annotations:
+        checksum/config: {{ tpl (print $.Template.BasePath "/configmap.yaml") . | sha256sum }}
+        checksum/secrets: {{ tpl (print $.Template.BasePath "/secret.yaml") . | sha256sum }}
+      labels:
+        app: {{ $name }}
+    spec:
+      {{- if $app.nodeSelector }}
+      nodeSelector:
+        env: "{{ $app.nodeSelector }}"
+      {{- else if $.Values.nodeSelector }}
+      nodeSelector:
+        env: "{{ $.Values.nodeSelector }}"
+      {{- end }}
+      {{- if $.Values.affinity }}
+      affinity:
+      {{- toYaml $.Values.affinity | nindent 8 }}
+      {{- end }}
+      terminationGracePeriodSeconds: 30
+      {{- with $.Values.image.secrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        - name: {{ $name }}
+          {{- if and $app.image_tag $app.image_name }}
+          image: "{{ $.Values.image.registry }}/{{ $app.image_name }}:{{ $app.image_tag }}"
+          {{- else if $app.image_name }}
+          image: "{{ $.Values.image.registry }}/{{ $app.image_name }}:{{ $.Values.image.tag }}"
+          {{- else }}
+          image: "{{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
+          {{- end }}
+          imagePullPolicy: {{ $.Values.image.pullPolicy }}
+          {{- with $app.lifecycle }}
+          {{- toYaml . | nindent 12 }}
+          {{- end }}
+          {{- if and $app.pods $app.pods.expose_ports }}
+          ports:
+            {{- range $app.pods.expose_ports }}
+            - containerPort: {{ . }}
+            {{- end }}
+          {{- end }}
+          env:
+          {{- range $commonEnvKey, $commonEnvValue := $.Values.env }}
+            - name: "{{ $commonEnvKey }}"
+              value: "{{ $commonEnvValue }}"
+          {{- end }}
+          {{- if or  (hasKey $.Values.config $name) (hasKey $.Values.secrets $name) }}
+          envFrom:
+            {{- if (hasKey $.Values.config $name)}}
+            - configMapRef:
+                name: {{ $name }}-config
+            {{- end }}
+            {{- if (hasKey $.Values.secrets $name) }}
+            - secretRef:
+                name: {{ $name }}-secret
+            {{- end }}
+          {{- end }}
+          {{- if $app.command }}
+          command:
+            {{- range $app.command }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          {{- if $app.args }}
+          args:
+            {{- range $app.args }}
+            - {{ . }}
+            {{- end }}
+          {{- end }}
+          resources:
+            {{- if and $app.resources.cpu_limit $app.resources.memory_limit }}
+            limits:
+              cpu: "{{ $app.resources.cpu_limit }}"
+              memory: "{{ $app.resources.memory_limit }}"
+            {{- end }}
+            requests:
+              cpu: "{{ $app.resources.cpu }}"
+              memory: "{{ $app.resources.memory }}"
+          {{- if $app.liveness_probe }}
+          livenessProbe:
+          {{- toYaml $app.liveness_probe | nindent 12 }}
+          {{- end -}}
+          {{- if $app.readiness_probe }}
+          readinessProbe:
+          {{- toYaml $app.readiness_probe | nindent 12 }}
+          {{- end }}
+---
+{{- end }}
+{{- end }}

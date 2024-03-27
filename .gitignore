@@ -4,5 +4,6 @@ postgres
 .docker/*
 !.docker/.gitkeep
 !.docker/Dockerfile
+.helm/launchpad/values.yaml
 __pycache__/
 *.py[cod]

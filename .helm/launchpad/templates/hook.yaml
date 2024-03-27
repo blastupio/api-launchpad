@@ -1,0 +1,42 @@
+{{- range $name, $app := .Values.apps }}
+{{- if $app.has_hook }}
+apiVersion: batch/v1
+kind: Job
+metadata:
+  labels:
+    app: {{ $.Chart.Name }}-migrator
+  name: {{ $.Chart.Name }}-migrator
+  namespace: {{ $.Release.Namespace }}
+  annotations:
+    "helm.sh/hook": post-install,post-upgrade
+    "helm.sh/hook-delete-policy": before-hook-creation
+spec:
+  backoffLimit: 1
+  template:
+    spec:
+      restartPolicy: Never
+      {{- with $.Values.image.secrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+      - name: primary
+        image: {{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag | default $.Values.env.APP_VERSION }}
+        command:
+          - "bash"
+        args:
+          - "-c"
+          - "alembic upgrade head"
+        {{- if or  (hasKey $.Values.config $name) (hasKey $.Values.secrets $name) }}
+        envFrom:
+        {{- if (hasKey $.Values.config $name)}}
+          - configMapRef:
+              name: {{ $name }}-config
+        {{- end }}
+        {{- if (hasKey $.Values.secrets $name) }}
+          - secretRef:
+              name: {{ $name }}-secret
+        {{- end }}
+        {{- end }}
+{{- end }}
+{{- end }}

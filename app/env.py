@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 APP_ENV = getenv("APP_ENV", "dev")
+APP_VERSION = getenv("APP_VERSION", "unstable")
 
 SENTRY_DSN = getenv("SENTRY_DSN", None)
 LOGTAIL_TOKEN = getenv("LOGTAIL_TOKEN")

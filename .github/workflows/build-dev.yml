@@ -48,6 +48,6 @@ jobs:
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: helm upgrade --install launchpad ./.helm/launchpad -n dev --set env.APP_ENV=dev --set env.APP_VERSION=${{ github.sha }} --set image.tag=unstable
+          exec: helm upgrade --install launchpad ./.helm/launchpad -n dev --set ingresses.launchpad.domain="dev-app-api.blastup.io" --set env.APP_ENV=dev --set env.APP_VERSION=${{ github.sha }} --set image.tag=unstable
           kubeconfig: '${{ secrets.KUBECONFIG }}'
           overrule_existing_kubeconfig: true

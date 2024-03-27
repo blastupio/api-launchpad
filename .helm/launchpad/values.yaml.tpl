@@ -1,4 +1,4 @@
-# Default values for eazylogin.
+# Default values for blastup-launchpad.
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 

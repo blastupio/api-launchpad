@@ -41,7 +41,7 @@ jobs:
         run: |
           ./install_vault.sh
           vault login token="${{ secrets.VAULT_TOKEN }}"
-          ./prepare_values.sh
+          ./prepare_values.sh production
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:

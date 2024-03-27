@@ -11,6 +11,20 @@ image:
     - name: ghcr-credentials
 
 apps:
+  worker:
+    deployment_enabled: true
+    replica_count: 1
+    service:
+      enabled: false
+    command:
+      - /bin/bash
+      - -c
+      - celery -A app.tasks worker -l INFO -c 4
+    resources:
+      memory: 512M
+      memory_limit: 1G
+      cpu: 200m
+      cpu_limit: 200m
   launchpad:
     has_hook: true
     deployment_enabled: true

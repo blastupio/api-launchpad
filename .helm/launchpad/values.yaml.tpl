@@ -73,10 +73,8 @@ ingresses:
         pathType: Prefix
 
 config:
-  launchpad:
-    data:
-      CELERY_RETRY_AFTER: 15
+  data:
+    CELERY_RETRY_AFTER: 15
 
 secrets:
-  launchpad:
-    data:
+  data:

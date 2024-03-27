@@ -1,15 +1,15 @@
-{{- range $name, $app := $.Values.config }}
+{{- if $.Values.config }}
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: {{ $name }}-config
+  name: {{ $.Chart.Name }}-config
   namespace: {{ $.Release.Namespace }}
   labels:
-    app: {{ $name }}
-    app.kubernetes.io/name: {{ $name }}
-    app.kubernetes.io/component: {{ $name }}
+    app: {{ $.Chart.Name }}
+    app.kubernetes.io/name: {{ $.Chart.Name }}
+    app.kubernetes.io/component: {{ $.Chart.Name }}
 data:
-  {{- range $k, $v := $app.data }}
+  {{- range $k, $v := $.Values.config.data }}
   {{ $k }}: {{ $v | quote }}
   {{- end }}
 ---

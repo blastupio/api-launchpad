@@ -1,0 +1,18 @@
+version: '3'
+services:
+  redis:
+    image: redis:latest
+    container_name: launchpad_redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+  postgres:
+    image: postgres:latest
+    container_name: launchpad_postgres
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    environment:
+        POSTGRES_USER: launchpad
+        POSTGRES_PASSWORD: launchpad
+        POSTGRES_DB: launchpad
+    volumes:
+        - ../.docker/launchpad/postgres:/var/lib/postgresql/data

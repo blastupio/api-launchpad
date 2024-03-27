@@ -12,6 +12,7 @@ class LaunchpadProjectCrud(BaseCrud):
         query = await self.session.execute(
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
+            .options(selectinload(LaunchpadProject.links))
             .order_by(LaunchpadProject.created_at.asc())
             .limit(limit)
             .offset(offset)

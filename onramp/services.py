@@ -44,7 +44,7 @@ class Crypto:
             median_gas = int(statistics.median(t.gas for t in block.transactions))
             return median_gas
 
-        nonce = self.web3.eth.get_transaction_count(self.web3.to_checksum_address(self.address), "latest")
+        nonce = await self.web3.eth.get_transaction_count(self.web3.to_checksum_address(self.address), "latest")
         gas = await estimate_gas()
         gas_price = max(await self.web3.eth.gas_price, Web3.to_wei(30, "gwei"))
 

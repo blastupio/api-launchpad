@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from redis.asyncio import Redis
 
 from app.dependencies import get_redis
+from .v1.router import router as v1router
 
 
 async def _calculate_rpm(redis: Redis = Depends(get_redis)) -> int:
@@ -15,6 +16,7 @@ async def _calculate_rpm(redis: Redis = Depends(get_redis)) -> int:
 
 
 router = APIRouter(dependencies=[Depends(_calculate_rpm)])
+router.include_router(v1router)
 
 
 @router.get("/internal/rpm")

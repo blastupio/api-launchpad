@@ -19,6 +19,10 @@ class ProcessMunzenOrder(Command):
                       lock: Lock = Depends(get_lock),
                       crud: OnRampCrud = Depends(get_onramp_crud),
                       crypto: Crypto = Depends(get_crypto)) -> CommandResult:
+        if not await lock.acquire(f"is-ready:munzen-processing"):
+            logger.debug(f'[ProcessMunzenOrder({self.order_id})] Another order in progress')
+            return CommandResult(success=False, need_retry=True, retry_after=10)
+
         if not await lock.acquire(f"munzen-order:{self.order_id}"):
             return CommandResult(success=False, need_retry=True, retry_after=60)
 
@@ -39,4 +43,5 @@ class ProcessMunzenOrder(Command):
                 logger.error(f'[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}')
                 return CommandResult(success=False, need_retry=True, retry_after=60)
         finally:
+            await lock.release(f"munzen-order:{self.order_id}")
             await lock.release(f"munzen-order:{self.order_id}")

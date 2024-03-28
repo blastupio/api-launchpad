@@ -4,12 +4,12 @@ services:
     image: redis:latest
     container_name: launchpad_redis
     ports:
-      - "6379:6379"
+      - "${REDIS_PORT:-6379}:6379"
   postgres:
     image: postgres:latest
     container_name: launchpad_postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
         POSTGRES_USER: launchpad
         POSTGRES_PASSWORD: launchpad

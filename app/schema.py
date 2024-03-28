@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Dict, List
 from enum import Enum
 from decimal import Decimal
@@ -65,3 +65,21 @@ class LaunchpadProjectsData(BaseModel):
 
 class AllLaunchpadProjectsResponse(BaseResponse):
     data: LaunchpadProjectsData
+
+
+class ErrorResponse(BaseModel):
+    ok: bool = Field(default=False)
+    error: str
+
+
+class AddressBalanceResponseData(BaseModel):
+    polygon: int
+    eth: int
+    bsc: int
+    blast: int
+    total: int
+
+
+class AddressBalanceResponse(BaseModel):
+    ok: bool
+    data: AddressBalanceResponseData

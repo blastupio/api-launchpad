@@ -14,6 +14,13 @@ class ProjectType(enum.Enum):
     PARTNERSHIP_PRESALE = "partnership_presale"
 
 
+class ProjectLinkType(enum.Enum):
+    DEFAULT = "default"
+    TWITTER = "twitter"
+    DISCORD = "discord"
+    TELEGRAM = "telegram"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -26,6 +33,8 @@ class LaunchpadProject(Base):
     slug = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
+
+    logo_url = Column(Text(), nullable=True)
 
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
@@ -44,12 +53,12 @@ class LaunchpadProject(Base):
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
 
-    profile_images = relationship("File", back_populates="project")
-    links = relationship("Link", back_populates="project")
+    profile_images = relationship("ProjectImage", back_populates="project")
+    links = relationship("ProjectLink", back_populates="project")
 
 
-class File(Base):
-    __tablename__ = 'file'
+class ProjectImage(Base):
+    __tablename__ = 'project_image'
 
     id = Column(BigIntegerType, primary_key=True)
 
@@ -60,13 +69,14 @@ class File(Base):
     project = relationship("LaunchpadProject", back_populates="profile_images")
 
 
-class Link(Base):
-    __tablename__ = 'link'
+class ProjectLink(Base):
+    __tablename__ = 'project_link'
 
     id = Column(BigIntegerType, primary_key=True)
 
     name = Column(String, nullable=True)
     url = Column(String, nullable=False)
+    type = Column(Enum(ProjectLinkType), default=ProjectLinkType.DEFAULT, server_default="DEFAULT")
 
     project_id = Column(BigIntegerType, ForeignKey('launchpad_project.id'))
     project = relationship("LaunchpadProject", back_populates="links")

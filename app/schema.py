@@ -20,9 +20,17 @@ class FileModel(BaseModel):
         orm_mode = True
 
 
+class ProjectLinkTypeEnum(str, Enum):
+    DEFAULT = "default"
+    TWITTER = "twitter"
+    DISCORD = "discord"
+    TELEGRAM = "telegram"
+
+
 class LinkModel(BaseModel):
     name: str
     url: str
+    type: ProjectLinkTypeEnum
 
     class Config:
         orm_mode = True
@@ -38,6 +46,7 @@ class LaunchpadProjectList(BaseModel):
     slug: str
     name: str
     short_description: str
+    logo_url: str | None
     links: List[LinkModel]
     token_price: Decimal
     total_raise: Decimal
@@ -49,8 +58,6 @@ class LaunchpadProjectList(BaseModel):
 
 
 class LaunchpadProject(LaunchpadProjectList):
-
-    registration_end_at: datetime
     start_at: datetime
     end_at: datetime
     fcfs_opens_at: datetime
@@ -58,7 +65,7 @@ class LaunchpadProject(LaunchpadProjectList):
     project_type: ProjectTypeEnum
 
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None
 
     profile_images: List[FileModel]
     links: List[LinkModel]
@@ -99,3 +106,13 @@ class AddressBalanceResponseData(BaseModel):
 class AddressBalanceResponse(BaseModel):
     ok: bool
     data: AddressBalanceResponseData
+
+
+class PriceFeedResponseData(BaseModel):
+    latest_answer: int = Field(alias="latestAnswer")
+    decimals: int
+
+
+class PriceFeedResponse(BaseModel):
+    ok: bool
+    data: PriceFeedResponseData

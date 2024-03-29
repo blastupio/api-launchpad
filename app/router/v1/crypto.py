@@ -1,14 +1,34 @@
+import json
+
 from fastapi import APIRouter, Path, Depends
 from starlette.responses import JSONResponse
 from redis.asyncio import Redis
 from datetime import timedelta
 
-from app.schema import AddressBalanceResponse, ErrorResponse, AddressBalanceResponseData
+from app.schema import AddressBalanceResponse, ErrorResponse, AddressBalanceResponseData, PriceFeedResponse, \
+    PriceFeedResponseData
 from app.services import Crypto
 from app.base import logger
 from app.dependencies import get_redis, get_launchpad_crypto
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
+
+
+@router.get("/price-feed/{token}", response_model=PriceFeedResponse | ErrorResponse)
+async def price_feed(redis: Redis = Depends(get_redis), crypto: Crypto = Depends(get_launchpad_crypto),
+                     token: str = Path()):
+    try:
+        if await redis.exists(f"price-feed:{token}"):
+            data = json.loads(await redis.get(f"price-feed:{token}"))
+        else:
+            data = await crypto.get_price_feed(token.lower())
+            await redis.setex(f"price-feed:{token}", value=json.dumps(data), time=timedelta(seconds=30))
+
+        return PriceFeedResponse(ok=True,
+                                 data=PriceFeedResponseData(**data))
+    except Exception as e:
+        logger.error(f"Cannot get price_feed: {e}")
+        return JSONResponse({"ok": False, "error": "Internal Server Error"}, status_code=500)
 
 
 @router.get("/{address}/balance", response_model=AddressBalanceResponse | ErrorResponse)

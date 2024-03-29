@@ -1,5 +1,5 @@
-from typing import Sequence
-from sqlalchemy import select
+from typing import Sequence, Union
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 
 from app.base import BaseCrud
@@ -18,3 +18,15 @@ class LaunchpadProjectCrud(BaseCrud):
             .offset(offset)
         )
         return query.scalars().all()
+
+    async def retrieve(self, id_or_slug: Union[int, str]):
+        st = (
+            select(LaunchpadProject)
+            .options(selectinload(LaunchpadProject.profile_images))
+            .options(selectinload(LaunchpadProject.links))
+        )
+
+        st = st.where(LaunchpadProject.id == id_or_slug) if isinstance(id_or_slug, int) \
+            else st.where(LaunchpadProject.slug == id_or_slug)
+        query = await self.session.execute(st)
+        return query.scalars().first()

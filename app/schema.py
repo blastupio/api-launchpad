@@ -33,15 +33,23 @@ class ProjectTypeEnum(str, Enum):
     PARTNERSHIP_PRESALE = "partnership_presale"
 
 
-class LaunchpadProject(BaseModel):
+class LaunchpadProjectList(BaseModel):
     id: int
+    slug: str
     name: str
     short_description: str
+    links: List[LinkModel]
     token_price: Decimal
     total_raise: Decimal
     raised: str = "0"
+    registration_end_at: datetime
 
-    registration_start_at: datetime
+    class Config:
+        orm_mode = True
+
+
+class LaunchpadProject(LaunchpadProjectList):
+
     registration_end_at: datetime
     start_at: datetime
     end_at: datetime
@@ -60,11 +68,19 @@ class LaunchpadProject(BaseModel):
 
 
 class LaunchpadProjectsData(BaseModel):
-    projects: List[LaunchpadProject]
+    projects: List[LaunchpadProjectList]
+
+
+class LaunchpadProjectData(BaseModel):
+    project: LaunchpadProject
 
 
 class AllLaunchpadProjectsResponse(BaseResponse):
     data: LaunchpadProjectsData
+
+
+class LaunchpadProjectResponse(BaseResponse):
+    data: LaunchpadProjectData
 
 
 class ErrorResponse(BaseModel):

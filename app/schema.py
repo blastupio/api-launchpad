@@ -83,3 +83,13 @@ class AddressBalanceResponseData(BaseModel):
 class AddressBalanceResponse(BaseModel):
     ok: bool
     data: AddressBalanceResponseData
+
+
+class PriceFeedResponseData(BaseModel):
+    latest_answer: int = Field(alias="latestAnswer")
+    decimals: int
+
+
+class PriceFeedResponse(BaseModel):
+    ok: bool
+    data: PriceFeedResponseData

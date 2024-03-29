@@ -20,9 +20,17 @@ class FileModel(BaseModel):
         orm_mode = True
 
 
+class ProjectLinkTypeEnum(str, Enum):
+    DEFAULT = "default"
+    TWITTER = "twitter"
+    DISCORD = "discord"
+    TELEGRAM = "telegram"
+
+
 class LinkModel(BaseModel):
     name: str
     url: str
+    type: ProjectLinkTypeEnum
 
     class Config:
         orm_mode = True
@@ -40,6 +48,7 @@ class LaunchpadProject(BaseModel):
     token_price: Decimal
     total_raise: Decimal
     raised: str = "0"
+    logo_url: str | None
 
     registration_start_at: datetime
     registration_end_at: datetime
@@ -50,7 +59,7 @@ class LaunchpadProject(BaseModel):
     project_type: ProjectTypeEnum
 
     created_at: datetime
-    updated_at: datetime
+    updated_at: datetime | None
 
     profile_images: List[FileModel]
     links: List[LinkModel]

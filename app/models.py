@@ -30,6 +30,7 @@ class LaunchpadProject(Base):
     __tablename__ = 'launchpad_project'
 
     id = Column(BigIntegerType, primary_key=True)
+    slug = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
 

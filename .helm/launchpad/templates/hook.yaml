@@ -22,6 +22,7 @@ spec:
       containers:
       - name: primary
         image: {{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag | default $.Values.env.APP_VERSION }}
+        imagePullPolicy: {{ $.Values.image.pullPolicy }}
         command:
           - "bash"
         args:

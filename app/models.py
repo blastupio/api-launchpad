@@ -89,6 +89,7 @@ class OnRampOrder(Base):
     address = Column(Text(), nullable=False, index=True)
     hash = Column(Text(), nullable=True, unique=True)
     amount = Column(Text(), nullable=False)
+    received_amount = Column(Text(), nullable=True)
     currency = Column(Text(), nullable=True)
     status = Column(Text(), default=ONRAMP_STATUS_NEW, server_default=ONRAMP_STATUS_NEW)
     extra = Column(JSON(), default=lambda: {}, server_default=text("'{}'::jsonb"))

@@ -17,7 +17,11 @@ router = APIRouter(prefix="/onramp", tags=["onramp"])
 
 
 @router.get("/order/{order_id}", response_model=OnrampOrderResponse | ErrorResponse)
-async def get_order_data(munzen: Munzen = Depends(get_munzen), order_id: UUID = Path()):
+async def get_order_data(
+        crud: OnRampCrud = Depends(get_onramp_crud),
+        munzen: Munzen = Depends(get_munzen),
+        order_id: UUID = Path()
+):
     try:
         order_data = (await munzen.get_order_data(str(order_id))).get("result")
     except Exception as e:
@@ -25,8 +29,13 @@ async def get_order_data(munzen: Munzen = Depends(get_munzen), order_id: UUID = 
             return {"ok": False, "error": "Not found"}
         raise e
 
-    if order_data.get("status") == "complete" and order_data.get("toWallet", "").lower() == ONRAMP_RECIPIENT_ADDR.lower():
-        process_munzen_order.apply_async(args=[order_data.get("merchantOrderId")])
+    if order_data.get("status") == "complete" and order_data.get("toWallet",
+                                                                 "").lower() == ONRAMP_RECIPIENT_ADDR.lower():
+        order = await crud.get_by_id(UUID(order_data.get("merchantOrderId")))
+        if order:
+            order.received_amount = f"{int(float(order_data.get('toAmount')) * 1e18)}"
+            await crud.persist(order)
+        process_munzen_order.apply_async(args=[order_data.get("merchantOrderId")], countdown=1)
 
     return {"ok": True, "data": order_data}
 
@@ -88,7 +97,10 @@ async def webhook_handler(munzen: Munzen = Depends(get_munzen),
         await crud.persist(order)
 
     if payload.get('eventType') == "order_complete" and order.status != ONRAMP_STATUS_COMPLETE:
+        order.received_amount = f"{int(float(payload.get('toAmount')) * 1e18)}"
+        await crud.persist(order)
+
         logger.info(f"[onramp webhook] Scheduled job for id {order.id}")
-        process_munzen_order.apply_async(args=[str(order.id)])
+        process_munzen_order.apply_async(args=[str(order.id)], countdown=1)
 
     return {"ok": True}

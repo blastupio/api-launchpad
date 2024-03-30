@@ -33,7 +33,7 @@ class ProcessMunzenOrder(Command):
                 return CommandResult(success=False, need_retry=False)
 
             try:
-                tx_hash = await crypto.send_eth(order.address, order.amount)
+                tx_hash = await crypto.send_eth(order.address, order.received_amount)
                 if tx_hash:
                     order.status = ONRAMP_STATUS_COMPLETE
                     order.hash = tx_hash

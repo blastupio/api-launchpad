@@ -121,14 +121,24 @@ class Munzen:
         ).hexdigest()
 
     async def generate_link(self, merchant_order_id: str | UUID, amount: str, currency: str) -> str:
-        query_params = {
-            "toWallet": self.onramp_wallet,
-            "toCurrency": currency,
-            "toAmount": amount,
-            "fromCurrency": "USD",
-            "merchantOrderId": str(merchant_order_id),
-            "apiKey": self.api_key,
-        }
+        if currency == "ETH":
+            query_params = {
+                "toWallet": self.onramp_wallet,
+                "toCurrency": currency,
+                "toAmount": amount,
+                "fromCurrency": "USD",
+                "merchantOrderId": str(merchant_order_id),
+                "apiKey": self.api_key,
+            }
+        else:  # currency == 'usd'
+            query_params = {
+                "toWallet": self.onramp_wallet,
+                "toCurrency": "ETH",
+                "fromCurrency": currency,
+                "fromAmount": amount,
+                "merchantOrderId": str(merchant_order_id),
+                "apiKey": self.api_key,
+            }
         query_params["signature"] = await self.calculate_signature(query_params)
 
         return f"{self.base_url}?{urlencode(query_params)}"

@@ -11,7 +11,7 @@ class ErrorResponse(BaseModel):
 class OnRampPayload(BaseModel):
     recipient: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
     amount: str
-    currency: Literal['ETH'] = Field(default="ETH")
+    currency: Literal['ETH', 'USD'] = Field(default="ETH")
 
 
 class OnRampResponseData(BaseModel):

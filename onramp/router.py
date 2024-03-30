@@ -47,18 +47,22 @@ async def get_payment_link(
         except ValueError:
             raise validation_error(error_message="Invalid amount", location=("body", "amount"))
 
-    if await amount_converter.convert("ETH", amount) < 11:  # 11 usd
+    if payload.currency == "ETH" and await amount_converter.convert("ETH", amount) < 11:  # 11 usd
+        raise validation_error(error_message="Amount should be greater than 11 usd equivalent",
+                               location=("body", "amount"))
+    if payload.currency == "USD" and amount < 11:
         raise validation_error(error_message="Amount should be greater than 11 usd equivalent",
                                location=("body", "amount"))
 
     order = await crud.persist(OnRampOrder(
-        amount=f"{int(amount * 1e18)}",
-        currency="ETH",
+        amount=f"{int(amount * 1e18)}" if payload.currency == "ETH" else f"{int(amount * 100)}",
+        currency=payload.currency,
         status=ONRAMP_STATUS_NEW,
         address=payload.recipient.lower(),
     ))
 
-    payment_link = await munzen.generate_link(order.id, f"{amount:.8f}", order.currency)
+    amount_str = f"{amount:.8f}" if payload.currency == "ETH" else f"{amount:.2f}"
+    payment_link = await munzen.generate_link(order.id, amount_str, order.currency)
     return OnRampResponse(ok=True, data=OnRampResponseData(
         internal_uuid=str(order.id),
         link=payment_link

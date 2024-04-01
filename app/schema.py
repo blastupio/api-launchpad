@@ -118,7 +118,7 @@ class PriceFeedResponse(BaseModel):
     data: PriceFeedResponseData
 
 
-class CurrentStageV2Data(BaseModel):
+class CurrentStageData(BaseModel):
     stage: str
     target_amount: str
     current_amount: str
@@ -145,7 +145,7 @@ class ProjectData(BaseModel):
     stages: list[StagesData]
     target: TargetData
     total_balance: TotalBalanceAggData
-    current_stage_v2: CurrentStageV2Data
+    current_stage: CurrentStageData
 
 
 class ProjectDataResponse(BaseModel):

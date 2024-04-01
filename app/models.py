@@ -83,7 +83,7 @@ class ProjectLink(Base):
 
 
 class OnRampOrder(Base):
-    __tablename__ = 'onramp_orders'
+    __tablename__ = 'onramp_order'
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
     address = Column(Text(), nullable=False, index=True)

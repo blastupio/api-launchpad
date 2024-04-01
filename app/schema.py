@@ -116,3 +116,38 @@ class PriceFeedResponseData(BaseModel):
 class PriceFeedResponse(BaseModel):
     ok: bool
     data: PriceFeedResponseData
+
+
+class CurrentStageV2Data(BaseModel):
+    stage: str
+    target_amount: str
+    current_amount: str
+    current_amount_usd: str
+
+
+class TotalBalanceAggData(BaseModel):
+    usd: str
+    token: str
+
+
+class TargetData(BaseModel):
+    target: int
+    target_usd: int
+
+
+class StagesData(BaseModel):
+    price: str
+    target: int
+    target_usd: int
+
+
+class ProjectData(BaseModel):
+    stages: list[StagesData]
+    target: TargetData
+    total_balance: TotalBalanceAggData
+    current_stage_v2: CurrentStageV2Data
+
+
+class ProjectDataResponse(BaseModel):
+    ok: bool
+    data: ProjectData

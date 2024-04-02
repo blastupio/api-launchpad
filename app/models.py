@@ -55,6 +55,7 @@ class LaunchpadProject(Base):
 
     profile_images = relationship("ProjectImage", back_populates="project")
     links = relationship("ProjectLink", back_populates="project")
+    proxy_link = relationship("ProjectLink", back_populates="project", uselist=False)
 
 
 class ProjectImage(Base):
@@ -96,3 +97,13 @@ class OnRampOrder(Base):
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
+
+
+class ProxyLink(Base):
+    __tablename__ = 'proxy_link'
+
+    id = Column(BigIntegerType, primary_key=True)
+    project_id = Column(BigIntegerType, ForeignKey('launchpad_project.id'), nullable=False)
+    base_url = Column(String, nullable=False)
+
+    project = relationship("LaunchpadProject", backref="base_proxy_url")

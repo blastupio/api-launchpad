@@ -142,10 +142,10 @@ class StagesData(BaseModel):
 
 
 class ProjectData(BaseModel):
-    stages: list[StagesData]
-    target: TargetData
-    total_balance: TotalBalanceAggData
-    current_stage: CurrentStageData
+    stages: list[StagesData] | str
+    target: TargetData | str
+    total_balance: TotalBalanceAggData | str
+    current_stage: CurrentStageData | str
 
 
 class ProjectDataResponse(BaseModel):

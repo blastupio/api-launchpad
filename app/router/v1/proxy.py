@@ -31,11 +31,12 @@ async def get_project_data(
         tasks = [
             fetch_data(base_url + '/crypto/stages'),
             fetch_data(base_url + '/crypto/target'),
+            fetch_data(base_url + '/crypto/contracts'),
             fetch_data(base_url + '/crypto/total-balance'),
             fetch_data(base_url + f'/crypto/current-stage-v2?network=polygon')
         ]
         responses = await asyncio.gather(*tasks)
-        stages, target, total_balance, current_stage = responses
+        stages, target, contracts, total_balance, current_stage = responses
     except Exception as exec:
         return ErrorResponse(error=str(exec))
 
@@ -44,6 +45,7 @@ async def get_project_data(
         "data": {
             "stages": stages.get("data"),
             "target": target.get("data"),
+            "contracts": target.get("contracts"),
             "total_balance": total_balance.get("data"),
             "current_stage": current_stage.get("data")
         }

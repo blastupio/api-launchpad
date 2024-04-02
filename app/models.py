@@ -1,4 +1,5 @@
 from decimal import Decimal
+import shortuuid
 import enum
 from uuid import uuid4
 from sqlalchemy import Enum
@@ -29,7 +30,7 @@ ONRAMP_STATUS_ERROR = "error"
 class LaunchpadProject(Base):
     __tablename__ = 'launchpad_project'
 
-    id = Column(BigIntegerType, primary_key=True)
+    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))
     slug = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
@@ -66,7 +67,7 @@ class ProjectImage(Base):
     title = Column(String, nullable=True)
     url = Column(String, nullable=False)
 
-    project_id = Column(BigIntegerType, ForeignKey('launchpad_project.id'))
+    project_id = Column(String, ForeignKey('launchpad_project.id'))
     project = relationship("LaunchpadProject", back_populates="profile_images")
 
 
@@ -79,7 +80,7 @@ class ProjectLink(Base):
     url = Column(String, nullable=False)
     type = Column(Enum(ProjectLinkType), default=ProjectLinkType.DEFAULT, server_default="DEFAULT")
 
-    project_id = Column(BigIntegerType, ForeignKey('launchpad_project.id'))
+    project_id = Column(String, ForeignKey('launchpad_project.id'))
     project = relationship("LaunchpadProject", back_populates="links")
 
 
@@ -103,7 +104,7 @@ class ProxyLink(Base):
     __tablename__ = 'proxy_link'
 
     id = Column(BigIntegerType, primary_key=True)
-    project_id = Column(BigIntegerType, ForeignKey('launchpad_project.id'), nullable=False)
+    project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
     base_url = Column(String, nullable=False)
 
     project = relationship("LaunchpadProject", backref="base_proxy_url")

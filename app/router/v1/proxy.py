@@ -21,7 +21,6 @@ async def fetch_data(api_url: str) -> dict:
 @router.get("/{id_or_slug}/project-data", response_model=ProjectDataResponse | ErrorResponse)
 async def get_project_data(
         id_or_slug: Union[str, int],
-        network: str = Query(),
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud)
 ):
     try:
@@ -33,7 +32,7 @@ async def get_project_data(
             fetch_data(base_url + '/crypto/stages'),
             fetch_data(base_url + '/crypto/target'),
             fetch_data(base_url + '/crypto/total-balance'),
-            fetch_data(base_url + f'/crypto/current-stage-v2?network={network}')
+            fetch_data(base_url + f'/crypto/current-stage-v2?network=polygon')
         ]
         responses = await asyncio.gather(*tasks)
         stages, target, total_balance, current_stage = responses

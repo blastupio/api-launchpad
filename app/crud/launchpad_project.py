@@ -27,7 +27,6 @@ class LaunchpadProjectCrud(BaseCrud):
             .options(selectinload(LaunchpadProject.base_proxy_url))
         )
 
-        st = st.where(LaunchpadProject.id == int(id_or_slug)) if id_or_slug.isdigit() \
-            else st.where(LaunchpadProject.slug == id_or_slug)
+        st = st.where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         query = await self.session.execute(st)
         return query.scalars().first()

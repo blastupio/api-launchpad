@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field
-from typing import Dict, List
+from typing import Dict, List, Union
 from enum import Enum
 from decimal import Decimal
 
@@ -42,7 +42,7 @@ class ProjectTypeEnum(str, Enum):
 
 
 class LaunchpadProjectList(BaseModel):
-    id: int
+    id: str
     slug: str
     name: str
     short_description: str
@@ -142,10 +142,10 @@ class StagesData(BaseModel):
 
 
 class ProjectData(BaseModel):
-    stages: list[StagesData] | str
-    target: TargetData | str
-    total_balance: TotalBalanceAggData | str
-    current_stage: CurrentStageData | str
+    stages: Union[list[StagesData], str]
+    target: Union[TargetData, str]
+    total_balance: Union[TotalBalanceAggData, str]
+    current_stage: Union[CurrentStageData, str]
 
 
 class ProjectDataResponse(BaseModel):

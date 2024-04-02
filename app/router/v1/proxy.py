@@ -42,7 +42,7 @@ async def get_project_data(
     default_error = "Some unexpected error"
 
     return {
-        "result": True,
+        "ok": True,
         "data": {
             "stages": stages.get("data") or stages.get("error") or default_error,
             "target": target.get("data") or target.get("error") or default_error,
@@ -66,4 +66,4 @@ async def get_balance(
     except Exception as exec:
         return ErrorResponse(error=str(exec))
 
-    return {"result": True, "data": balance}
+    return {"ok": True, "data": balance}

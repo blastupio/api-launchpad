@@ -39,15 +39,13 @@ async def get_project_data(
     except Exception as exec:
         return ErrorResponse(error=str(exec))
 
-    default_error = "Some unexpected error"
-
     return {
         "ok": True,
         "data": {
-            "stages": stages.get("data") or stages.get("error") or default_error,
-            "target": target.get("data") or target.get("error") or default_error,
-            "total_balance": total_balance.get("data") or total_balance.get("error") or default_error,
-            "current_stage": current_stage.get("data") or current_stage.get("error") or default_error
+            "stages": stages.get("data"),
+            "target": target.get("data"),
+            "total_balance": total_balance.get("data"),
+            "current_stage": current_stage.get("data")
         }
     }
 

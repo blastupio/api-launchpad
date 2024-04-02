@@ -34,14 +34,15 @@ class LaunchpadProject(Base):
     slug = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
+    ticker = Column(String, nullable=True)
 
     logo_url = Column(Text(), nullable=True)
 
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
 
-    total_raise = Column(DECIMAL, default=Decimal('0'))
-    token_price = Column(DECIMAL, nullable=False)
+    total_raise = Column(DECIMAL, default=Decimal('0'), nullable=True)
+    token_price = Column(DECIMAL, nullable=True)
 
     project_type = Column(Enum(ProjectType))
 
@@ -50,6 +51,8 @@ class LaunchpadProject(Base):
     start_at = Column(DateTime(), nullable=False)
     end_at = Column(DateTime(), nullable=False)
     fcfs_opens_at = Column(DateTime(), nullable=False)
+    points_reward_start_at = Column(DateTime(), nullable=True)
+    points_reward_end_at = Column(DateTime(), nullable=True)
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)

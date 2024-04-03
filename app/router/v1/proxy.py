@@ -62,7 +62,7 @@ async def get_balance(
         project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
 
         base_url = project.base_proxy_url[0].base_url
-        balance = await fetch_data(base_url + f"crypto/{address}/balance")
+        balance = await fetch_data(base_url + f"/crypto/{address}/balance")
     except Exception as exec:
         return ErrorResponse(error=str(exec))
 

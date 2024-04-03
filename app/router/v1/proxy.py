@@ -1,13 +1,15 @@
-import httpx
 import asyncio
-from fastapi import APIRouter, Path, Depends, Query
-
 from typing import Union
 
-from app.dependencies import get_launchpad_projects_crud
+import httpx
+from fastapi import APIRouter, Path, Depends
+from redis.asyncio import Redis
+
 from app.crud import LaunchpadProjectCrud
+from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import LaunchpadProject
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse
+from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 
@@ -21,24 +23,30 @@ async def fetch_data(api_url: str) -> dict:
 @router.get("/{id_or_slug}/project-data", response_model=ProjectDataResponse | ErrorResponse)
 async def get_project_data(
         id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud)
+        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        redis: Redis = Depends(get_redis)
 ):
-    try:
-        project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    async def get_proxy_data():
+        try:
+            project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+            base_url = project.base_proxy_url[0].base_url
+            tasks = [
+                fetch_data(base_url + '/crypto/stages'),
+                fetch_data(base_url + '/crypto/target'),
+                fetch_data(base_url + '/crypto/contracts'),
+                fetch_data(base_url + '/crypto/total-balance'),
+                fetch_data(base_url + f'/crypto/current-stage-v2?network=polygon')
+            ]
+            responses = await asyncio.gather(*tasks)
+            return responses
+        except Exception as exec:
+            return {}, {}, {}, {}, {}
 
-        base_url = project.base_proxy_url[0].base_url
-
-        tasks = [
-            fetch_data(base_url + '/crypto/stages'),
-            fetch_data(base_url + '/crypto/target'),
-            fetch_data(base_url + '/crypto/contracts'),
-            fetch_data(base_url + '/crypto/total-balance'),
-            fetch_data(base_url + f'/crypto/current-stage-v2?network=polygon')
-        ]
-        responses = await asyncio.gather(*tasks)
-        stages, target, contracts, total_balance, current_stage = responses
-    except Exception as exec:
-        return ErrorResponse(error=str(exec))
+    stages, target, contracts, total_balance, current_stage = await get_data_with_cache(
+        f"project-proxy-data:{id_or_slug}",
+        get_proxy_data,
+        redis
+    )
 
     return {
         "ok": True,

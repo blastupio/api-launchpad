@@ -1,5 +1,5 @@
-from pydantic import BaseModel, Field
-from typing import Dict, List, Union, Optional
+from pydantic import BaseModel, Field, field_validator
+from typing import Dict, List, Optional
 from enum import Enum
 from decimal import Decimal
 
@@ -26,6 +26,11 @@ class ProjectLinkTypeEnum(str, Enum):
     DISCORD = "discord"
     TELEGRAM = "telegram"
 
+class ProjectStatusEnum(str, Enum):
+    ONGOING = "ongoing"
+    UPCOMING = "upcoming"
+    COMPLETED = "completed"
+
 
 class LinkModel(BaseModel):
     name: str
@@ -45,6 +50,7 @@ class LaunchpadProjectList(BaseModel):
     id: str
     slug: str
     name: str
+    status: ProjectStatusEnum
     short_description: str
     logo_url: str | None
     links: List[LinkModel]
@@ -53,8 +59,27 @@ class LaunchpadProjectList(BaseModel):
     raised: str = "0"
     registration_end_at: datetime
 
+    @field_validator('total_raise')
+    @classmethod
+    def convert_total_raise(cls, value):
+        if isinstance(value, Decimal):
+            return str(int(value))
+        return str(int(value))
+
     class Config:
         orm_mode = True
+
+
+class TokenDetailsData(BaseModel):
+    tge_date: datetime
+    tge_percent: int
+    cliff: int
+    vesting: str
+    ticker: str
+    token_description: str
+    total_supply: int
+    initial_supply: str
+    market_cap: int
 
 
 class LaunchpadProject(LaunchpadProjectList):
@@ -72,6 +97,7 @@ class LaunchpadProject(LaunchpadProjectList):
 
     profile_images: List[FileModel]
     links: List[LinkModel]
+    token_details: TokenDetailsData
 
     class Config:
         orm_mode = True

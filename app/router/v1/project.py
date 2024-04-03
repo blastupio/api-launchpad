@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends
-from typing import Union
+from fastapi import APIRouter, Depends, Query
+from typing import Union, Optional
 
 from app.dependencies import get_launchpad_projects_crud
 from app.crud import LaunchpadProjectCrud
+from app.models import StatusProject
 
 from app.schema import AllLaunchpadProjectsResponse, LaunchpadProjectResponse, ErrorResponse
 
@@ -11,13 +12,14 @@ router = APIRouter(prefix="/projects", tags=["launchpad projects"])
 
 @router.get("/list", response_model=AllLaunchpadProjectsResponse)
 async def list_launchpad_projects(
+        status: Optional[StatusProject] = Query(None, description="Filter projects by status"),
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud)
 ):
 
     return {
         "ok": True,
         "data": {
-            "projects": await projects_crud.all()
+            "projects": await projects_crud.all(status=status)
         }
     }
 

@@ -3,7 +3,7 @@ import shortuuid
 import enum
 from uuid import uuid4
 from sqlalchemy import Enum
-from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text
+from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer
 
 from sqlalchemy.orm import relationship
 
@@ -20,6 +20,12 @@ class ProjectLinkType(enum.Enum):
     TWITTER = "twitter"
     DISCORD = "discord"
     TELEGRAM = "telegram"
+
+
+class StatusProject(enum.Enum):
+    ONGOING = "ongoing"
+    UPCOMING = "upcoming"
+    COMPLETED = "completed"
 
 
 ONRAMP_STATUS_NEW = "new"
@@ -45,6 +51,7 @@ class LaunchpadProject(Base):
     token_price = Column(DECIMAL, nullable=True)
 
     project_type = Column(Enum(ProjectType))
+    status = Column(Enum(StatusProject))
 
     registration_start_at = Column(DateTime(), nullable=False)
     registration_end_at = Column(DateTime(), nullable=False)
@@ -60,6 +67,7 @@ class LaunchpadProject(Base):
     profile_images = relationship("ProjectImage", back_populates="project")
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProjectLink", back_populates="project", uselist=False)
+    token_details = relationship("TokenDetails", back_populates="project", uselist=False)
 
 
 class ProjectImage(Base):
@@ -111,3 +119,23 @@ class ProxyLink(Base):
     base_url = Column(String, nullable=False)
 
     project = relationship("LaunchpadProject", backref="base_proxy_url")
+
+
+class TokenDetails(Base):
+    __tablename__ = 'token_details'
+
+    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))
+
+    tge_date = Column(DateTime(), nullable=False)
+    tge_percent = Column(Integer, nullable=False)
+    cliff = Column(Integer, nullable=False)
+    vesting = Column(String, nullable=False)
+
+    ticker = Column(String, nullable=False)
+    token_description = Column(String, nullable=False)
+    total_supply = Column(Integer, nullable=False)
+    initial_supply = Column(String, nullable=False)
+    market_cap = Column(Integer, nullable=False)
+
+    project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
+    project = relationship("LaunchpadProject")

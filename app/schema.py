@@ -84,6 +84,7 @@ class TokenDetailsData(BaseModel):
 
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
+    description: str
     start_at: datetime
     end_at: datetime
     points_reward_start_at: datetime

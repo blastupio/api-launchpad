@@ -64,14 +64,21 @@ async def get_project_data(
 async def get_balance(
         id_or_slug: Union[str, int],
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        redis: Redis = Depends(get_redis),
         address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")
 ):
-    try:
-        project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    async def get_proxy_data():
+        try:
+            project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+            base_url = project.base_proxy_url[0].base_url
+            return await fetch_data(base_url + f"/crypto/{address}/balance")
+        except Exception as exec:
+            return {}
 
-        base_url = project.base_proxy_url[0].base_url
-        balance = await fetch_data(base_url + f"/crypto/{address}/balance")
-    except Exception as exec:
-        return ErrorResponse(error=str(exec))
+    balance = await get_data_with_cache(
+        f"project-proxy-data-balance:{id_or_slug}:{address}",
+        get_proxy_data,
+        redis
+    )
 
-    return {"ok": True, "data": balance}
+    return {"ok": True, "data": balance.get('data')}

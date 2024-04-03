@@ -53,6 +53,6 @@ jobs:
       - name: Deploy
         uses: WyriHaximus/github-action-helm3@v3
         with:
-          exec: helm upgrade launchpad ./.helm/launchpad -n prod --set env.APP_ENV=prod --set env.APP_VERSION=${{ env.RELEASE_VERSION }} --set image.tag=${{ env.RELEASE_VERSION }}
+          exec: helm upgrade --install launchpad ./.helm/launchpad -n prod --set env.APP_ENV=prod --set env.APP_VERSION=${{ env.RELEASE_VERSION }} --set image.tag=${{ env.RELEASE_VERSION }}
           kubeconfig: '${{ secrets.KUBECONFIG }}'
           overrule_existing_kubeconfig: true

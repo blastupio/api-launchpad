@@ -3,9 +3,12 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from sqladmin import Admin
 
 from app import router
 from onramp.router import router as onramp_router
+from app.base import engine
+from app.admin import add_views, authentication_backend
 from app.env import APP_ENV, SENTRY_DSN, ALLOWED_ORIGINS, APP_VERSION
 
 load_dotenv()
@@ -24,6 +27,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+admin = Admin(app, engine, authentication_backend=authentication_backend)
+add_views(admin)
 
 
 class RootResponseData(BaseModel):

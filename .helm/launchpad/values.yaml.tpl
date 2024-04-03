@@ -46,10 +46,14 @@ apps:
       httpGet:
         path: /internal/rpm
         port: 8000
+      periodSeconds: 30
+      initialDelaySeconds: 30
     readiness_probe:
       httpGet:
         path: /
         port: 8000
+      periodSeconds: 30
+      initialDelaySeconds: 30
     resources:
       memory: 512M
       memory_limit: 1G

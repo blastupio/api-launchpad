@@ -45,7 +45,7 @@ async def get_project_data(
         "data": {
             "stages": stages.get("data"),
             "target": target.get("data"),
-            "contracts": target.get("contracts"),
+            "contracts": contracts.get("data"),
             "total_balance": total_balance.get("data"),
             "current_stage": current_stage.get("data")
         }

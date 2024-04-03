@@ -1,5 +1,5 @@
 from pydantic import BaseModel, Field, field_validator
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Literal
 from enum import Enum
 from decimal import Decimal
 
@@ -170,10 +170,16 @@ class StagesData(BaseModel):
     target_usd: int
 
 
+class ContractsData(BaseModel):
+    environment: Literal["testnet", "mainnet"]
+    contracts: dict[str, str]
+
+
 class ProjectData(BaseModel):
     stages: Optional[list[StagesData]] = None
     target: Optional[TargetData] = None
     total_balance: Optional[TotalBalanceAggData] = None
+    contracts: ContractsData
     current_stage: Optional[CurrentStageData] = None
 
 

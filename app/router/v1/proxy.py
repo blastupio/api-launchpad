@@ -112,7 +112,7 @@ async def save_transaction(
         pass
 
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-    base_url = project.base_proxy_url[0].base_url
+    base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient() as client:
         response = await client.post(base_url + f"/users/transactions", json=payload)
@@ -138,7 +138,7 @@ async def get_onramp_payment_link(
         pass
     payload_json["source"] = "launchpad"
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-    base_url = project.base_proxy_url[0].base_url
+    base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient() as client:
         response = await client.post(base_url + f"/onramp/payment-link", json=payload_json)
@@ -154,7 +154,7 @@ async def get_onramp_order_status(
         order_id: UUID = Path()
 ):
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-    base_url = project.base_proxy_url[0].base_url
+    base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient() as client:
         response = await client.get(base_url + f"/onramp/order/{order_id}")

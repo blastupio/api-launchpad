@@ -28,7 +28,7 @@ apps:
   launchpad:
     has_hook: true
     deployment_enabled: true
-    replica_count: 8
+    replica_count: 3
     pods:
       expose_ports:
         - 8000

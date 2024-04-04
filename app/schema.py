@@ -189,3 +189,12 @@ class ProjectData(BaseModel):
 class ProjectDataResponse(BaseModel):
     ok: bool
     data: ProjectData
+
+
+class SaveTransactionResponseData(BaseModel):
+    transaction_id: str
+
+
+class SaveTransactionResponse(BaseModel):
+    ok: bool
+    data: SaveTransactionResponseData

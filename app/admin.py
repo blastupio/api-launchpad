@@ -78,6 +78,7 @@ class AdminAuth(AuthenticationBackend):
 authentication_backend = AdminAuth(secret_key=SECRET_KEY)
 
 
+
 def add_views(admin: Admin):
 
     for view in admin_views:

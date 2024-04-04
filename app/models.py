@@ -1,13 +1,22 @@
-from decimal import Decimal
-import shortuuid
 import enum
+import shortuuid
+
+from decimal import Decimal
+import datetime
+from typing import Any
 from uuid import uuid4
 from sqlalchemy import Enum
-from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer, Boolean
-
+from fastapi_storages.integrations.sqlalchemy import FileType as _FileType
 from sqlalchemy.orm import relationship
+from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, JSON, text, Integer, Boolean
 
 from app.base import Base, BigIntegerType
+from app.services import PublicAssetS3Storage
+
+
+class FileType(_FileType):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(storage=PublicAssetS3Storage(), *args, **kwargs)
 
 
 class ProjectType(enum.Enum):
@@ -43,7 +52,7 @@ class LaunchpadProject(Base):
     ticker = Column(String, nullable=True)
     is_active = Column(Boolean, server_default='false', default=False, nullable=True)
 
-    logo_url = Column(Text(), nullable=True)
+    logo_url = Column(FileType())
 
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
@@ -62,7 +71,7 @@ class LaunchpadProject(Base):
     points_reward_start_at = Column(DateTime(), nullable=True)
     points_reward_end_at = Column(DateTime(), nullable=True)
 
-    created_at = Column(DateTime(), nullable=False, default=func.now())
+    created_at = Column(DateTime(), nullable=False, default=datetime.datetime.now(datetime.UTC))
     updated_at = Column(DateTime(), nullable=True)
 
     profile_images = relationship("ProjectImage", back_populates="project")
@@ -77,7 +86,7 @@ class ProjectImage(Base):
     id = Column(BigIntegerType, primary_key=True)
 
     title = Column(String, nullable=True)
-    url = Column(String, nullable=False)
+    url = Column(FileType())
 
     project_id = Column(String, ForeignKey('launchpad_project.id'))
     project = relationship("LaunchpadProject", back_populates="profile_images")
@@ -108,7 +117,7 @@ class OnRampOrder(Base):
     status = Column(Text(), default=ONRAMP_STATUS_NEW, server_default=ONRAMP_STATUS_NEW)
     extra = Column(JSON(), default=lambda: {}, server_default=text("'{}'::jsonb"))
 
-    created_at = Column(DateTime(), nullable=False, default=func.now())
+    created_at = Column(DateTime(), nullable=False, default=datetime.datetime.now(datetime.UTC))
     updated_at = Column(DateTime(), nullable=True)
 
 
@@ -131,7 +140,7 @@ class TokenDetails(Base):
     tge_percent = Column(Integer, nullable=False)
     cliff = Column(Integer, nullable=False)
     vesting = Column(String, nullable=False)
-    icon = Column(String, nullable=True)
+    icon = Column(FileType())
 
     ticker = Column(String, nullable=False)
     token_description = Column(String, nullable=False)

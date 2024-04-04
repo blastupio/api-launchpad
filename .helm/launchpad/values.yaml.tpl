@@ -28,7 +28,7 @@ apps:
   launchpad:
     has_hook: true
     deployment_enabled: true
-    replica_count: 8
+    replica_count: 3
     pods:
       expose_ports:
         - 8000
@@ -41,7 +41,7 @@ apps:
     command:
       - /bin/bash
       - -c
-      - uvicorn main:app --proxy-headers --workers 1 --host 0.0.0.0 --port 8000 --forwarded-allow-ips '*'
+      - uvicorn main:app --proxy-headers --workers 4 --host 0.0.0.0 --port 8000 --forwarded-allow-ips '*'
     liveness_probe:
       httpGet:
         path: /internal/rpm
@@ -54,11 +54,6 @@ apps:
         port: 8000
       periodSeconds: 30
       initialDelaySeconds: 30
-    resources:
-      memory: 512M
-      memory_limit: 1G
-      cpu: 200m
-      cpu_limit: 200m
 
 env:
   APP_ENV: dev

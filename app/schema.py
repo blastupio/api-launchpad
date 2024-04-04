@@ -50,6 +50,7 @@ class LaunchpadProjectList(BaseModel):
     id: str
     slug: str
     name: str
+    is_active: bool
     status: ProjectStatusEnum
     short_description: str
     logo_url: str | None
@@ -71,6 +72,7 @@ class LaunchpadProjectList(BaseModel):
 
 
 class TokenDetailsData(BaseModel):
+    icon: str
     tge_date: datetime
     tge_percent: int
     cliff: int

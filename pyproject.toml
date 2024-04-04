@@ -20,6 +20,9 @@ celery = {extras = ["redis"], version = "^5.3.6"}
 web3 = "^6.15.1"
 greenlet = "^3.0.2"
 shortuuid = "^1.0.13"
+PyJWT = "^2.8.0"
+itsdangerous = "^2.1.2"
+sqladmin = "^0.16.1"
 
 [tool.poetry.dev-dependencies]
 

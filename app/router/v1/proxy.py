@@ -2,13 +2,13 @@ import asyncio
 from typing import Union
 
 import httpx
-from fastapi import APIRouter, Path, Depends
+from fastapi import APIRouter, Path, Depends, Body
 from redis.asyncio import Redis
 
 from app.crud import LaunchpadProjectCrud
 from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import LaunchpadProject
-from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse
+from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse
 from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
@@ -82,3 +82,23 @@ async def get_balance(
     )
 
     return {"ok": True, "data": balance.get('data')}
+
+
+@router.post("/{id_or_slug}/transactions", response_model=SaveTransactionResponse | ErrorResponse)
+async def save_transaction(
+        id_or_slug: Union[str, int],
+        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        payload: dict = Body(embed=False)
+):
+    payload["source"] = "launchpad"
+    project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    base_url = project.base_proxy_url[0].base_url
+
+    async with httpx.AsyncClient() as client:
+        response = await client.post(base_url + f"/users/transactions", json=payload)
+        json_response = response.json()
+
+    if not json_response.get("ok"):
+        return json_response
+
+    return {"ok": True, "data": json_response.get("data")}

@@ -198,3 +198,45 @@ class SaveTransactionResponseData(BaseModel):
 class SaveTransactionResponse(BaseModel):
     ok: bool
     data: SaveTransactionResponseData
+
+
+class OnrampOrderResponseData(BaseModel):
+    order_id: str = Field(alias="orderId")
+    blockchain_network_tx_id: str | None = Field(alias="blockchainNetworkTxId", default=None)
+    merchant_order_id: str = Field(alias="merchantOrderId")
+    customer_id: str = Field(alias="customerId")
+    from_currency: str = Field(alias="fromCurrency")
+    from_amount: float | int = Field(alias="fromAmount")
+    from_amount_without_fees: float | int = Field(alias="fromAmountWithoutFees")
+    to_currency: str = Field(alias="toCurrency")
+    to_amount: float | int = Field(alias="toAmount")
+    to_wallet: str = Field(alias="toWallet")
+    exchange_rate: float | int = Field(alias="exchangeRate")
+    provider_fee: float | int = Field(alias="providerFee")
+    network_fee: float | int = Field(alias="networkFee")
+    network_fee_fiat: float | int = Field(alias="networkFeeFiat")
+    status: str
+    created_at: str = Field(alias="createdAt")
+
+
+class OnrampOrderResponse(BaseModel):
+    ok: bool
+    data: OnrampOrderResponseData
+
+
+class Language(BaseModel):
+    current: str | None = Field(default=None)
+    all: list[str] = Field(default=[])
+
+
+class OnrampOrderRequest(BaseModel):
+    amount: str = Field()
+    recipient: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    utm: str | None = Field(default=None)
+    language: Language | None = Field(default=None)
+    first_login: str = Field(alias="first_login")
+    ref_code: str | None = Field(alias="refCode", default=None)
+    browser: str | None = Field(alias="browser", default=None)
+    device_resolution: str | None = Field(alias="deviceResolution", default=None)
+    device_type: str | None = Field(alias="deviceType", default=None)
+    referrer: str | None = Field(default=None)

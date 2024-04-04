@@ -67,7 +67,7 @@ class LaunchpadProject(Base):
 
     profile_images = relationship("ProjectImage", back_populates="project")
     links = relationship("ProjectLink", back_populates="project")
-    proxy_link = relationship("ProjectLink", back_populates="project", uselist=False)
+    proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
 
 
@@ -119,7 +119,7 @@ class ProxyLink(Base):
     project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
     base_url = Column(String, nullable=False)
 
-    project = relationship("LaunchpadProject", backref="base_proxy_url")
+    project = relationship("LaunchpadProject", back_populates="proxy_link")
 
 
 class TokenDetails(Base):
@@ -140,4 +140,4 @@ class TokenDetails(Base):
     market_cap = Column(Integer, nullable=False)
 
     project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
-    project = relationship("LaunchpadProject")
+    project = relationship("LaunchpadProject", back_populates="token_details")

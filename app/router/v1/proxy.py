@@ -29,7 +29,7 @@ async def get_project_data(
     async def get_proxy_data():
         try:
             project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-            base_url = project.base_proxy_url[0].base_url
+            base_url = project.proxy_link.base_url
             tasks = [
                 fetch_data(base_url + '/crypto/stages'),
                 fetch_data(base_url + '/crypto/target'),
@@ -70,7 +70,7 @@ async def get_balance(
     async def get_proxy_data():
         try:
             project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-            base_url = project.base_proxy_url[0].base_url
+            base_url = project.proxy_link.base_url
             return await fetch_data(base_url + f"/crypto/{address}/balance")
         except Exception as exec:
             return {}

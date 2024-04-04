@@ -29,7 +29,7 @@ class LaunchpadProjectCrud(BaseCrud):
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
             .options(selectinload(LaunchpadProject.links))
-            .options(selectinload(LaunchpadProject.base_proxy_url))
+            .options(selectinload(LaunchpadProject.proxy_link))
             .options(selectinload(LaunchpadProject.token_details))
         )
 

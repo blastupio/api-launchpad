@@ -22,12 +22,9 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
             if cached_data is None:
                 logger.info("Get none from main function in get_data")
                 raise Exception
-            if isinstance(cached_data, (dict, list)):
-                value_to_cache = json.dumps(cached_data)
-            else:
-                value_to_cache = str(cached_data)
-            await redis.setex(key, value=value_to_cache, time=timedelta(seconds=30))
-            await redis.setex(key + ":long", value=value_to_cache, time=timedelta(minutes=20))
+
+            await redis.setex(key, value=json.dumps(cached_data), time=timedelta(seconds=30))
+            await redis.setex(key + ":long", value=json.dumps(cached_data), time=timedelta(minutes=20))
         except Exception as exec:
             cached_data = await redis.get(key + ':long')
             cached_data = int(cached_data) if cached_data is not None else None

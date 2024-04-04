@@ -3,7 +3,7 @@ import shortuuid
 import enum
 from uuid import uuid4
 from sqlalchemy import Enum
-from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer
+from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer, Boolean
 
 from sqlalchemy.orm import relationship
 
@@ -41,6 +41,7 @@ class LaunchpadProject(Base):
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
     ticker = Column(String, nullable=True)
+    is_active = Column(Boolean, server_default='false', default=False, nullable=True)
 
     logo_url = Column(Text(), nullable=True)
 
@@ -130,6 +131,7 @@ class TokenDetails(Base):
     tge_percent = Column(Integer, nullable=False)
     cliff = Column(Integer, nullable=False)
     vesting = Column(String, nullable=False)
+    icon = Column(String, nullable=True)
 
     ticker = Column(String, nullable=False)
     token_description = Column(String, nullable=False)

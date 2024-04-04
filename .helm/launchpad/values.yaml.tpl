@@ -57,8 +57,8 @@ apps:
     resources:
       memory: 512M
       memory_limit: 1G
-      cpu: 200m
-      cpu_limit: 200m
+      cpu: 500m
+      cpu_limit: 1000m
 
 env:
   APP_ENV: dev

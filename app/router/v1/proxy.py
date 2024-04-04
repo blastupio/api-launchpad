@@ -12,6 +12,7 @@ from app.models import LaunchpadProject
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse, \
     OnrampOrderResponseData, OnrampOrderRequest
 from app.utils import get_data_with_cache
+from app.base import logger
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 
@@ -54,13 +55,23 @@ async def get_project_data(
             responses = await asyncio.gather(*tasks)
             return responses
         except Exception as exec:
-            return {}, {}, {}, {}, {}
+            logger.info(f"Failed get project data: {exec}")
+            return None
 
-    stages, target, contracts, total_balance, current_stage = await get_data_with_cache(
+    project_data = await get_data_with_cache(
         f"project-proxy-data:{id_or_slug}",
         get_proxy_data,
         redis
     )
+    if not project_data:
+        return {"ok": False, "data": {
+            "stages": {},
+            "target": {},
+            "contracts": {},
+            "total_balance": {},
+            "current_stage": {}
+        }}
+    stages, target, contracts, total_balance, current_stage = project_data
 
     return {
         "ok": True,

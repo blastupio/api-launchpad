@@ -75,7 +75,7 @@ class TokenDetailsData(BaseModel):
     icon: str
     tge_date: datetime
     tge_percent: int
-    cliff: int
+    cliff: str
     vesting: str
     ticker: str
     token_description: str

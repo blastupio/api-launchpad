@@ -18,7 +18,7 @@ router = APIRouter(prefix="/proxy", tags=["proxy"])
 
 
 async def fetch_data(api_url: str) -> dict:
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.) as client:
         response = await client.get(api_url)
         return response.json()
 
@@ -128,7 +128,7 @@ async def save_transaction(
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
     base_url = project.proxy_link.base_url
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.) as client:
         response = await client.post(base_url + f"/users/transactions", json=payload)
         json_response = response.json()
 
@@ -154,7 +154,7 @@ async def get_onramp_payment_link(
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
     base_url = project.proxy_link.base_url
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.) as client:
         response = await client.post(base_url + f"/onramp/payment-link", json=payload_json)
         json_response = response.json()
 
@@ -170,7 +170,7 @@ async def get_onramp_order_status(
     project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
     base_url = project.proxy_link.base_url
 
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=30.) as client:
         response = await client.get(base_url + f"/onramp/order/{order_id}")
         json_response = response.json()
 

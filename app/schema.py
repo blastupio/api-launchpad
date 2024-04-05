@@ -22,7 +22,7 @@ class FileModel(BaseModel):
     url: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProjectLinkTypeEnum(str, Enum):
@@ -43,7 +43,7 @@ class LinkModel(BaseModel):
     type: ProjectLinkTypeEnum
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class ProjectTypeEnum(str, Enum):
@@ -78,7 +78,7 @@ class LaunchpadProjectList(BaseModel):
         return str(int(value))
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class TokenDetailsData(BaseModel):
@@ -107,7 +107,7 @@ class LaunchpadProject(LaunchpadProjectList):
     token_details: TokenDetailsData
 
     class Config:
-        orm_mode = True
+        from_attributes = True
 
 
 class LaunchpadProjectsData(BaseModel):

@@ -10,6 +10,7 @@ from app.schema import AddressBalanceResponse, ErrorResponse, AddressBalanceResp
 from app.services import Crypto
 from app.base import logger
 from app.dependencies import get_redis, get_launchpad_crypto
+from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
 
@@ -37,25 +38,27 @@ async def get_address_balance(
     redis: Redis = Depends(get_redis),
     crypto: Crypto = Depends(get_launchpad_crypto)
 ):
-    async def get_data(network: str, address_: str):
-        if await redis.exists(f"address-balance:{network}:{address_}"):
-            return await redis.get(f"address-balance:{network}:{address_}")
-        else:
-            try:
-                data = await crypto.get_token_balance(network, address_)
-                await redis.setex(f"address-balance:{network}:{address_}", value=data,
-                                  time=timedelta(seconds=30))
-                await redis.setex(f"address-balance:{network}:{address_}:long", value=data,
-                                  time=timedelta(minutes=20))
-                return data
-            except Exception as exec:
-                return await redis.get(f"address-balance:{network}:{address_}:long")
-
     try:
-        polygon = await get_data("polygon", address)
-        eth = await get_data("eth", address)
-        bsc = await get_data("bsc", address)
-        blast = await get_data("blast", address)
+        polygon = await get_data_with_cache(
+            f"address-balance:polygon:{address}",
+            lambda: crypto.get_token_balance("polygon", address),
+            redis
+        )
+        eth = await get_data_with_cache(
+            f"address-balance:eth:{address}",
+            lambda: crypto.get_token_balance("eth", address),
+            redis
+        )
+        bsc = await get_data_with_cache(
+            f"address-balance:bsc:{address}",
+            lambda: crypto.get_token_balance("bsc", address),
+            redis
+        )
+        blast = await get_data_with_cache(
+            f"address-balance:blast:{address}",
+            lambda: crypto.get_token_balance("blast", address),
+            redis
+        )
 
         return AddressBalanceResponse(
             ok=True,

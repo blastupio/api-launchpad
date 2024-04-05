@@ -64,6 +64,11 @@ class LaunchpadProjectList(BaseModel):
     total_raise: Decimal
     raised: str = "0"
     registration_end_at: datetime
+    start_at: datetime
+    end_at: datetime
+    points_reward_start_at: datetime
+    points_reward_end_at: datetime
+    fcfs_opens_at: datetime
 
     @field_validator('total_raise')
     @classmethod
@@ -92,12 +97,6 @@ class TokenDetailsData(BaseModel):
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
     description: str
-    start_at: datetime
-    end_at: datetime
-    points_reward_start_at: datetime
-    points_reward_end_at: datetime
-    fcfs_opens_at: datetime
-
     project_type: ProjectTypeEnum
 
     created_at: datetime

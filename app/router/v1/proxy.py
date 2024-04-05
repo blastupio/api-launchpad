@@ -10,7 +10,7 @@ from app.crud import LaunchpadProjectCrud
 from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import LaunchpadProject
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse, \
-    OnrampOrderResponseData, OnrampOrderRequest, SaveTransactionDataRequest
+    OnrampOrderResponseData, OnrampOrderRequest, SaveTransactionDataRequest, OnrampOrderResponse
 from app.utils import get_data_with_cache
 from app.base import logger
 
@@ -159,7 +159,7 @@ async def get_onramp_payment_link(
     return json_response
 
 
-@router.get("/{id_or_slug}/onramp/order/{order_id}", response_model=OnrampOrderResponseData | ErrorResponse)
+@router.get("/{id_or_slug}/onramp/order/{order_id}", response_model=OnrampOrderResponse | ErrorResponse)
 async def get_onramp_order_status(
         id_or_slug: Union[str, int],
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),

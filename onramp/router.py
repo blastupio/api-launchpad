@@ -27,7 +27,8 @@ async def get_order_data(
     except Exception as e:
         if str(e) == "API Error. Status code: 404":
             return {"ok": False, "error": "Not found"}
-        raise e
+
+        return {"ok": False, "error": str(e)}
 
     if order_data.get("status") == "complete" and order_data.get("toWallet",
                                                                  "").lower() == ONRAMP_RECIPIENT_ADDR.lower():

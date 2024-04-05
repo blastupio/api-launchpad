@@ -10,13 +10,13 @@ class LaunchpadProjectCrud(BaseCrud):
 
     async def all(self, limit: int = 100, offset: int = 0, status: StatusProject = None) -> \
             Sequence[LaunchpadProject]:
-
-        st = select(LaunchpadProject)\
-                .options(selectinload(LaunchpadProject.profile_images))\
-                .options(selectinload(LaunchpadProject.links))\
-                .order_by(LaunchpadProject.created_at.asc())\
-                .limit(limit)\
-                .offset(offset)
+        st = select(LaunchpadProject) \
+            .options(selectinload(LaunchpadProject.profile_images)) \
+            .options(selectinload(LaunchpadProject.links)) \
+            .options(selectinload(LaunchpadProject.proxy_link)) \
+            .order_by(LaunchpadProject.created_at.asc()) \
+            .limit(limit) \
+            .offset(offset)
         if status:
             st = st.where(LaunchpadProject.status == status)
 

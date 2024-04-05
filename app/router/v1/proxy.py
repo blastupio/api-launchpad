@@ -6,13 +6,13 @@ import httpx
 from fastapi import APIRouter, Request, Path, Depends, Body
 from redis.asyncio import Redis
 
+from app.base import logger
 from app.crud import LaunchpadProjectCrud
 from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import LaunchpadProject
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse, \
-    OnrampOrderResponseData, OnrampOrderRequest, SaveTransactionDataRequest, OnrampOrderResponse
+    OnrampOrderRequest, SaveTransactionDataRequest, OnrampOrderResponse
 from app.utils import get_data_with_cache
-from app.base import logger
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 

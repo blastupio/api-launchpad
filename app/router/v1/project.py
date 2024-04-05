@@ -1,11 +1,15 @@
 from fastapi import APIRouter, Depends, Query
 from typing import Union, Optional
 
-from app.dependencies import get_launchpad_projects_crud
+from httpx import AsyncClient
+from redis.asyncio import Redis
+
+from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.crud import LaunchpadProjectCrud
 from app.models import StatusProject
 
 from app.schema import AllLaunchpadProjectsResponse, LaunchpadProjectResponse, ErrorResponse
+from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/projects", tags=["launchpad projects"])
 
@@ -13,13 +17,25 @@ router = APIRouter(prefix="/projects", tags=["launchpad projects"])
 @router.get("/list", response_model=AllLaunchpadProjectsResponse)
 async def list_launchpad_projects(
         status: Optional[StatusProject] = Query(None, description="Filter projects by status"),
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud)
+        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        redis: Redis = Depends(get_redis)
 ):
+    projects = await projects_crud.all(status=status)
+    for project in projects:
+        base_url = project.proxy_link.base_url
+
+        async def get_proxy_data():
+            async with AsyncClient(timeout=30.) as client:
+                response = await client.get(f"{base_url}/crypto/total-balance")
+                return response.json()
+
+        total_balance = await get_data_with_cache(f"projects-list-raised-data:{project.slug}", get_proxy_data, redis)
+        project.raised = total_balance.get("data", {}).get("usd")
 
     return {
         "ok": True,
         "data": {
-            "projects": await projects_crud.all(status=status)
+            "projects": projects
         }
     }
 
@@ -29,7 +45,6 @@ async def retrieve_launchpad_project(
         id_or_slug: Union[str, int],
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud)
 ):
-
     try:
         project = await projects_crud.retrieve(id_or_slug=id_or_slug)
     except Exception:

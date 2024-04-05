@@ -16,6 +16,7 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
     if await redis.exists(key):
         cached_data = await redis.get(key)
         if cached_data:
+            cached_data = cached_data.decode()
             cached_data = json.loads(cached_data)
             return cached_data
     try:
@@ -28,8 +29,12 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
         await redis.setex(key + ":long", value=json.dumps(cached_data), time=timedelta(minutes=20))
     except Exception as exec:
         cached_data = await redis.get(key + ':long')
-        cached_data = json.loads(cached_data) if cached_data is not None else None
+
         if cached_data is None:
             logger.info("No data in long cache")
+            return cached_data
+
+        cached_data = cached_data.decode()
+        cached_data = json.loads(cached_data) if cached_data is not None else None
 
     return cached_data

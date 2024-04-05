@@ -25,7 +25,11 @@ async def get_current_rpm(redis: Redis = Depends(get_redis)):
     for i in range(10):
         minute = int(time() / 60) * 60 - (1 + i) * 60
         if await redis.exists(f"rpm:{minute}"):
-            stats.append(int((await redis.get(f"rpm:{minute}")).decode('utf-8')))
+            value = (await redis.get(f"rpm:{minute}")).decode('utf-8')
+
+            if not value:
+                continue
+            stats.append(int(value))
 
     return {
         "ok": True,

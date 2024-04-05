@@ -129,7 +129,7 @@ class TokenDetails(Base):
 
     tge_date = Column(DateTime(), nullable=False)
     tge_percent = Column(Integer, nullable=False)
-    cliff = Column(Integer, nullable=False)
+    cliff = Column(String, nullable=False)
     vesting = Column(String, nullable=False)
     icon = Column(String, nullable=True)
 

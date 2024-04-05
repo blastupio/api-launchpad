@@ -6,6 +6,11 @@ from decimal import Decimal
 from datetime import datetime
 
 
+class Language(BaseModel):
+    current: str | None = Field(default=None)
+    all: list[str] = Field(default=[])
+
+
 class BaseResponse(BaseModel):
     ok: bool
     data: Dict
@@ -191,6 +196,22 @@ class ProjectDataResponse(BaseModel):
     data: ProjectData
 
 
+class SaveTransactionDataRequest(BaseModel):
+    tx_hash: str = Field(alias="tx_hash")
+    utm: str | None = Field(default=None)
+    language: Language | None = Field(default=None)
+    wallet_address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    chain: Literal["polygon", "ethereum", "bsc", "blast"] = Field()
+    currency: Literal["USDT", "USDC", "USDB", "BNB", "MATIC", "ETH"] = Field()
+    amount: str = Field()
+    first_login: str | None = Field(alias="first_login", default=None)
+    ref_code: str | None = Field(alias="refCode", default=None)
+    browser: str | None = Field(alias="browser", default=None)
+    device_resolution: str | None = Field(alias="deviceResolution", default=None)
+    device_type: str | None = Field(alias="deviceType", default=None)
+    referrer: str | None = Field(default=None)
+
+
 class SaveTransactionResponseData(BaseModel):
     transaction_id: str
 
@@ -222,11 +243,6 @@ class OnrampOrderResponseData(BaseModel):
 class OnrampOrderResponse(BaseModel):
     ok: bool
     data: OnrampOrderResponseData
-
-
-class Language(BaseModel):
-    current: str | None = Field(default=None)
-    all: list[str] = Field(default=[])
 
 
 class OnrampOrderRequest(BaseModel):

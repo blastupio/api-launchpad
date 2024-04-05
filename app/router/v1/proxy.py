@@ -10,7 +10,7 @@ from app.crud import LaunchpadProjectCrud
 from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import LaunchpadProject
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse, \
-    OnrampOrderResponseData, OnrampOrderRequest
+    OnrampOrderResponseData, OnrampOrderRequest, SaveTransactionDataRequest
 from app.utils import get_data_with_cache
 from app.base import logger
 
@@ -117,11 +117,12 @@ async def save_transaction(
         request: Request,
         id_or_slug: Union[str, int],
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
-        payload: dict = Body(embed=False)
+        payload: SaveTransactionDataRequest = Body(embed=False)
 ):
-    payload["source"] = "launchpad"
+    payload_json = payload.model_dump()
+    payload_json["source"] = "launchpad"
     try:
-        payload["ip"] = get_ip_from_request(request)
+        payload_json["ip"] = get_ip_from_request(request)
     except:
         pass
 
@@ -129,13 +130,10 @@ async def save_transaction(
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.) as client:
-        response = await client.post(base_url + f"/users/transactions", json=payload)
+        response = await client.post(base_url + f"/users/transactions", json=payload_json)
         json_response = response.json()
 
-    if not json_response.get("ok"):
-        return json_response
-
-    return {"ok": True, "data": json_response.get("data")}
+    return json_response
 
 
 @router.post("/{id_or_slug}/onramp/payment-link")

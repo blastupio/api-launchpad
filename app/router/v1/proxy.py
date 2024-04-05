@@ -106,6 +106,9 @@ async def get_balance(
         redis
     )
 
+    if not balance.get("data"):
+        return {"ok": False, "error": f"No data received for balance: {balance}"}
+
     return {"ok": True, "data": balance.get('data')}
 
 

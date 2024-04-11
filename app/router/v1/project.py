@@ -20,7 +20,7 @@ async def list_launchpad_projects(
         projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
         redis: Redis = Depends(get_redis)
 ):
-    projects = await projects_crud.all(status=status)
+    projects = await projects_crud.all_with_proxy(status=status)
     for project in projects:
         base_url = project.proxy_link.base_url
 

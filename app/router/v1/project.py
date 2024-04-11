@@ -1,13 +1,13 @@
-from fastapi import APIRouter, Depends, Query
 from typing import Union, Optional
 
+from fastapi import APIRouter, Depends, Query
 from httpx import AsyncClient
 from redis.asyncio import Redis
+from starlette.responses import JSONResponse
 
-from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.crud import LaunchpadProjectCrud
+from app.dependencies import get_launchpad_projects_crud, get_redis
 from app.models import StatusProject
-
 from app.schema import AllLaunchpadProjectsResponse, LaunchpadProjectResponse, ErrorResponse
 from app.utils import get_data_with_cache
 
@@ -48,6 +48,12 @@ async def retrieve_launchpad_project(
 ):
     try:
         project = await projects_crud.retrieve(id_or_slug=id_or_slug)
+        if not project:
+            return JSONResponse(
+                status_code=404,
+                content={"ok": False, "error": "Project does not exist"},
+            )
+
         base_url = project.proxy_link.base_url
 
         async def get_proxy_data():

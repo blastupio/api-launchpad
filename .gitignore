@@ -7,3 +7,4 @@ postgres
 .helm/launchpad/values.yaml
 __pycache__/
 *.py[cod]
+/client.http

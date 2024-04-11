@@ -65,7 +65,7 @@ class LaunchpadProject(Base):
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
 
-    profile_images = relationship("ProjectImage", back_populates="project")
+    profile_images = relationship("ProjectImage", back_populates="project", order_by="ProjectImage.ordering_key, ProjectImage.id")
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
@@ -75,6 +75,7 @@ class ProjectImage(Base):
     __tablename__ = 'project_image'
 
     id = Column(BigIntegerType, primary_key=True)
+    ordering_key = Column(Integer, nullable=True, index=True)
 
     title = Column(String, nullable=True)
     url = Column(String, nullable=False)

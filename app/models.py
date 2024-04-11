@@ -1,10 +1,10 @@
-from decimal import Decimal
-import shortuuid
 import enum
+from decimal import Decimal
 from uuid import uuid4
+
+import shortuuid
 from sqlalchemy import Enum
 from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer, Boolean
-
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
@@ -12,7 +12,7 @@ from app.base import Base, BigIntegerType
 
 class ProjectType(enum.Enum):
     DEFAULT = "default"
-    PARTNERSHIP_PRESALE = "partnership_presale"
+    PRIVATE_PRESALE = "private_presale"
 
 
 class ProjectLinkType(enum.Enum):

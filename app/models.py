@@ -138,7 +138,7 @@ class TokenDetails(Base):
     token_description = Column(String, nullable=False)
     total_supply = Column(Integer, nullable=False)
     initial_supply = Column(String, nullable=False)
-    market_cap = Column(Integer, nullable=False)
+    market_cap = Column(String, nullable=False)
 
     project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
     project = relationship("LaunchpadProject", back_populates="token_details")

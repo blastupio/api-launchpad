@@ -255,3 +255,12 @@ class OnrampOrderRequest(BaseModel):
     device_resolution: str | None = Field(alias="deviceResolution", default=None)
     device_type: str | None = Field(alias="deviceType", default=None)
     referrer: str | None = Field(default=None)
+
+
+class GetBoosterPointsResponseData(BaseModel):
+    transaction_id: str
+
+
+class GetBoosterPointsResponse(BaseModel):
+    ok: bool
+    data: GetBoosterPointsResponseData

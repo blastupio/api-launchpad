@@ -1,10 +1,10 @@
-from decimal import Decimal
-import shortuuid
 import enum
+from decimal import Decimal
 from uuid import uuid4
+
+import shortuuid
 from sqlalchemy import Enum
 from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer, Boolean
-
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
@@ -12,7 +12,7 @@ from app.base import Base, BigIntegerType
 
 class ProjectType(enum.Enum):
     DEFAULT = "default"
-    PARTNERSHIP_PRESALE = "partnership_presale"
+    PRIVATE_PRESALE = "private_presale"
 
 
 class ProjectLinkType(enum.Enum):
@@ -65,7 +65,7 @@ class LaunchpadProject(Base):
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
 
-    profile_images = relationship("ProjectImage", back_populates="project")
+    profile_images = relationship("ProjectImage", back_populates="project", order_by="ProjectImage.ordering_key, ProjectImage.id")
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
@@ -75,6 +75,7 @@ class ProjectImage(Base):
     __tablename__ = 'project_image'
 
     id = Column(BigIntegerType, primary_key=True)
+    ordering_key = Column(Integer, nullable=True, index=True)
 
     title = Column(String, nullable=True)
     url = Column(String, nullable=False)
@@ -137,7 +138,7 @@ class TokenDetails(Base):
     token_description = Column(String, nullable=False)
     total_supply = Column(Integer, nullable=False)
     initial_supply = Column(String, nullable=False)
-    market_cap = Column(Integer, nullable=False)
+    market_cap = Column(String, nullable=False)
 
     project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
     project = relationship("LaunchpadProject", back_populates="token_details")

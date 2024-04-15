@@ -1,3 +1,4 @@
+import numpy as np
 from pydantic import BaseModel, Field, field_validator
 from typing import Dict, List, Optional, Literal
 from enum import Enum
@@ -61,7 +62,10 @@ class LaunchpadProjectList(BaseModel):
     logo_url: str | None
     links: List[LinkModel]
     token_price: Decimal
+    raise_goal: Decimal
     total_raise: Decimal
+    raise_goal_on_launchpad: Decimal | None
+    total_raised: Decimal | None
     raised: str = "0"
     registration_end_at: datetime
     start_at: datetime
@@ -70,16 +74,36 @@ class LaunchpadProjectList(BaseModel):
     points_reward_end_at: datetime
     fcfs_opens_at: datetime
 
-    @field_validator('total_raise')
-    @classmethod
-    def convert_total_raise(cls, value):
-        if isinstance(value, Decimal):
-            return str(int(value))
-        return str(int(value))
-
     class Config:
         from_attributes = True
 
+    @field_validator('raise_goal')
+    @classmethod
+    def convert_raise_goal(cls, value):
+        if value is None:
+            return Decimal('0')
+        return np.format_float_positional(value, trim='0')
+
+    @field_validator('total_raise')
+    @classmethod
+    def convert_total_raise(cls, value):
+        if value is None:
+            return Decimal('0')
+        return np.format_float_positional(value, trim='0')
+
+    @field_validator('raise_goal_on_launchpad')
+    @classmethod
+    def convert_raise_goal_on_launchpad(cls, value):
+        if value is None:
+            return Decimal('0')
+        return np.format_float_positional(value, trim='0')
+
+    @field_validator('total_raised')
+    @classmethod
+    def convert_total_raised(cls, value):
+        if value is None:
+            return Decimal('0')
+        return np.format_float_positional(value, trim='0')
 
 class TokenDetailsData(BaseModel):
     icon: str
@@ -103,7 +127,6 @@ class LaunchpadProject(LaunchpadProjectList):
     updated_at: datetime | None
 
     profile_images: List[FileModel]
-    links: List[LinkModel]
     token_details: TokenDetailsData
 
     class Config:

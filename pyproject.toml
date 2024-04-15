@@ -23,6 +23,7 @@ shortuuid = "^1.0.13"
 PyJWT = "^2.8.0"
 itsdangerous = "^2.1.2"
 sqladmin = "^0.16.1"
+numpy = "^1.26.4"
 
 [tool.poetry.dev-dependencies]
 

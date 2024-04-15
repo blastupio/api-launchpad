@@ -48,7 +48,9 @@ class LaunchpadProject(Base):
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
 
-    total_raise = Column(DECIMAL, default=Decimal('0'), nullable=True)
+    raise_goal = Column(DECIMAL, default=Decimal('0'), nullable=True)
+    raise_goal_on_launchpad = Column(DECIMAL, default=Decimal('0'), nullable=True)
+    total_raised = Column(DECIMAL, default=Decimal('0'), nullable=True)
     token_price = Column(DECIMAL, nullable=True)
 
     project_type = Column(Enum(ProjectType))
@@ -69,6 +71,10 @@ class LaunchpadProject(Base):
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
+
+    @property
+    def total_raise(self):
+        return self.raise_goal
 
 
 class ProjectImage(Base):

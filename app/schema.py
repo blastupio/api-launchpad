@@ -49,7 +49,7 @@ class LinkModel(BaseModel):
 
 class ProjectTypeEnum(str, Enum):
     DEFAULT = 'default'
-    PARTNERSHIP_PRESALE = "partnership_presale"
+    PRIVATE_PRESALE = "private_presale"
 
 
 class LaunchpadProjectList(BaseModel):
@@ -81,28 +81,28 @@ class LaunchpadProjectList(BaseModel):
     @classmethod
     def convert_raise_goal(cls, value):
         if value is None:
-            return Decimal('0')
+            return Decimal(0)
         return np.format_float_positional(value, trim='0')
 
     @field_validator('total_raise')
     @classmethod
     def convert_total_raise(cls, value):
         if value is None:
-            return Decimal('0')
+            return Decimal(0)
         return np.format_float_positional(value, trim='0')
 
     @field_validator('raise_goal_on_launchpad')
     @classmethod
     def convert_raise_goal_on_launchpad(cls, value):
         if value is None:
-            return Decimal('0')
+            return Decimal(0)
         return np.format_float_positional(value, trim='0')
 
     @field_validator('total_raised')
     @classmethod
     def convert_total_raised(cls, value):
         if value is None:
-            return Decimal('0')
+            return Decimal(0)
         return np.format_float_positional(value, trim='0')
 
 class TokenDetailsData(BaseModel):

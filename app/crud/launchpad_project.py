@@ -1,7 +1,7 @@
 from typing import Sequence, Union
 
 from sqlalchemy import select, or_
-from sqlalchemy.orm import selectinload, joinedload
+from sqlalchemy.orm import selectinload, joinedload, contains_eager
 
 from app.base import BaseCrud
 from app.models import LaunchpadProject, StatusProject, ProxyLink
@@ -15,8 +15,8 @@ class LaunchpadProjectCrud(BaseCrud):
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
             .options(selectinload(LaunchpadProject.links))
-            .options(joinedload(LaunchpadProject.proxy_link))
-            .where(ProxyLink.id != None)
+            .options(contains_eager(LaunchpadProject.proxy_link))
+            .join(LaunchpadProject.proxy_link)
             .order_by(LaunchpadProject.created_at.asc())
             .limit(limit)
             .offset(offset)

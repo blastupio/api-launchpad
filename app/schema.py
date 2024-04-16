@@ -49,7 +49,7 @@ class LinkModel(BaseModel):
 
 class ProjectTypeEnum(str, Enum):
     DEFAULT = 'default'
-    PARTNERSHIP_PRESALE = "partnership_presale"
+    PRIVATE_PRESALE = "private_presale"
 
 
 class LaunchpadProjectList(BaseModel):

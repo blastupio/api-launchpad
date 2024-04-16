@@ -1,17 +1,13 @@
 import asyncio
-from typing import Union
 from uuid import UUID
 
 import httpx
-from fastapi import APIRouter, Request, Path, Depends, Body
-from redis.asyncio import Redis
+from fastapi import APIRouter, Request, Path, Body
 
 from app.base import logger
-from app.crud import LaunchpadProjectCrud
-from app.dependencies import get_launchpad_projects_crud, get_redis
-from app.models import LaunchpadProject
+from app.dependencies import LaunchpadProjectCrudDep, RedisDep
 from app.schema import ProjectDataResponse, ErrorResponse, AddressBalanceResponse, SaveTransactionResponse, \
-    OnrampOrderRequest, SaveTransactionDataRequest, OnrampOrderResponse
+    OnrampOrderRequest, SaveTransactionDataRequest, OnrampOrderResponse, NotFoundError
 from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
@@ -36,14 +32,10 @@ def get_ip_from_request(request: Request) -> str:
 
 
 @router.get("/{id_or_slug}/project-data", response_model=ProjectDataResponse | ErrorResponse)
-async def get_project_data(
-        id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
-        redis: Redis = Depends(get_redis)
-):
+async def get_project_data(id_or_slug: str | int, projects_crud: LaunchpadProjectCrudDep, redis: RedisDep):
     async def get_proxy_data():
         try:
-            project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+            project = await projects_crud.find_by_id_or_slug(id_or_slug)
             base_url = project.proxy_link.base_url
             tasks = [
                 fetch_data(base_url + '/crypto/stages'),
@@ -54,8 +46,8 @@ async def get_project_data(
             ]
             responses = await asyncio.gather(*tasks)
             return responses
-        except Exception as exec:
-            logger.info(f"Failed get project data: {exec}")
+        except Exception as e:
+            logger.info(f"Failed get project data: {e}")
             return None
 
     project_data = await get_data_with_cache(
@@ -63,14 +55,10 @@ async def get_project_data(
         get_proxy_data,
         redis
     )
+
     if not project_data:
-        return {"ok": False, "data": {
-            "stages": {},
-            "target": {},
-            "contracts": {},
-            "total_balance": {},
-            "current_stage": {}
-        }}
+        return NotFoundError("Project data does not exist")
+
     stages, target, contracts, total_balance, current_stage = project_data
 
     return {
@@ -87,24 +75,30 @@ async def get_project_data(
 
 @router.get("/{id_or_slug}/{address}/balance", response_model=AddressBalanceResponse | ErrorResponse)
 async def get_balance(
-        id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
-        redis: Redis = Depends(get_redis),
+        id_or_slug: str | int,
+        projects_crud: LaunchpadProjectCrudDep,
+        redis: RedisDep,
         address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")
 ):
     async def get_proxy_data():
+        project = await projects_crud.find_by_id_or_slug(id_or_slug)
+        if not project:
+            return None
+
+        base_url = project.proxy_link.base_url
+
         try:
-            project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
-            base_url = project.proxy_link.base_url
             return await fetch_data(base_url + f"/crypto/{address}/balance")
-        except Exception as exec:
-            return {}
+        except Exception:
+            return None
 
     balance = await get_data_with_cache(
         f"project-proxy-data-balance:{id_or_slug}:{address}",
         get_proxy_data,
         redis
     )
+    if not balance:
+        return NotFoundError("Project does not exist")
 
     if not balance.get("data"):
         return {"ok": False, "error": f"No data received for balance: {balance}"}
@@ -115,8 +109,8 @@ async def get_balance(
 @router.post("/{id_or_slug}/transactions", response_model=SaveTransactionResponse | ErrorResponse)
 async def save_transaction(
         request: Request,
-        id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        id_or_slug: str | int,
+        projects_crud: LaunchpadProjectCrudDep,
         payload: SaveTransactionDataRequest = Body(embed=False)
 ):
     payload_json = payload.model_dump()
@@ -126,7 +120,10 @@ async def save_transaction(
     except:
         pass
 
-    project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    project = await projects_crud.find_by_id_or_slug(id_or_slug)
+    if not project:
+        return NotFoundError("Project does not exist")
+
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.) as client:
@@ -139,8 +136,8 @@ async def save_transaction(
 @router.post("/{id_or_slug}/onramp/payment-link")
 async def get_onramp_payment_link(
         request: Request,
-        id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        id_or_slug: str | int,
+        projects_crud: LaunchpadProjectCrudDep,
         payload: OnrampOrderRequest = Body(embed=False)
 ):
     payload_json = payload.model_dump()
@@ -149,7 +146,10 @@ async def get_onramp_payment_link(
     except:
         pass
     payload_json["source"] = "launchpad"
-    project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    project = await projects_crud.find_by_id_or_slug(id_or_slug)
+    if not project:
+        return NotFoundError("Project does not exist")
+
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.) as client:
@@ -161,11 +161,14 @@ async def get_onramp_payment_link(
 
 @router.get("/{id_or_slug}/onramp/order/{order_id}", response_model=OnrampOrderResponse | ErrorResponse)
 async def get_onramp_order_status(
-        id_or_slug: Union[str, int],
-        projects_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
+        id_or_slug: str | int,
+        projects_crud: LaunchpadProjectCrudDep,
         order_id: UUID = Path()
 ):
-    project: LaunchpadProject = await projects_crud.retrieve(id_or_slug=id_or_slug)
+    project = await projects_crud.find_by_id_or_slug(id_or_slug)
+    if not project:
+        return NotFoundError("Project does not exist")
+
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.) as client:

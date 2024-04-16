@@ -6,10 +6,22 @@ from decimal import Decimal
 
 from datetime import datetime
 
+from starlette.responses import JSONResponse
+
 
 class Language(BaseModel):
     current: str | None = Field(default=None)
     all: list[str] = Field(default=[])
+
+
+class NotFoundError(JSONResponse):
+    def __init__(self, err: str):
+        super().__init__(content={"ok": False, "error": err}, status_code=404)
+
+
+class InternalServerError(JSONResponse):
+    def __init__(self, err: str):
+        super().__init__(content={"ok": False, "error": err}, status_code=500)
 
 
 class BaseResponse(BaseModel):

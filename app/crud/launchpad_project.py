@@ -33,9 +33,9 @@ class LaunchpadProjectCrud(BaseCrud):
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
             .options(selectinload(LaunchpadProject.links))
-            .options(joinedload(LaunchpadProject.proxy_link))
             .options(selectinload(LaunchpadProject.token_details))
-            .where(ProxyLink.id != None)
+            .options(contains_eager(LaunchpadProject.proxy_link))
+            .join(LaunchpadProject.proxy_link)
             .where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         )
 

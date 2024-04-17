@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import Depends
 from redis.asyncio import Redis, from_url
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -41,10 +43,12 @@ async def get_launchpad_crypto() -> Crypto:
         onramp_private_key_seed=ONRAMP_SEED_PHRASE,
     )
 
+CryptoDep = Annotated[Crypto, Depends(get_launchpad_crypto)]
 
 async def get_redis() -> Redis:
     return from_url(REDIS_URL)
 
+RedisDep = Annotated[Redis, Depends(get_redis)]
 
 async def get_lock(redis: Redis = Depends(get_redis)) -> Lock:
     return Lock(redis)
@@ -60,6 +64,7 @@ async def get_launchpad_projects_crud(session: AsyncSession = Depends(get_sessio
 
     return LaunchpadProjectCrud(session)
 
+LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_projects_crud)]
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)

@@ -1,10 +1,10 @@
 from typing import Sequence, Union
 
 from sqlalchemy import select, or_
-from sqlalchemy.orm import selectinload, joinedload, contains_eager
+from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
-from app.models import LaunchpadProject, StatusProject, ProxyLink
+from app.models import LaunchpadProject, StatusProject
 
 
 class LaunchpadProjectCrud(BaseCrud):
@@ -28,7 +28,7 @@ class LaunchpadProjectCrud(BaseCrud):
 
         return result.scalars().all()
 
-    async def retrieve(self, id_or_slug: Union[int, str]):
+    async def find_by_id_or_slug(self, id_or_slug: Union[int, str]):
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))

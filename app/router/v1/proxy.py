@@ -52,7 +52,7 @@ async def get_project_data(
                 fetch_data(base_url + "/crypto/target"),
                 fetch_data(base_url + "/crypto/contracts"),
                 fetch_data(base_url + "/crypto/total-balance"),
-                fetch_data(base_url + f"/crypto/current-stage-v2?network=polygon"),
+                fetch_data(base_url + "/crypto/current-stage-v2?network=polygon"),
             ]
             responses = await asyncio.gather(*tasks)
             return responses
@@ -125,7 +125,7 @@ async def save_transaction(
     payload_json["source"] = "launchpad"
     try:
         payload_json["ip"] = get_ip_from_request(request)
-    except:
+    except Exception:
         pass
 
     project = await projects_crud.find_by_id_or_slug(id_or_slug)
@@ -135,7 +135,7 @@ async def save_transaction(
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(base_url + f"/users/transactions", json=payload_json)
+        response = await client.post(f"{base_url}/users/transactions", json=payload_json)
         json_response = response.json()
 
     return json_response
@@ -151,7 +151,7 @@ async def get_onramp_payment_link(
     payload_json = payload.model_dump()
     try:
         payload_json["ip"] = get_ip_from_request(request)
-    except:
+    except Exception:
         pass
     payload_json["source"] = "launchpad"
     project = await projects_crud.find_by_id_or_slug(id_or_slug)
@@ -161,7 +161,7 @@ async def get_onramp_payment_link(
     base_url = project.proxy_link.base_url
 
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.post(base_url + f"/onramp/payment-link", json=payload_json)
+        response = await client.post(f"{base_url}/onramp/payment-link", json=payload_json)
         json_response = response.json()
 
     return json_response

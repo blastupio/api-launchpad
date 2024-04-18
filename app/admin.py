@@ -56,7 +56,7 @@ class AdminAuth(AuthenticationBackend):
         form = await request.form()
         username, password = form["username"], form["password"]
 
-        if not username == ADMIN_USERNAME or not password == ADMIN_PASSWORD:
+        if username != ADMIN_USERNAME or password != ADMIN_PASSWORD:
             return False
 
         token = self._generate_token(username)

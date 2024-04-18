@@ -21,7 +21,7 @@ class ProcessMunzenOrder(Command):
         crud: OnRampCrud = Depends(get_onramp_crud),
         crypto: Crypto = Depends(get_crypto),
     ) -> CommandResult:
-        if not await lock.acquire(f"is-ready:munzen-processing"):
+        if not await lock.acquire("is-ready:munzen-processing"):
             logger.debug(f"[ProcessMunzenOrder({self.order_id})] Another order in progress")
             return CommandResult(success=False, need_retry=True, retry_after=10)
 

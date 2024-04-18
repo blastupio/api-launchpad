@@ -145,12 +145,13 @@ class Crypto:
 
         contract = self._contract(network)
         web3 = self.web3[network]
-        balance = int(await contract.functions.balances(web3.to_checksum_address(address)).call())
+        address = web3.to_checksum_address(address)
+        balance = int(await contract.functions.balances(address).call())
         for c in self._legacy_contracts(network):
-            balance += int(await c.functions.balances(web3.to_checksum_address(address)).call())
+            balance += int(await c.functions.balances(address).call())
 
         return balance
-
+    
     async def get_contract_stage(self, network: str) -> int:
         if self.contracts.get(network) is None:
             return 0

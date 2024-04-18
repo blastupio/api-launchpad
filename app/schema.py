@@ -11,7 +11,7 @@ from starlette.responses import JSONResponse
 
 class Language(BaseModel):
     current: str | None = Field(default=None)
-    all: list[str] = Field(default=[])
+    all: list[str] = Field(default=[])  # noqa
 
 
 class NotFoundError(JSONResponse):
@@ -30,7 +30,7 @@ class BaseResponse(BaseModel):
 
 
 class FileModel(BaseModel):
-    id: int
+    id: int  # noqa
     title: str
     url: str
 
@@ -54,7 +54,7 @@ class ProjectStatusEnum(str, Enum):
 class LinkModel(BaseModel):
     name: str
     url: str
-    type: ProjectLinkTypeEnum
+    type: ProjectLinkTypeEnum  # noqa
 
     class Config:
         from_attributes = True
@@ -66,7 +66,7 @@ class ProjectTypeEnum(str, Enum):
 
 
 class LaunchpadProjectList(BaseModel):
-    id: str
+    id: str  # noqa
     slug: str
     name: str
     is_active: bool

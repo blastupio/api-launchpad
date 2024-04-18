@@ -2,11 +2,13 @@
 
 ## Running locally
 
-1. Install dependencies via Poetry
+1. Install dependencies via [Poetry](https://python-poetry.org/docs/#installation).
 
 ```{shell}
 poetry shell
 poetry install
+poetry install dev
+pre-commit install
 ```
 
 2. Create `.env` file and fill it with proper values

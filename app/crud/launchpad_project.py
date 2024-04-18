@@ -9,8 +9,9 @@ from app.models import LaunchpadProject, StatusProject
 
 class LaunchpadProjectCrud(BaseCrud):
 
-    async def all_with_proxy(self, limit: int = 100, offset: int = 0, status: StatusProject = None) -> \
-            Sequence[LaunchpadProject]:
+    async def all_with_proxy(
+        self, limit: int = 100, offset: int = 0, status: StatusProject = None
+    ) -> Sequence[LaunchpadProject]:
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))

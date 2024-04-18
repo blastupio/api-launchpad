@@ -31,11 +31,12 @@ class Crypto:
         if token.lower() not in ["eth"]:
             return {}
 
-        price_feed_contract = self.web3.eth.contract(self.web3.to_checksum_address(self.eth_price_feed_addr),
-                                                     abi=PRICE_FEED_ABI)
+        price_feed_contract = self.web3.eth.contract(
+            self.web3.to_checksum_address(self.eth_price_feed_addr), abi=PRICE_FEED_ABI
+        )
         return {
             "latestAnswer": await price_feed_contract.functions.latestAnswer().call(),
-            "decimals": int(await price_feed_contract.functions.decimals().call())
+            "decimals": int(await price_feed_contract.functions.decimals().call()),
         }
 
     async def send_eth(self, recipient: str, amount: str) -> str | None:
@@ -44,7 +45,9 @@ class Crypto:
             median_gas = int(statistics.median(t.gas for t in block.transactions))
             return median_gas
 
-        nonce = await self.web3.eth.get_transaction_count(self.web3.to_checksum_address(self.address), "latest")
+        nonce = await self.web3.eth.get_transaction_count(
+            self.web3.to_checksum_address(self.address), "latest"
+        )
         gas = await estimate_gas()
         gas_price = max(await self.web3.eth.gas_price, Web3.to_wei(30, "gwei"))
 
@@ -85,13 +88,16 @@ class AmountConverter:
                     price_feed = json.loads(await self.redis.get(f"price-feed:{token}"))
                 else:
                     price_feed = await self.crypto.get_price_feed(token.lower())
-                    await self.redis.setex(f"price-feed:{token}", value=json.dumps(price_feed),
-                                           time=timedelta(seconds=10))
+                    await self.redis.setex(
+                        f"price-feed:{token}",
+                        value=json.dumps(price_feed),
+                        time=timedelta(seconds=10),
+                    )
 
                 return price_feed["latestAnswer"] / (10 ** price_feed["decimals"])
             else:
                 return self.price_cache.get(currency.split("-")[0].upper())
-        return 1.
+        return 1.0
 
 
 class Munzen:
@@ -152,7 +158,8 @@ class Munzen:
             }
 
             response = await client.get(
-                f"{self.api_url}api/v1/merchants/orders/{munzen_order_id}?{urlencode(input_data)}")
+                f"{self.api_url}api/v1/merchants/orders/{munzen_order_id}?{urlencode(input_data)}"
+            )
             if response.status_code != 200:
                 raise Exception(f"API Error. Status code: {response.status_code}")
 

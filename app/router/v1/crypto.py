@@ -5,8 +5,14 @@ from fastapi import APIRouter, Path
 
 from app.base import logger
 from app.dependencies import RedisDep, CryptoDep
-from app.schema import AddressBalanceResponse, ErrorResponse, AddressBalanceResponseData, PriceFeedResponse, \
-    PriceFeedResponseData, InternalServerError
+from app.schema import (
+    AddressBalanceResponse,
+    ErrorResponse,
+    AddressBalanceResponseData,
+    PriceFeedResponse,
+    PriceFeedResponseData,
+    InternalServerError,
+)
 from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
@@ -19,7 +25,9 @@ async def price_feed(redis: RedisDep, crypto: CryptoDep, token: str = Path()):
             data = json.loads(await redis.get(f"price-feed:{token}"))
         else:
             data = await crypto.get_price_feed(token.lower())
-            await redis.setex(f"price-feed:{token}", value=json.dumps(data), time=timedelta(seconds=30))
+            await redis.setex(
+                f"price-feed:{token}", value=json.dumps(data), time=timedelta(seconds=30)
+            )
 
         return PriceFeedResponse(ok=True, data=PriceFeedResponseData(**data))
     except Exception as e:
@@ -28,27 +36,29 @@ async def price_feed(redis: RedisDep, crypto: CryptoDep, token: str = Path()):
 
 
 @router.get("/{address}/balance", response_model=AddressBalanceResponse | ErrorResponse)
-async def get_address_balance(redis: RedisDep, crypto: CryptoDep, address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")):
+async def get_address_balance(
+    redis: RedisDep, crypto: CryptoDep, address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")
+):
     try:
         polygon = await get_data_with_cache(
             f"address-balance:polygon:{address}",
             lambda: crypto.get_token_balance("polygon", address),
-            redis
+            redis,
         )
         eth = await get_data_with_cache(
             f"address-balance:eth:{address}",
             lambda: crypto.get_token_balance("eth", address),
-            redis
+            redis,
         )
         bsc = await get_data_with_cache(
             f"address-balance:bsc:{address}",
             lambda: crypto.get_token_balance("bsc", address),
-            redis
+            redis,
         )
         blast = await get_data_with_cache(
             f"address-balance:blast:{address}",
             lambda: crypto.get_token_balance("blast", address),
-            redis
+            redis,
         )
 
         return AddressBalanceResponse(
@@ -58,8 +68,9 @@ async def get_address_balance(redis: RedisDep, crypto: CryptoDep, address: str =
                 eth=int(eth),
                 bsc=int(bsc),
                 blast=int(blast),
-                total=int(polygon) + int(eth) + int(bsc) + int(blast)
-            ))
+                total=int(polygon) + int(eth) + int(bsc) + int(blast),
+            ),
+        )
     except Exception as e:
         logger.error(f"Cannot get address balance: {e}")
         return InternalServerError("Failed to get balance data")

@@ -7,13 +7,30 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 
-from app.env import REDIS_URL, MUNZEN_API_KEY, MUNZEN_API_SECRET, MUNZEN_ENVIRONMENT, ONRAMP_RECIPIENT_ADDR, \
-    CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE, ETH_PRICE_FEED_ADDR, \
-    CRYPTO_ENVIRONMENT, CONTROLLER_SEED_PHRASE, \
-    CONTRACT_ADDR_POLYGON, CONTRACT_ADDR_ETH, \
-    CONTRACT_ADDR_BSC, USDT_CONTRACT_ADDR_POLYGON, USDT_CONTRACT_ADDR_ETH, \
-    CRYPTO_API_KEY_POLYGON, CRYPTO_API_KEY_ETH, CRYPTO_API_KEY_BSC, \
-    ONRAMP_SEED_PHRASE, CONTRACT_ADDR_BLAST, USDT_CONTRACT_ADDR_BLAST, USDT_CONTRACT_ADDR_BSC
+from app.env import (
+    REDIS_URL,
+    MUNZEN_API_KEY,
+    MUNZEN_API_SECRET,
+    MUNZEN_ENVIRONMENT,
+    ONRAMP_RECIPIENT_ADDR,
+    CRYPTO_API_KEY_BLAST,
+    ONRAMP_SENDER_SEED_PHRASE,
+    ETH_PRICE_FEED_ADDR,
+    CRYPTO_ENVIRONMENT,
+    CONTROLLER_SEED_PHRASE,
+    CONTRACT_ADDR_POLYGON,
+    CONTRACT_ADDR_ETH,
+    CONTRACT_ADDR_BSC,
+    USDT_CONTRACT_ADDR_POLYGON,
+    USDT_CONTRACT_ADDR_ETH,
+    CRYPTO_API_KEY_POLYGON,
+    CRYPTO_API_KEY_ETH,
+    CRYPTO_API_KEY_BSC,
+    ONRAMP_SEED_PHRASE,
+    CONTRACT_ADDR_BLAST,
+    USDT_CONTRACT_ADDR_BLAST,
+    USDT_CONTRACT_ADDR_BSC,
+)
 from app.services import Lock, Crypto as CryptoLaunchpad
 from onramp.services import Munzen, Crypto, AmountConverter
 
@@ -43,12 +60,16 @@ async def get_launchpad_crypto() -> Crypto:
         onramp_private_key_seed=ONRAMP_SEED_PHRASE,
     )
 
+
 CryptoDep = Annotated[Crypto, Depends(get_launchpad_crypto)]
+
 
 async def get_redis() -> Redis:
     return from_url(REDIS_URL)
 
+
 RedisDep = Annotated[Redis, Depends(get_redis)]
+
 
 async def get_lock(redis: Redis = Depends(get_redis)) -> Lock:
     return Lock(redis)
@@ -59,12 +80,15 @@ async def get_session() -> AsyncSession:
         yield session
 
 
-async def get_launchpad_projects_crud(session: AsyncSession = Depends(get_session)) -> \
-        LaunchpadProjectCrud:
+async def get_launchpad_projects_crud(
+    session: AsyncSession = Depends(get_session),
+) -> LaunchpadProjectCrud:
 
     return LaunchpadProjectCrud(session)
 
+
 LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_projects_crud)]
+
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)
@@ -78,5 +102,7 @@ async def get_crypto() -> Crypto:
     return Crypto(CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE, ETH_PRICE_FEED_ADDR)
 
 
-async def get_amount_converter(redis: Redis = Depends(get_redis), crypto: Crypto = Depends(get_crypto)) -> AmountConverter:
+async def get_amount_converter(
+    redis: Redis = Depends(get_redis), crypto: Crypto = Depends(get_crypto)
+) -> AmountConverter:
     return AmountConverter(redis, crypto)

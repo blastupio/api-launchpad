@@ -44,7 +44,10 @@ class RootResponse(BaseModel):
 
 @app.get("/", tags=["root"], response_model=RootResponse)
 async def root():
-    return {"ok": True, "data": {
-        "name": "Blastup Launchpad",
-        "version": APP_VERSION,
-    }}
+    return {
+        "ok": True,
+        "data": {
+            "name": "Blastup Launchpad",
+            "version": APP_VERSION,
+        },
+    }

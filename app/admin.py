@@ -5,8 +5,14 @@ from sqladmin.authentication import AuthenticationBackend
 from starlette.requests import Request
 from datetime import datetime, timedelta
 
-from app.models import LaunchpadProject, ProxyLink, ProjectImage, OnRampOrder, TokenDetails, \
-    ProjectLink
+from app.models import (
+    LaunchpadProject,
+    ProxyLink,
+    ProjectImage,
+    OnRampOrder,
+    TokenDetails,
+    ProjectLink,
+)
 
 from app.env import ADMIN_PASSWORD, ADMIN_USERNAME, TOKEN_EXPIRATION, ALGORITHM, SECRET_KEY
 
@@ -35,8 +41,14 @@ class ProjectLinkAdmin(ModelView, model=ProjectLink):
     pass
 
 
-admin_views = [LaunchpadProjectAdmin, ProjectLinkAdmin, ProjectImageAdmin,
-               OnrampOrderAdmin, TokenDetailsAdmin, ProxyLinkAdmin]
+admin_views = [
+    LaunchpadProjectAdmin,
+    ProjectLinkAdmin,
+    ProjectImageAdmin,
+    OnrampOrderAdmin,
+    TokenDetailsAdmin,
+    ProxyLinkAdmin,
+]
 
 
 class AdminAuth(AuthenticationBackend):

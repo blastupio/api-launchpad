@@ -20,12 +20,16 @@ def process_munzen_order(entity_id: str):
         result = run_command_and_get_result(ProcessMunzenOrder(entity_id))
 
         if result.need_retry:
-            retry_after = result.retry_after if result.retry_after is not None else CELERY_RETRY_AFTER
+            retry_after = (
+                result.retry_after if result.retry_after is not None else CELERY_RETRY_AFTER
+            )
             process_munzen_order.apply_async(args=[entity_id], countdown=retry_after)
             return
     except Exception as e:
         if isinstance(e, Retry):
             raise e
 
-        logger.error(f"process_munzen_order[{entity_id}] Unhandled exception: {e}, {traceback.format_exc()}")
+        logger.error(
+            f"process_munzen_order[{entity_id}] Unhandled exception: {e}, {traceback.format_exc()}"
+        )
         raise Retry("", exc=e)

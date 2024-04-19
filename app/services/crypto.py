@@ -11,14 +11,15 @@ def get_http_provider(blockchain: str, api_keys: dict[str, str]) -> AsyncHTTPPro
 
 
 class Crypto:
-    def __init__(self,
-                 environment: str,
-                 contracts: dict[str, str],
-                 usdt_contracts: dict[str, str],
-                 api_keys: dict[str, str],
-                 private_key_seed: str,
-                 onramp_private_key_seed: str
-                 ):
+    def __init__(
+        self,
+        environment: str,
+        contracts: dict[str, str],
+        usdt_contracts: dict[str, str],
+        api_keys: dict[str, str],
+        private_key_seed: str,
+        onramp_private_key_seed: str,
+    ):
         self.environment = environment
         self.contracts = contracts
         self.usdt_contracts = usdt_contracts
@@ -39,11 +40,31 @@ class Crypto:
             "bsc": AsyncWeb3(get_http_provider("bsc", api_keys)),
             "blast": AsyncWeb3(get_http_provider("blast", api_keys)),
         }
-        self.stages = [2500000, 5000000, 11250000, 38750000, 76250000, 117500000, 155000000, 190000000, 197500000,
-                       200000000, ]
-        self.stage_diff = [2500000, 2500000, 6250000, 27500000, 37500000, 41250000, 37500000, 35000000, 7500000,
-                           2500000]
-        self.stage_prices = [.02, .03, .04, .05, .055, .06, .065, .07, .08, .9]
+        self.stages = [
+            2500000,
+            5000000,
+            11250000,
+            38750000,
+            76250000,
+            117500000,
+            155000000,
+            190000000,
+            197500000,
+            200000000,
+        ]
+        self.stage_diff = [
+            2500000,
+            2500000,
+            6250000,
+            27500000,
+            37500000,
+            41250000,
+            37500000,
+            35000000,
+            7500000,
+            2500000,
+        ]
+        self.stage_prices = [0.02, 0.03, 0.04, 0.05, 0.055, 0.06, 0.065, 0.07, 0.08, 0.9]
 
     async def change_stage(self, network: str, new_stage: int):
         if self.contracts.get(network) is None:
@@ -51,16 +72,23 @@ class Crypto:
 
         web3 = self.web3[network]
         contract = self._contract(network)
-        nonce = await web3.eth.get_transaction_count(web3.to_checksum_address(self.address), block_identifier="latest")
+        nonce = await web3.eth.get_transaction_count(
+            web3.to_checksum_address(self.address), block_identifier="latest"
+        )
 
-        gas = await (contract.functions
-                     .setStage(new_stage)
-                     .estimate_gas({'from': web3.to_checksum_address(self.address)}))
+        gas = await contract.functions.setStage(new_stage).estimate_gas(
+            {"from": web3.to_checksum_address(self.address)}
+        )
         gas = int(gas * 1.5)
 
-        transaction = await contract.functions.setStage(new_stage).build_transaction({
-            "gas": gas, "nonce": nonce, "gasPrice": await web3.eth.gas_price, "chainId": await web3.eth.chain_id
-        })
+        transaction = await contract.functions.setStage(new_stage).build_transaction(
+            {
+                "gas": gas,
+                "nonce": nonce,
+                "gasPrice": await web3.eth.gas_price,
+                "chainId": await web3.eth.chain_id,
+            }
+        )
         signed_tx = web3.eth.account.sign_transaction(transaction, self.private_key)
         return (await web3.eth.send_raw_transaction(signed_tx.rawTransaction)).hex()
 
@@ -69,25 +97,30 @@ class Crypto:
             return None
 
         web3 = self.web3[network]
-        contract = web3.eth.contract(address=web3.to_checksum_address(self.usdt_contracts[network]), abi=ERC20_ABI)
+        contract = web3.eth.contract(
+            address=web3.to_checksum_address(self.usdt_contracts[network]), abi=ERC20_ABI
+        )
 
-        nonce = await web3.eth.get_transaction_count(web3.to_checksum_address(self.onramp_address), block_identifier="latest")
-        gas = await (contract.functions
-                     .approve(web3.to_checksum_address(self.contracts[network]),
-                              115792089237316195423570985008687907853269984665640564039457584007913129639935)
-                     .estimate_gas({'from': web3.to_checksum_address(self.onramp_address)}))
+        nonce = await web3.eth.get_transaction_count(
+            web3.to_checksum_address(self.onramp_address), block_identifier="latest"
+        )
+        gas = await contract.functions.approve(
+            web3.to_checksum_address(self.contracts[network]),
+            115792089237316195423570985008687907853269984665640564039457584007913129639935,
+        ).estimate_gas({"from": web3.to_checksum_address(self.onramp_address)})
         gas = int(gas * 1.5)
 
-        transaction = (await contract.functions
-                       .approve(
-                            web3.to_checksum_address(self.contracts[network]),
-                            115792089237316195423570985008687907853269984665640564039457584007913129639935
-                       ).build_transaction({
-                            "gas": gas,
-                            "nonce": nonce,
-                            "gasPrice": await web3.eth.gas_price,
-                            "chainId": await web3.eth.chain_id
-                       }))
+        transaction = await contract.functions.approve(
+            web3.to_checksum_address(self.contracts[network]),
+            115792089237316195423570985008687907853269984665640564039457584007913129639935,
+        ).build_transaction(
+            {
+                "gas": gas,
+                "nonce": nonce,
+                "gasPrice": await web3.eth.gas_price,
+                "chainId": await web3.eth.chain_id,
+            }
+        )
         signed_tx = web3.eth.account.sign_transaction(transaction, self.onramp_private_key)
         return (await web3.eth.send_raw_transaction(signed_tx.rawTransaction)).hex()
 
@@ -98,23 +131,33 @@ class Crypto:
         contract = self._contract(network)
         web3 = self.web3[network]
 
-        nonce = await web3.eth.get_transaction_count(web3.to_checksum_address(self.onramp_address),
-                                                     block_identifier="latest", )
-        gas = await (contract.functions
-        .depositUSDTTo(web3.to_checksum_address(address), int(float(amount) * 1e6), web3.to_checksum_address(address), )
-        .estimate_gas({
-            'from': web3.to_checksum_address(self.onramp_address),
-        }))
+        nonce = await web3.eth.get_transaction_count(
+            web3.to_checksum_address(self.onramp_address),
+            block_identifier="latest",
+        )
+        gas = await contract.functions.depositUSDTTo(
+            web3.to_checksum_address(address),
+            int(float(amount) * 1e6),
+            web3.to_checksum_address(address),
+        ).estimate_gas(
+            {
+                "from": web3.to_checksum_address(self.onramp_address),
+            }
+        )
         gas = int(gas * 1.5)
 
-        transaction = (await contract.functions
-                       .depositUSDTTo(web3.to_checksum_address(address), int(float(amount) * 1e6), web3.to_checksum_address(address), )
-                       .build_transaction({
-                            "gas": gas,
-                            "nonce": nonce,
-                            "gasPrice": await web3.eth.gas_price,
-                            "chainId": await web3.eth.chain_id
-                        }))
+        transaction = await contract.functions.depositUSDTTo(
+            web3.to_checksum_address(address),
+            int(float(amount) * 1e6),
+            web3.to_checksum_address(address),
+        ).build_transaction(
+            {
+                "gas": gas,
+                "nonce": nonce,
+                "gasPrice": await web3.eth.gas_price,
+                "chainId": await web3.eth.chain_id,
+            }
+        )
         signed_tx = web3.eth.account.sign_transaction(transaction, self.onramp_private_key)
         return (await web3.eth.send_raw_transaction(signed_tx.rawTransaction)).hex()
 
@@ -123,9 +166,12 @@ class Crypto:
             return 0
 
         web3 = self.web3[network]
-        contract = web3.eth.contract(address=web3.to_checksum_address(self.usdt_contracts[network]), abi=ERC20_ABI)
-        return await contract.functions.allowance(web3.to_checksum_address(self.address),
-                                                  self.contracts[network]).call()
+        contract = web3.eth.contract(
+            address=web3.to_checksum_address(self.usdt_contracts[network]), abi=ERC20_ABI
+        )
+        return await contract.functions.allowance(
+            web3.to_checksum_address(self.address), self.contracts[network]
+        ).call()
 
     async def get_transaction_data(self, network: str, tx_hash: str):
         if self.contracts.get(network) is None:
@@ -151,7 +197,7 @@ class Crypto:
             balance += int(await c.functions.balances(address).call())
 
         return balance
-    
+
     async def get_contract_stage(self, network: str) -> int:
         if self.contracts.get(network) is None:
             return 0
@@ -209,15 +255,21 @@ class Crypto:
         price_feed_addr = await contract.functions.COIN_PRICE_FEED().call()
 
         web3 = self.web3[network]
-        price_feed_contract = self.web3[network].eth.contract(web3.to_checksum_address(price_feed_addr),
-                                                              abi=PRICE_FEED_ABI)
+        price_feed_contract = self.web3[network].eth.contract(
+            web3.to_checksum_address(price_feed_addr), abi=PRICE_FEED_ABI
+        )
         return {
             "latestAnswer": await price_feed_contract.functions.latestAnswer().call(),
-            "decimals": int(await price_feed_contract.functions.decimals().call())
+            "decimals": int(await price_feed_contract.functions.decimals().call()),
         }
 
     def _contract(self, network) -> AsyncContract:
-        abi = {"eth": PRESALE_ABI, "polygon": PRESALE_ABI, "bsc": PRESALE_BSC_ABI, "blast": PRESALE_BLAST_ABI}[network]
+        abi = {
+            "eth": PRESALE_ABI,
+            "polygon": PRESALE_ABI,
+            "bsc": PRESALE_BSC_ABI,
+            "blast": PRESALE_BLAST_ABI,
+        }[network]
         web3 = self.web3[network]
         return web3.eth.contract(web3.to_checksum_address(self.contracts[network]), abi=abi)
 
@@ -230,8 +282,10 @@ class Crypto:
             "eth": [],
             "polygon": [],
             "bsc": [
-                web3.eth.contract(web3.to_checksum_address("0x765eE5652281D2a17D4e43AeA97a5D47280079a7"),
-                                  abi=PRESALE_ABI)
+                web3.eth.contract(
+                    web3.to_checksum_address("0x765eE5652281D2a17D4e43AeA97a5D47280079a7"),
+                    abi=PRESALE_ABI,
+                )
             ],
             "blast": [],
         }

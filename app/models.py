@@ -4,7 +4,20 @@ from uuid import uuid4
 
 import shortuuid
 from sqlalchemy import Enum
-from sqlalchemy import String, DECIMAL, ForeignKey, Column, UUID, Text, DateTime, func, JSON, text, Integer, Boolean
+from sqlalchemy import (
+    String,
+    DECIMAL,
+    ForeignKey,
+    Column,
+    UUID,
+    Text,
+    DateTime,
+    func,
+    JSON,
+    text,
+    Integer,
+    Boolean,
+)
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
@@ -34,23 +47,23 @@ ONRAMP_STATUS_ERROR = "error"
 
 
 class LaunchpadProject(Base):
-    __tablename__ = 'launchpad_project'
+    __tablename__ = "launchpad_project"
 
-    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))
+    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))  # noqa
     slug = Column(String, nullable=False, unique=True)
     name = Column(String, nullable=False)
     short_description = Column(Text(), nullable=False)
     ticker = Column(String, nullable=True)
-    is_active = Column(Boolean, server_default='false', default=False, nullable=True)
+    is_active = Column(Boolean, server_default="false", default=False, nullable=True)
 
     logo_url = Column(Text(), nullable=True)
 
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
 
-    raise_goal = Column(DECIMAL, default=Decimal('0'), nullable=True)
-    raise_goal_on_launchpad = Column(DECIMAL, default=Decimal('0'), nullable=True)
-    total_raised = Column(DECIMAL, default=Decimal('0'), nullable=True)
+    raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
+    raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)
+    total_raised = Column(DECIMAL, default=Decimal("0"), nullable=True)
     token_price = Column(DECIMAL, nullable=True)
 
     project_type = Column(Enum(ProjectType))
@@ -67,7 +80,11 @@ class LaunchpadProject(Base):
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
 
-    profile_images = relationship("ProjectImage", back_populates="project", order_by="ProjectImage.ordering_key, ProjectImage.id")
+    profile_images = relationship(
+        "ProjectImage",
+        back_populates="project",
+        order_by="ProjectImage.ordering_key, ProjectImage.id",
+    )
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
@@ -78,37 +95,39 @@ class LaunchpadProject(Base):
 
 
 class ProjectImage(Base):
-    __tablename__ = 'project_image'
+    __tablename__ = "project_image"
 
-    id = Column(BigIntegerType, primary_key=True)
+    id = Column(BigIntegerType, primary_key=True)  # noqa
     ordering_key = Column(Integer, nullable=True, index=True)
 
     title = Column(String, nullable=True)
     url = Column(String, nullable=False)
 
-    project_id = Column(String, ForeignKey('launchpad_project.id'))
+    project_id = Column(String, ForeignKey("launchpad_project.id"))
     project = relationship("LaunchpadProject", back_populates="profile_images")
 
 
 class ProjectLink(Base):
-    __tablename__ = 'project_link'
+    __tablename__ = "project_link"
 
-    id = Column(BigIntegerType, primary_key=True)
+    id = Column(BigIntegerType, primary_key=True)  # noqa
 
     name = Column(String, nullable=True)
     url = Column(String, nullable=False)
-    type = Column(Enum(ProjectLinkType), default=ProjectLinkType.DEFAULT, server_default="DEFAULT")
+    type = Column(
+        Enum(ProjectLinkType), default=ProjectLinkType.DEFAULT, server_default="DEFAULT"
+    )  # noqa
 
-    project_id = Column(String, ForeignKey('launchpad_project.id'))
+    project_id = Column(String, ForeignKey("launchpad_project.id"))
     project = relationship("LaunchpadProject", back_populates="links")
 
 
 class OnRampOrder(Base):
-    __tablename__ = 'onramp_order'
+    __tablename__ = "onramp_order"
 
-    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid4)  # noqa
     address = Column(Text(), nullable=False, index=True)
-    hash = Column(Text(), nullable=True, unique=True)
+    hash = Column(Text(), nullable=True, unique=True)  # noqa
     amount = Column(Text(), nullable=False)
     received_amount = Column(Text(), nullable=True)
     currency = Column(Text(), nullable=True)
@@ -120,19 +139,19 @@ class OnRampOrder(Base):
 
 
 class ProxyLink(Base):
-    __tablename__ = 'proxy_link'
+    __tablename__ = "proxy_link"
 
-    id = Column(BigIntegerType, primary_key=True)
-    project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
     base_url = Column(String, nullable=False)
 
     project = relationship("LaunchpadProject", back_populates="proxy_link")
 
 
 class TokenDetails(Base):
-    __tablename__ = 'token_details'
+    __tablename__ = "token_details"
 
-    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))
+    id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))  # noqa
 
     tge_date = Column(DateTime(), nullable=False)
     tge_percent = Column(Integer, nullable=False)
@@ -146,5 +165,5 @@ class TokenDetails(Base):
     initial_supply = Column(String, nullable=False)
     market_cap = Column(String, nullable=False)
 
-    project_id = Column(String, ForeignKey('launchpad_project.id'), nullable=False)
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
     project = relationship("LaunchpadProject", back_populates="token_details")

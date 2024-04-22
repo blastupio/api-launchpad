@@ -25,9 +25,9 @@ jobs:
 
       - name: Install dev dependencies
         run: |
-          source $(poetry env info --path)/bin/activate
-          poetry install --no-root --only dev
-          pre-commit install
+          $HOME/.poetry/bin/poetry install --no-root --only dev
+          $HOME/.poetry/bin/poetry run 'pre-commit install'
+          $HOME/.poetry/bin/poetry run 'pre-commit run --all'
 
       - name: Run pre-commit hook
         run: pre-commit run -a

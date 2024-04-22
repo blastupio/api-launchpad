@@ -2,34 +2,33 @@ name: Pre-commit checks
 
 on:
   pull_request_target:
-    types: [closed]
+    types: [opened, synchronize]
 
 jobs:
   pre-commit:
     name: Pre-commit hook
     runs-on: ubuntu-latest
 
-    if: github.event_name == 'pull_request_target' && github.event.pull_request.merged == true
-
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v2
+    - name: Checkout repository
+      uses: actions/checkout@v2
 
-      - name: Set up Python 3.11
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.11
+    - name: Set up Python 3.11
+      uses: actions/setup-python@v2
+      with:
+        python-version: 3.11
 
-      - name: Install Poetry
-        run: |
-          curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python3 -
-          source $HOME/.poetry/env
+    - name: Install Poetry
+      run: |
+        curl -sSL https://install.python-poetry.org | python3 -
+        python3 -m poetry --version
+        python3 -m poetry config virtualenvs.create true
 
-      - name: Install dev dependencies
-        run: poetry install --no-root --no-interaction --no-ansi --extras dev
+    - name: Install dev dependencies
+      run: python3 -m poetry install --only dev
 
-      - name: Run pre-commit hook
-        run: pre-commit run -a
+    - name: Run pre-commit hook
+      run: pre-commit run -a
 
-      - name: Check for pre-commit errors
-        run: echo "Pre-commit checks passed"
+    - name: Check for pre-commit errors
+      run: echo "Pre-commit checks passed"

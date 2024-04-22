@@ -25,12 +25,11 @@ jobs:
 
       - name: Install dev dependencies
         run: |
-          $HOME/.poetry/bin/poetry install --no-root --only dev
-          $HOME/.poetry/bin/poetry run 'pre-commit install'
-          $HOME/.poetry/bin/poetry run 'pre-commit run --all'
+          /home/runner/.local/bin/poetry install --no-root --only dev
+          /home/runner/.local/bin/poetry run 'pre-commit install'
 
       - name: Run pre-commit hook
-        run: pre-commit run -a
+        run: /home/runner/.local/bin/poetry run 'pre-commit run -a'
 
       - name: Check for pre-commit errors
         run: echo "Pre-commit checks passed"

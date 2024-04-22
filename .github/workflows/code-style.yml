@@ -24,7 +24,8 @@ jobs:
           poetry --version
           poetry config virtualenvs.create true
           poetry install --no-root --only dev
-          poetry run 'pre-commit install'
+          pip install pre-commit
+          pre-commit install
           poetry run 'pre-commit run -a'
 
       - name: Check for pre-commit errors

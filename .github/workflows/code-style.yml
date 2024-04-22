@@ -18,19 +18,14 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install Poetry
+      - name: Install Poetry and
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version
-
-      - name: Install dev dependencies
-        run: |
-          /home/runner/.local/bin/poetry shell --no-interactive
-          /home/runner/.local/bin/poetry install --no-root --only dev
-          /home/runner/.local/bin/poetry run 'pre-commit install'
-
-      - name: Run pre-commit hook
-        run: /home/runner/.local/bin/poetry run 'pre-commit run -a'
+          poetry config virtualenvs.create true
+          poetry install --no-root --only dev
+          poetry run 'pre-commit install'
+          poetry run 'pre-commit run -a'
 
       - name: Check for pre-commit errors
         run: echo "Pre-commit checks passed"

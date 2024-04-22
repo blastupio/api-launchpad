@@ -1,12 +1,22 @@
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
-from typing import Dict, List, Optional, Literal, Any
+from typing import Dict, List, Optional, Literal, Any, NewType
 from enum import Enum
 from decimal import Decimal
 
 from datetime import datetime
 
 from starlette.responses import JSONResponse
+
+
+Address = NewType("Address", str)
+
+ChainId = NewType("ChainId", int)
+
+
+class TokenInChain(BaseModel):
+    address: Address
+    chain_id: ChainId
 
 
 class Language(BaseModel):
@@ -312,3 +322,11 @@ class TierInfoResponse(BaseModel):
 class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
     balance: dict[str, Any] = Field(default_factory=dict)
+
+
+class TokenPriceResponse(BaseModel):
+    price: dict[Address, float]
+
+
+class Any2AnyPriceResponse(BaseModel):
+    rate: dict[ChainId, dict[Address, float]]

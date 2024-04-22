@@ -2,6 +2,12 @@ include .env
 export
 
 
+makemigrations:
+	PYTHONPATH=. alembic revision -m "${m}" --autogenerate
+
+migrate:
+	PYTHONPATH=. alembic upgrade head
+
 dev:
 	uvicorn main:app --host 0.0.0.0 --port 80 --reload
 

@@ -4,13 +4,13 @@ repos:
     hooks:
     - id: check-ast
     - id: check-merge-conflict
-    - id: check-yaml
     - id: end-of-file-fixer
     - id: trailing-whitespace
   - repo: https://github.com/psf/black
     rev: 24.2.0
     hooks:
       - id: black
+        exclude: ^.*\b(migrations)\b.*$
         args: [--config, pyproject.toml]
   - repo: https://github.com/pycqa/flake8
     rev: 7.0.0

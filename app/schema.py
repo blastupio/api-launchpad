@@ -142,6 +142,7 @@ class LaunchpadProject(LaunchpadProjectList):
 
     profile_images: List[FileModel]
     token_details: TokenDetailsData
+    token_address: str | None
 
     class Config:
         from_attributes = True

@@ -60,6 +60,7 @@ class LaunchpadProject(Base):
 
     description = Column(Text(), nullable=True)
     token_sale_details = Column(Text(), nullable=True)
+    token_address = Column(String, nullable=True)
 
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)
@@ -114,9 +115,9 @@ class ProjectLink(Base):
 
     name = Column(String, nullable=True)
     url = Column(String, nullable=False)
-    type = Column(
+    type = Column(  # noqa
         Enum(ProjectLinkType), default=ProjectLinkType.DEFAULT, server_default="DEFAULT"
-    )  # noqa
+    )
 
     project_id = Column(String, ForeignKey("launchpad_project.id"))
     project = relationship("LaunchpadProject", back_populates="links")

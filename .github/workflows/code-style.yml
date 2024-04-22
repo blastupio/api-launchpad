@@ -1,8 +1,6 @@
 name: Pre-commit checks
 
 on: push
-#  pull_request_target:
-#    types: [opened, synchronize]
 
 jobs:
   pre-commit:
@@ -18,7 +16,7 @@ jobs:
         with:
           python-version: 3.11
 
-      - name: Install Poetry and
+      - name: Install Poetry and run pre-commit
         run: |
           curl -sSL https://install.python-poetry.org | python3 -
           poetry --version

@@ -25,7 +25,9 @@ jobs:
           poetry config virtualenvs.create true
 
       - name: Install dev dependencies
-        run: poetry install --only dev
+        run: |
+          poetry install --no-root --only dev
+          pre-commit install
 
       - name: Run pre-commit hook
         run: pre-commit run -a

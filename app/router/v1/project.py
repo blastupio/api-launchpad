@@ -28,7 +28,9 @@ async def list_launchpad_projects(
 
         async def get_proxy_data():
             async with AsyncClient(timeout=30.0) as client:
-                response = await client.get(f"{project.proxy_link.base_url}/crypto/total-balance")
+                response = await client.get(
+                    f"{project.proxy_link.base_url}/crypto/total-balance"  # noqa
+                )
                 return response.json()
 
         total_balance = await get_data_with_cache(

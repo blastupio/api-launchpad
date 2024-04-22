@@ -1,6 +1,6 @@
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
-from typing import Dict, List, Optional, Literal
+from typing import Dict, List, Optional, Literal, Any
 from enum import Enum
 from decimal import Decimal
 
@@ -297,3 +297,18 @@ class OnrampOrderRequest(BaseModel):
 
 class SignUserBalanceResponse(BaseModel):
     signature: str
+
+
+class TierInfo(BaseModel):
+    order: int
+    title: str
+    blp_amount: int
+
+
+class TierInfoResponse(BaseModel):
+    tiers: list[TierInfo]
+
+
+class UserInfoResponse(BaseModel):
+    tier: TierInfo | None = None
+    balance: dict[str, Any] = Field(default_factory=dict)

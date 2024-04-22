@@ -25,7 +25,7 @@ jobs:
 
       - name: Install dev dependencies
         run: |
-          poetry shell
+          source $(poetry env info --path)/bin/activate
           poetry install --no-root --only dev
           pre-commit install
 

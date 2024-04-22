@@ -25,6 +25,7 @@ jobs:
 
       - name: Install dev dependencies
         run: |
+          /home/runner/.local/bin/poetry shell
           /home/runner/.local/bin/poetry install --no-root --only dev
           /home/runner/.local/bin/poetry run 'pre-commit install'
 

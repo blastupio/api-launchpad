@@ -10,25 +10,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v2
 
-    - name: Set up Python 3.11
-      uses: actions/setup-python@v2
-      with:
-        python-version: 3.11
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.11
 
-    - name: Install Poetry
-      run: |
-        curl -sSL https://install.python-poetry.org | python3 -
-        python3 -m poetry --version
-        python3 -m poetry config virtualenvs.create true
+      - name: Install Poetry
+        run: |
+          curl -sSL https://install.python-poetry.org | python3 -
+          python3 -m poetry --version
+          python3 -m poetry config virtualenvs.create true
 
-    - name: Install dev dependencies
-      run: python3 -m poetry install --only dev
+      - name: Install dev dependencies
+        run: python3 -m poetry install --only dev
 
-    - name: Run pre-commit hook
-      run: pre-commit run -a
+      - name: Run pre-commit hook
+        run: pre-commit run -a
 
-    - name: Check for pre-commit errors
-      run: echo "Pre-commit checks passed"
+      - name: Check for pre-commit errors
+        run: echo "Pre-commit checks passed"

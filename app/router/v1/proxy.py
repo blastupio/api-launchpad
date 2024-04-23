@@ -15,6 +15,7 @@ from app.schema import (
     SaveTransactionDataRequest,
     OnrampOrderResponse,
     NotFoundError,
+    GetPointsResponse,
 )
 from app.utils import get_data_with_cache
 
@@ -184,3 +185,36 @@ async def get_onramp_order_status(
         json_response = response.json()
 
     return json_response
+
+
+@router.get("/{id_or_slug}/{address}/points", response_model=GetPointsResponse | ErrorResponse)
+async def get_profile_points(
+    projects_crud: LaunchpadProjectCrudDep,
+    redis: RedisDep,
+    id_or_slug: str | int = Path(),
+    address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+):
+    async def get_proxy_data():
+        project = await projects_crud.find_by_id_or_slug(id_or_slug)
+        if not project:
+            return None
+
+        base_url = project.proxy_link.base_url
+
+        try:
+            return await fetch_data(
+                base_url + f"/users/profile/{address}/points?project_name={project.slug.upper()}"
+            )
+        except Exception:
+            return None
+
+    points = await get_data_with_cache(
+        f"project-proxy-data-points:{id_or_slug}:{address}", get_proxy_data, redis
+    )
+    if not points:
+        return NotFoundError("Project does not exist")
+
+    if not points.get("data"):
+        return {"ok": False, "error": f"No data received for points: {points}"}
+
+    return {"ok": True, "data": points.get("data")}

@@ -1,4 +1,4 @@
-from typing import Sequence, Union
+from typing import Sequence
 
 from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload, contains_eager
@@ -29,7 +29,7 @@ class LaunchpadProjectCrud(BaseCrud):
 
         return result.scalars().all()
 
-    async def find_by_id_or_slug(self, id_or_slug: Union[int, str]):
+    async def find_by_id_or_slug(self, id_or_slug: int | str):
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
@@ -39,7 +39,6 @@ class LaunchpadProjectCrud(BaseCrud):
             .join(LaunchpadProject.proxy_link)
             .where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         )
+        query = await self.session.scalars(st)
 
-        query = await self.session.execute(st)
-
-        return query.scalars().first()
+        return query.first()

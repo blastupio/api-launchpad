@@ -1,5 +1,7 @@
 from fastapi import APIRouter, Path, Query
+from web3 import Web3
 
+from app.consts import NATIVE_TOKEN_ADDRESS
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -22,8 +24,17 @@ async def get_token_price(
         example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2,0x0000000000000000000000000000000000000000",  # noqa
     ),
 ) -> TokenPriceResponse:
-    list_tokens_addresses = token_addresses.split(",")
-    prices = await get_tokens_price(chain_id=chain_id, token_addresses=list_tokens_addresses)
+    _list_tokens_addresses = token_addresses.split(",")
+    filtered_list_tokens_addresses = [
+        address
+        for address in _list_tokens_addresses
+        if Web3.is_address(address) or address == NATIVE_TOKEN_ADDRESS
+    ]
+    if not filtered_list_tokens_addresses:
+        return TokenPriceResponse(price={})
+    prices = await get_tokens_price(
+        chain_id=chain_id, token_addresses=filtered_list_tokens_addresses
+    )
     return TokenPriceResponse(price=prices)
 
 

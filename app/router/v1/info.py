@@ -9,19 +9,22 @@ from app.schema import (
     TokenPriceResponse,
     Any2AnyPriceResponse,
 )
+from app.services.prices import get_tokens_price
 
 router = APIRouter(prefix="/info", tags=["info"])
 
 
 @router.get("/token-price", response_model=TokenPriceResponse)
 async def get_token_price(
-    chain_id: int = Query(..., example=1),
+    chain_id: ChainId = Query(..., example=1),
     token_addresses: str = Query(
         description="comma-separated list of token addresses",
         example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2,0x0000000000000000000000000000000000000000",  # noqa
     ),
 ) -> TokenPriceResponse:
-    return {"price": {Address("0x0000000000000000000000000000000000000000"): 123.12}}
+    list_tokens_addresses = token_addresses.split(",")
+    prices = await get_tokens_price(chain_id=chain_id, token_addresses=list_tokens_addresses)
+    return TokenPriceResponse(price=prices)
 
 
 @router.post("/any2any-price", response_model=Any2AnyPriceResponse)

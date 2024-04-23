@@ -1,11 +1,18 @@
 import asyncio
+import json
+from collections import defaultdict
+from datetime import timedelta
 from typing import Any
 
 import httpx
 
 from app.base import logger
+from app.dependencies import get_redis
 from app.schema import ChainId, Address
-from app.services.coingecko.consts import from_platform_to_chain_id
+from app.services.coingecko.consts import (
+    from_platform_to_chain_id,
+    chain_id_to_native_coin_coingecko_id,
+)
 from app.services.coingecko.types import ListCoin, CoinGeckoCoinId
 
 
@@ -52,7 +59,7 @@ class CoingeckoClient:
         resp = await self.get(url, params=params)
         return resp
 
-    async def get_coingecko_price(self, token_ids: list[str]) -> dict[str, dict[str, float]]:
+    async def get_coingecko_price(self, token_ids: list[str]) -> dict[str, dict[str, float]] | None:
         url = f"{self.__host}/simple/price/"
         logger.info(f"Getting coingecko price for {token_ids}")
         params = {"ids": ",".join(token_ids), "vs_currencies": "usd"}
@@ -88,31 +95,43 @@ class CoingeckoClient:
             81457: {"0x963eec23618bbc8e1766661d5f263f18094ae4d5": "cybro"}
         }
         """
-        res: dict[ChainId, dict[Address, CoinGeckoCoinId]] = {}
+        redis = await get_redis()
+        if _value := await redis.get("coingecko_id_by_chain_id_and_address"):
+            # json.loads returns dicts with string chain_ids, so we need to convert them to int
+            return {int(key): value for key, value in json.loads(_value).items()}
+
+        res: dict[ChainId, dict[Address, CoinGeckoCoinId]] = defaultdict(dict)
         list_of_coins: list[ListCoin] = await self.get_coingecko_list_of_coins()
         for coin in list_of_coins:
             for platform_name, token_address_on_platform in coin["platforms"].items():
-                chain_id = from_platform_to_chain_id.get(platform_name)
-                if chain_id:
-                    if chain_id in res:
-                        res[chain_id][Address(token_address_on_platform)] = CoinGeckoCoinId(
-                            coin["id"]
-                        )
-                    else:
-                        res[chain_id] = {
-                            Address(token_address_on_platform): CoinGeckoCoinId(coin["id"])
-                        }
+                if chain_id := from_platform_to_chain_id.get(platform_name):
+                    res[chain_id][Address(token_address_on_platform)] = CoinGeckoCoinId(coin["id"])
+
+        for chain_id, native_coin_id in chain_id_to_native_coin_coingecko_id.items():
+            res[chain_id][Address(native_coin_id)] = CoinGeckoCoinId(native_coin_id)
+
+        await redis.setex(
+            "coingecko_id_by_chain_id_and_address", timedelta(minutes=30), json.dumps(res)
+        )
         return res
 
     @staticmethod
-    def get_token_address_by_coingecko_id(
+    async def get_token_address_by_coingecko_id(
         chain_id: ChainId,
         coingecko_id_by_chain_id_and_address: dict[ChainId, dict[Address, CoinGeckoCoinId]],
     ) -> dict[CoinGeckoCoinId, Address]:
+        redis = await get_redis()
+        if _value := await redis.get(f"token_address_by_coingecko_id_{chain_id}"):
+            return json.loads(_value)
+
         res = {}
         for token_address, coingecko_id in coingecko_id_by_chain_id_and_address[chain_id].items():
             res[coingecko_id] = token_address
+
+        await redis.setex(
+            f"token_address_by_coingecko_id_{chain_id}", timedelta(minutes=30), json.dumps(res)
+        )
         return res
 
 
-coingecko_client = CoingeckoClient()
+coingecko_cli = CoingeckoClient()

@@ -9,9 +9,9 @@ from_platform_to_chain_id = {
     CoinGeckoPlatform("polygon-pos"): ChainId(137),
 }
 
-chain_id_to_native_coin_coingecko_id: dict[int, str] = {
-    1: "ethereum",
-    56: "binancecoin",
-    137: "matic-network",
-    81457: "blast-old",
+chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
+    ChainId(1): "ethereum",
+    ChainId(56): "binancecoin",
+    ChainId(137): "matic-network",
+    ChainId(81457): "blast-old",
 }

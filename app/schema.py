@@ -13,9 +13,11 @@ Address = NewType("Address", str)
 
 ChainId = NewType("ChainId", int)
 
+RatesForChainAndToken = NewType("RatesForChainAndToken", dict[ChainId, dict[Address, float | None]])
+
 
 class TokenInChain(BaseModel):
-    address: Address
+    address: Address = Field(pattern=r"0x[0-9a-fA-F]{40}")
     chain_id: ChainId
 
 
@@ -329,4 +331,4 @@ class TokenPriceResponse(BaseModel):
 
 
 class Any2AnyPriceResponse(BaseModel):
-    rate: dict[ChainId, dict[Address, float]]
+    rate: RatesForChainAndToken

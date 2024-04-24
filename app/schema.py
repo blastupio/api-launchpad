@@ -1,13 +1,11 @@
+from datetime import datetime
+from decimal import Decimal
+from enum import Enum
+from typing import Dict, List, Optional, Literal, Any, NewType
+
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
-from typing import Dict, List, Optional, Literal, Any, NewType
-from enum import Enum
-from decimal import Decimal
-
-from datetime import datetime
-
 from starlette.responses import JSONResponse
-
 
 Address = NewType("Address", str)
 
@@ -332,3 +330,13 @@ class TokenPriceResponse(BaseModel):
 
 class Any2AnyPriceResponse(BaseModel):
     rate: RatesForChainAndToken
+
+
+class GetPointsData(BaseModel):
+    points: int
+    extra_points: int | None = None
+
+
+class GetPointsResponse(BaseModel):
+    ok: bool
+    data: GetPointsData

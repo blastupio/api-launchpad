@@ -1,8 +1,10 @@
 import asyncio
+from http.client import NOT_FOUND
 from uuid import UUID
 
 import httpx
 from fastapi import APIRouter, Request, Path, Body
+from httpx import Response
 
 from app.base import logger
 from app.dependencies import LaunchpadProjectCrudDep, RedisDep
@@ -16,6 +18,7 @@ from app.schema import (
     OnrampOrderResponse,
     NotFoundError,
     GetPointsResponse,
+    InternalServerError,
 )
 from app.utils import get_data_with_cache
 
@@ -23,9 +26,13 @@ router = APIRouter(prefix="/proxy", tags=["proxy"])
 
 
 async def fetch_data(api_url: str) -> dict:
+    return (await fetch(api_url)).json()
+
+
+async def fetch(api_url: str) -> Response:
     async with httpx.AsyncClient(timeout=30.0) as client:
         response = await client.get(api_url)
-        return response.json()
+        return response
 
 
 def get_ip_from_request(request: Request) -> str:
@@ -178,12 +185,7 @@ async def get_onramp_order_status(
     if not project:
         return NotFoundError("Project does not exist")
 
-    base_url = project.proxy_link.base_url
-
-    async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.get(base_url + f"/onramp/order/{order_id}")
-        json_response = response.json()
-
+    json_response = await fetch_data(f"{project.proxy_link.base_url}/onramp/order/{order_id}")
     return json_response
 
 
@@ -195,26 +197,31 @@ async def get_profile_points(
     address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
 ):
     async def get_proxy_data():
-        project = await projects_crud.find_by_id_or_slug(id_or_slug)
-        if not project:
+        if (project := await projects_crud.find_by_id_or_slug(id_or_slug)) is None:
             return None
 
         base_url = project.proxy_link.base_url
+        response = await fetch(
+            f"{base_url}/users/profile/{address}/points?project_name={project.slug.upper()}"
+        )
 
-        try:
-            return await fetch_data(
-                base_url + f"/users/profile/{address}/points?project_name={project.slug.upper()}"
-            )
-        except Exception:
+        if response.is_success:
+            return response.json().get("data")
+
+        if response.status_code == NOT_FOUND:
             return None
 
-    points = await get_data_with_cache(
-        f"project-proxy-data-points:{id_or_slug}:{address}", get_proxy_data, redis
-    )
+        raise Exception(response.text)
+
+    try:
+        points = await get_data_with_cache(
+            f"project-proxy-data-points:{id_or_slug}:{address}", get_proxy_data, redis
+        )
+    except Exception as e:
+        logger.error(f"Failed get profile points: {e}")
+        return InternalServerError("Failed get profile points")
+
     if not points:
         return NotFoundError("Project does not exist")
 
-    if not points.get("data"):
-        return {"ok": False, "error": f"No data received for points: {points}"}
-
-    return {"ok": True, "data": points.get("data")}
+    return {"ok": True, "data": points}

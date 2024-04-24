@@ -319,7 +319,7 @@ class TierInfoResponse(BaseModel):
 
 class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
-    balance: dict[str, Any] = Field(default_factory=dict)
+    blastup_balance: dict[ChainId, int] | None = None
 
 
 class TokenPriceResponse(BaseModel):

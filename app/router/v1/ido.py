@@ -22,7 +22,7 @@ async def sign_user_balance(
     chain_id = 81457 if crypto.environment == "mainnet" else 168587773
 
     _balances = await asyncio.gather(
-        *[crypto.get_token_balance(chain, user_address) for chain in chains]
+        *[crypto.get_blastup_token_balance(chain, user_address) for chain in chains]
     )
     balance = sum(balance for balance in _balances if isinstance(balance, int))
 

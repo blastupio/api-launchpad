@@ -13,5 +13,7 @@ chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
     ChainId(1): "ethereum",
     ChainId(56): "binancecoin",
     ChainId(137): "matic-network",
-    ChainId(81457): "blast-old",
+    ChainId(81457): "ethereum",
+    ChainId(168587773): "ethereum",
+    ChainId(11155111): "ethereum",
 }

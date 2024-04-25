@@ -1,14 +1,13 @@
 from typing import Annotated
 
 from fastapi import Depends
-from redis.asyncio import Redis, from_url
+from redis.asyncio import Redis
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 
 from app.env import (
-    REDIS_URL,
     MUNZEN_API_KEY,
     MUNZEN_API_SECRET,
     MUNZEN_ENVIRONMENT,
@@ -31,6 +30,7 @@ from app.env import (
     USDT_CONTRACT_ADDR_BLAST,
     USDT_CONTRACT_ADDR_BSC,
 )
+from app.redis import redis_cli
 from app.services import Lock, Crypto as CryptoLaunchpad
 from onramp.services import Munzen, Crypto, AmountConverter
 
@@ -64,8 +64,8 @@ async def get_launchpad_crypto() -> Crypto:
 CryptoDep = Annotated[Crypto, Depends(get_launchpad_crypto)]
 
 
-async def get_redis() -> Redis:
-    return from_url(REDIS_URL)
+def get_redis() -> Redis:
+    return redis_cli
 
 
 RedisDep = Annotated[Redis, Depends(get_redis)]

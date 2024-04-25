@@ -18,12 +18,11 @@ TOKEN_PRICE_TTL_MINUTES = 1
 
 
 class TokenPriceCache:
-    def __init__(self) -> None:
-        self._redis_cli: Redis | None = None
+    def __init__(self, redis_cli: Redis) -> None:
+        self._redis_cli = redis_cli
 
-    async def _get_redis(self):
-        if self._redis_cli is None:
-            self._redis_cli = await get_redis()
+    @property
+    def redis(self):
         return self._redis_cli
 
     def __get_cache_key(self, chain_id: ChainId, address: Address) -> str:
@@ -34,14 +33,13 @@ class TokenPriceCache:
         return ChainId(int(chain_id)), Address(address)
 
     async def set(self, prices: dict[ChainId, dict[Address, float | None]]) -> None:  # noqa
-        redis_cli = await self._get_redis()
         tasks = []
         for chain_id, addr_to_price in prices.items():
             for address, price in addr_to_price.items():
                 cache_key = self.__get_cache_key(chain_id, address)
                 if price:
                     tasks.append(
-                        redis_cli.set(
+                        self.redis.set(
                             cache_key, price, ex=timedelta(minutes=TOKEN_PRICE_TTL_MINUTES)
                         )
                     )
@@ -50,13 +48,12 @@ class TokenPriceCache:
     async def get(
         self, addresses_by_chain_id: dict[ChainId, list[str]]
     ) -> dict[ChainId, dict[Address, float]]:
-        redis_cli = await self._get_redis()
         keys = [
             self.__get_cache_key(chain_id, Address(address))
             for chain_id, addr_list in addresses_by_chain_id.items()
             for address in addr_list
         ]
-        if not (data := await redis_cli.mget(keys)):
+        if not (data := await self.redis.mget(keys)):
             return {}
 
         res: dict[ChainId, dict[Address, float]] = {}
@@ -152,4 +149,4 @@ async def get_any2any_prices(
     return rates
 
 
-token_price_cache = TokenPriceCache()
+token_price_cache = TokenPriceCache(redis_cli=get_redis())

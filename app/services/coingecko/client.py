@@ -5,6 +5,7 @@ from datetime import timedelta
 from typing import Any
 
 import httpx
+from redis.asyncio import Redis
 
 from app.base import logger
 from app.dependencies import get_redis
@@ -18,7 +19,8 @@ from app.services.coingecko.types import ListCoin, CoinGeckoCoinId
 
 
 class CoingeckoClient:
-    def __init__(self, api_key: str | None = None):
+    def __init__(self, redis_cli: Redis, api_key: str | None = None):
+        self.__redis = redis_cli
         self.__api_key = api_key
         self.__DEFAULT_PARAMS = {"x_cg_pro_api_key": self.__api_key} if self.__api_key else {}
         self.__host = (
@@ -26,6 +28,10 @@ class CoingeckoClient:
             if self.__api_key
             else "https://api.coingecko.com/api/v3"
         )
+
+    @property
+    def redis(self) -> Redis:
+        return self.__redis
 
     async def get(
         self,
@@ -96,8 +102,7 @@ class CoingeckoClient:
             81457: {"0x963eec23618bbc8e1766661d5f263f18094ae4d5": "cybro"}
         }
         """
-        redis = await get_redis()
-        if _value := await redis.get("coingecko_id_by_chain_id_and_address"):
+        if _value := await self.redis.get("coingecko_id_by_chain_id_and_address"):
             # json.loads returns dicts with string chain_ids, so we need to convert them to int
             return {int(key): value for key, value in json.loads(_value).items()}
 
@@ -111,28 +116,29 @@ class CoingeckoClient:
         for chain_id, native_coin_id in chain_id_to_native_coin_coingecko_id.items():
             res[chain_id][Address(native_coin_id)] = CoinGeckoCoinId(native_coin_id)
 
-        await redis.setex(
+        await self.redis.setex(
             "coingecko_id_by_chain_id_and_address", timedelta(minutes=30), json.dumps(res)
         )
         return res
 
-    @staticmethod
     async def get_token_address_by_coingecko_id(
+        self,
         chain_id: ChainId,
         coingecko_id_by_chain_id_and_address: dict[ChainId, dict[Address, CoinGeckoCoinId]],
     ) -> dict[CoinGeckoCoinId, Address]:
-        redis = await get_redis()
-        if _value := await redis.get(f"token_address_by_coingecko_id_{chain_id}"):
+        if _value := await self.redis.get(f"token_address_by_coingecko_id_{chain_id}"):
             return json.loads(_value)
 
         res = {}
-        for token_address, coingecko_id in coingecko_id_by_chain_id_and_address[chain_id].items():
+        for token_address, coingecko_id in coingecko_id_by_chain_id_and_address.get(
+            chain_id, {}
+        ).items():
             res[coingecko_id] = token_address
 
-        await redis.setex(
+        await self.redis.setex(
             f"token_address_by_coingecko_id_{chain_id}", timedelta(minutes=30), json.dumps(res)
         )
         return res
 
 
-coingecko_cli = CoingeckoClient(api_key=COINGECKO_API_KEY)
+coingecko_cli = CoingeckoClient(redis_cli=get_redis(), api_key=COINGECKO_API_KEY)

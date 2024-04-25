@@ -30,7 +30,7 @@ from app.services.prices import get_tokens_price, get_any2any_prices
 router = APIRouter(prefix="/info", tags=["info"])
 
 
-@router.get("/token-price", response_model=TokenPriceResponse)
+@router.get("/token-price", response_model=TokenPriceResponse, description="Get token price in USD")
 async def get_token_price(
     chain_id: ChainId = Query(..., example=1),
     token_addresses: str = Query(

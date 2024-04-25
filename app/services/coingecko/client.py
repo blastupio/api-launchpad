@@ -14,6 +14,7 @@ from app.schema import ChainId, Address
 from app.services.coingecko.consts import (
     from_platform_to_chain_id,
     chain_id_to_native_coin_coingecko_id,
+    chain_id_to_testnet_coin_coingecko_id,
 )
 from app.services.coingecko.types import ListCoin, CoinGeckoCoinId
 
@@ -60,7 +61,7 @@ class CoingeckoClient:
                 logger.info(f"Bad {status=} for {url} with {params=} and {headers=}: {resp.text}")
                 await asyncio.sleep(time_sleep)
 
-    async def get_coingecko_list_of_coins(self) -> list[ListCoin]:
+    async def get_coingecko_list_of_coins(self) -> list[ListCoin] | None:
         url = f"{self.__host}/coins/list"
         params = {"include_platform": True}
         resp = await self.get(url, params=params)
@@ -107,14 +108,23 @@ class CoingeckoClient:
             return {int(key): value for key, value in json.loads(_value).items()}
 
         res: dict[ChainId, dict[Address, CoinGeckoCoinId]] = defaultdict(dict)
-        list_of_coins: list[ListCoin] = await self.get_coingecko_list_of_coins()
-        for coin in list_of_coins:
+        list_of_coins: list[ListCoin] | None = await self.get_coingecko_list_of_coins()
+        for coin in list_of_coins or []:
             for platform_name, token_address_on_platform in coin["platforms"].items():
                 if chain_id := from_platform_to_chain_id.get(platform_name):
                     res[chain_id][Address(token_address_on_platform)] = CoinGeckoCoinId(coin["id"])
 
+        # support for native coins
         for chain_id, native_coin_id in chain_id_to_native_coin_coingecko_id.items():
             res[chain_id][Address(native_coin_id)] = CoinGeckoCoinId(native_coin_id)
+
+        # support for tokens in testnets
+        for (
+            chain_id,
+            token_address_to_coingecko_id,
+        ) in chain_id_to_testnet_coin_coingecko_id.items():
+            for address, coingecko_id in token_address_to_coingecko_id.items():
+                res[chain_id][Address(address)] = CoinGeckoCoinId(coingecko_id)
 
         await self.redis.setex(
             "coingecko_id_by_chain_id_and_address", timedelta(minutes=30), json.dumps(res)

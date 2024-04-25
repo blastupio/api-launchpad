@@ -17,3 +17,10 @@ chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
     ChainId(168587773): "ethereum",
     ChainId(11155111): "ethereum",
 }
+
+chain_id_to_testnet_coin_coingecko_id: dict[ChainId, dict[str, str]] = {
+    ChainId(168587773): {
+        "0x4200000000000000000000000000000000000022": "usdb",
+        "0x4200000000000000000000000000000000000023": "weth",
+    }
+}

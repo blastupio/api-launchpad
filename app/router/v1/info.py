@@ -10,8 +10,9 @@ from app.schema import (
     TokenInChain,
     TokenPriceResponse,
     Any2AnyPriceResponse,
+    RatesForChainAndToken,
 )
-from app.services.prices import get_tokens_price
+from app.services.prices import get_tokens_price, get_any2any_prices
 
 router = APIRouter(prefix="/info", tags=["info"])
 
@@ -42,13 +43,10 @@ async def get_token_price(
 async def get_any2any_price_rate(
     from_token: TokenInChain, to_tokens: list[TokenInChain]
 ) -> Any2AnyPriceResponse:
-    return {
-        "rate": {
-            1: {
-                "0x0000000000000000000000000000000000000000": 123.12,
-            }
-        }
-    }
+    if not to_tokens:
+        return Any2AnyPriceResponse(rate=RatesForChainAndToken({}))
+    rates = await get_any2any_prices(from_token, to_tokens)
+    return Any2AnyPriceResponse(rate=rates)
 
 
 @router.get("/user/{address}", response_model=UserInfoResponse)

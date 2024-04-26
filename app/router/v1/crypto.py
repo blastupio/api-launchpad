@@ -14,6 +14,7 @@ from app.schema import (
     InternalServerError,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
+from app import chains
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
 
@@ -42,10 +43,10 @@ async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$
         return AddressBalanceResponse(
             ok=True,
             data=AddressBalanceResponseData(
-                polygon=balances_by_chain_id[137],
-                eth=balances_by_chain_id[1],
-                bsc=balances_by_chain_id[56],
-                blast=balances_by_chain_id[81457],
+                eth=balances_by_chain_id[chains.ethereum.id],
+                bsc=balances_by_chain_id[chains.bsc.id],
+                polygon=balances_by_chain_id[chains.polygon.id],
+                blast=balances_by_chain_id[chains.blast.id],
                 total=sum(balances_by_chain_id.values()),
             ),
         )

@@ -3,14 +3,15 @@ import asyncio
 from app.dependencies import get_launchpad_crypto
 from app.schema import ChainId
 from app.services.balances.redis import blastup_balance_redis
+from app import chains
 
 
 async def get_blastup_tokens_balance_for_chains(address: str) -> dict[ChainId, int]:
     _chain_to_chain_id = {
-        "eth": 1,
-        "bsc": 56,
-        "polygon": 137,
-        "blast": 81457,
+        "eth": chains.ethereum.id,
+        "bsc": chains.bsc.id,
+        "polygon": chains.polygon.id,
+        "blast": chains.blast.id,
     }
     _chain_id_to_chain = {_chain_to_chain_id[chain]: chain for chain in _chain_to_chain_id}
 

@@ -7,29 +7,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 
-from app.env import (
-    MUNZEN_API_KEY,
-    MUNZEN_API_SECRET,
-    MUNZEN_ENVIRONMENT,
-    ONRAMP_RECIPIENT_ADDR,
-    CRYPTO_API_KEY_BLAST,
-    ONRAMP_SENDER_SEED_PHRASE,
-    ETH_PRICE_FEED_ADDR,
-    CRYPTO_ENVIRONMENT,
-    CONTROLLER_SEED_PHRASE,
-    CONTRACT_ADDR_POLYGON,
-    CONTRACT_ADDR_ETH,
-    CONTRACT_ADDR_BSC,
-    USDT_CONTRACT_ADDR_POLYGON,
-    USDT_CONTRACT_ADDR_ETH,
-    CRYPTO_API_KEY_POLYGON,
-    CRYPTO_API_KEY_ETH,
-    CRYPTO_API_KEY_BSC,
-    ONRAMP_SEED_PHRASE,
-    CONTRACT_ADDR_BLAST,
-    USDT_CONTRACT_ADDR_BLAST,
-    USDT_CONTRACT_ADDR_BSC,
-)
+from app.env import settings
+
 from app.redis import redis_cli
 from app.services import Lock, Crypto as CryptoLaunchpad
 from onramp.services import Munzen, Crypto, AmountConverter
@@ -37,27 +16,27 @@ from onramp.services import Munzen, Crypto, AmountConverter
 
 async def get_launchpad_crypto() -> Crypto:
     return CryptoLaunchpad(
-        environment=CRYPTO_ENVIRONMENT,
+        environment=settings.crypto_environment,
         contracts={
-            "polygon": CONTRACT_ADDR_POLYGON,
-            "eth": CONTRACT_ADDR_ETH,
-            "bsc": CONTRACT_ADDR_BSC,
-            "blast": CONTRACT_ADDR_BLAST,
+            "polygon": settings.contract_addr_polygon,
+            "eth": settings.contract_addr_eth,
+            "bsc": settings.contract_addr_bsc,
+            "blast": settings.contract_addr_blast,
         },
         usdt_contracts={
-            "polygon": USDT_CONTRACT_ADDR_POLYGON,
-            "eth": USDT_CONTRACT_ADDR_ETH,
-            "bsc": USDT_CONTRACT_ADDR_BSC,
-            "blast": USDT_CONTRACT_ADDR_BLAST,
+            "polygon": settings.usdt_contract_addr_polygon,
+            "eth": settings.usdt_contract_addr_eth,
+            "bsc": settings.usdt_contract_addr_bsc,
+            "blast": settings.usdt_contract_addr_blast,
         },
         api_keys={
-            "polygon": CRYPTO_API_KEY_POLYGON,
-            "eth": CRYPTO_API_KEY_ETH,
-            "bsc": CRYPTO_API_KEY_BSC,
-            "blast": CRYPTO_API_KEY_BLAST,
+            "polygon": settings.crypto_api_key_polygon,
+            "eth": settings.crypto_api_key_eth,
+            "bsc": settings.crypto_api_key_bsc,
+            "blast": settings.crypto_api_key_blast,
         },
-        private_key_seed=CONTROLLER_SEED_PHRASE,
-        onramp_private_key_seed=ONRAMP_SEED_PHRASE,
+        private_key_seed=settings.controller_seed_phrase,
+        onramp_private_key_seed=settings.onramp_seed_phrase,
     )
 
 
@@ -95,11 +74,20 @@ async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRam
 
 
 async def get_munzen() -> Munzen:
-    return Munzen(MUNZEN_API_KEY, MUNZEN_API_SECRET, MUNZEN_ENVIRONMENT, ONRAMP_RECIPIENT_ADDR)
+    return Munzen(
+        settings.munzen_api_key,
+        settings.munzen_api_secret,
+        settings.munzen_environment,
+        settings.onramp_recipient_addr,
+    )
 
 
 async def get_crypto() -> Crypto:
-    return Crypto(CRYPTO_API_KEY_BLAST, ONRAMP_SENDER_SEED_PHRASE, ETH_PRICE_FEED_ADDR)
+    return Crypto(
+        settings.crypto_api_key_blast,
+        settings.onramp_sender_seed_phrase,
+        settings.eth_price_feed_addr,
+    )
 
 
 async def get_amount_converter(

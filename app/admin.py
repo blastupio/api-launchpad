@@ -14,7 +14,7 @@ from app.models import (
     ProjectLink,
 )
 
-from app.env import ADMIN_PASSWORD, ADMIN_USERNAME, TOKEN_EXPIRATION, ALGORITHM, SECRET_KEY
+from app.env import settings
 
 
 class LaunchpadProjectAdmin(ModelView, model=LaunchpadProject):
@@ -56,7 +56,7 @@ class AdminAuth(AuthenticationBackend):
         form = await request.form()
         username, password = form["username"], form["password"]
 
-        if username != ADMIN_USERNAME or password != ADMIN_PASSWORD:
+        if username != settings.admin_username or password != settings.admin_password:
             return False
 
         token = self._generate_token(username)
@@ -73,7 +73,7 @@ class AdminAuth(AuthenticationBackend):
         token = request.session.get("token")
 
         try:
-            jwt.decode(token, SECRET_KEY, algorithms=["HS256"])
+            jwt.decode(token, settings.secret_key, algorithms=["HS256"])
             return True
         except jwt.ExpiredSignatureError:
             return False
@@ -82,15 +82,14 @@ class AdminAuth(AuthenticationBackend):
 
     @staticmethod
     def _generate_token(username: str) -> str:
-        expiration_time = datetime.utcnow() + timedelta(minutes=int(TOKEN_EXPIRATION))
+        expiration_time = datetime.utcnow() + timedelta(minutes=settings.token_expiration)
         payload = {"username": username, "exp": expiration_time}
-        return jwt.encode(payload, SECRET_KEY, algorithm=ALGORITHM)
+        return jwt.encode(payload, settings.secret_key, algorithm=settings.algorithm)
 
 
-authentication_backend = AdminAuth(secret_key=SECRET_KEY)
+authentication_backend = AdminAuth(secret_key=settings.secret_key)
 
 
 def add_views(admin: Admin):
-
     for view in admin_views:
         admin.add_view(view)

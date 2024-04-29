@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Body, HTTPException, Path
 from app.base import logger
 from app.crud import OnRampCrud
 from app.dependencies import get_onramp_crud, get_munzen, get_amount_converter
-from app.env import ONRAMP_RECIPIENT_ADDR
+from app.env import settings
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
 from app.utils import validation_error
@@ -38,7 +38,7 @@ async def get_order_data(
 
     if (
         order_data.get("status") == "complete"
-        and order_data.get("toWallet", "").lower() == ONRAMP_RECIPIENT_ADDR.lower()
+        and order_data.get("toWallet", "").lower() == settings.onramp_recipient_addr.lower()
     ):
         order = await crud.get_by_id(UUID(order_data.get("merchantOrderId")))
         if order:

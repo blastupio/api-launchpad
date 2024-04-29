@@ -1,6 +1,6 @@
 import asyncio
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Query
 
 from app.dependencies import CryptoDep
 from app.env import IDO_SIGN_ACCOUNT_PRIVATE_KEY, LAUNCHPAD_CONTRACT_ADDRESS
@@ -17,6 +17,7 @@ async def sign_user_balance(
     user_address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
+    contract_address: str = Query(),
 ) -> SignUserBalanceResponse:
     chains = ("eth", "polygon", "bsc", "blast")
     chain_id = 81457 if crypto.environment == "mainnet" else 168587773
@@ -30,7 +31,7 @@ async def sign_user_balance(
         user_address=user_address,
         balance=balance,
         chain_id=chain_id,
-        launcpad_contract_address=LAUNCHPAD_CONTRACT_ADDRESS,
+        launchpad_contract_address=contract_address,
         private_key=IDO_SIGN_ACCOUNT_PRIVATE_KEY,
     )
     return {"signature": signature}

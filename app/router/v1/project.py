@@ -23,20 +23,21 @@ async def list_launchpad_projects(
     redis: RedisDep,
     status: Optional[StatusProject] = Query(None, description="Filter projects by status"),
 ):
-    projects = await projects_crud.all_with_proxy(status=status)
+    projects = await projects_crud.all(status=status)
     for project in projects:
+        if project.proxy_link:
 
-        async def get_proxy_data():
-            async with AsyncClient(timeout=30.0) as client:
-                response = await client.get(
-                    f"{project.proxy_link.base_url}/crypto/total-balance"  # noqa
-                )
-                return response.json()
+            async def get_proxy_data():
+                async with AsyncClient(timeout=30.0) as client:
+                    response = await client.get(
+                        f"{project.proxy_link.base_url}/crypto/total-balance"  # noqa
+                    )
+                    return response.json()
 
-        total_balance = await get_data_with_cache(
-            f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
-        )
-        project.raised = total_balance.get("data", {}).get("usd", "0")
+            total_balance = await get_data_with_cache(
+                f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
+            )
+            project.raised = total_balance.get("data", {}).get("usd", "0")
 
     return {"ok": True, "data": {"projects": projects}}
 
@@ -50,17 +51,18 @@ async def retrieve_launchpad_project(
         if not project:
             return NotFoundError("Project does not exist")
 
-        base_url = project.proxy_link.base_url
+        if project.proxy_link:
+            base_url = project.proxy_link.base_url
 
-        async def get_proxy_data():
-            async with AsyncClient(timeout=30.0) as client:
-                response = await client.get(f"{base_url}/crypto/total-balance")
-                return response.json()
+            async def get_proxy_data():
+                async with AsyncClient(timeout=30.0) as client:
+                    response = await client.get(f"{base_url}/crypto/total-balance")
+                    return response.json()
 
-        total_balance = await get_data_with_cache(
-            f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
-        )
-        project.raised = total_balance.get("data", {}).get("usd")
+            total_balance = await get_data_with_cache(
+                f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
+            )
+            project.raised = total_balance.get("data", {}).get("usd")
     except Exception:
         return InternalServerError("Failed to get proxy data")
 

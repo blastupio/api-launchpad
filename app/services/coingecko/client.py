@@ -9,7 +9,7 @@ from redis.asyncio import Redis
 
 from app.base import logger
 from app.dependencies import get_redis
-from app.env import COINGECKO_API_KEY
+from app.env import settings
 from app.schema import ChainId, Address
 from app.services.coingecko.consts import (
     from_platform_to_chain_id,
@@ -151,4 +151,4 @@ class CoingeckoClient:
         return res
 
 
-coingecko_cli = CoingeckoClient(redis_cli=get_redis(), api_key=COINGECKO_API_KEY)
+coingecko_cli = CoingeckoClient(redis_cli=get_redis(), api_key=settings.coingecko_api_key)

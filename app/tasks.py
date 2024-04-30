@@ -5,10 +5,10 @@ from celery.exceptions import Retry
 
 from app.base import logger
 from app.common import run_command_and_get_result
-from app.env import CELERY_BROKER, CELERY_RETRY_AFTER
+from app.env import settings
 from onramp.jobs import ProcessMunzenOrder
 
-app = Celery("tasks", broker=CELERY_BROKER)
+app = Celery("tasks", broker=settings.celery_broker)
 
 
 @app.task(
@@ -21,7 +21,9 @@ def process_munzen_order(entity_id: str):
 
         if result.need_retry:
             retry_after = (
-                result.retry_after if result.retry_after is not None else CELERY_RETRY_AFTER
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
             )
             process_munzen_order.apply_async(args=[entity_id], countdown=retry_after)
             return

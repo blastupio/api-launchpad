@@ -1,5 +1,5 @@
 from redis.asyncio import from_url, Redis
 
-from app.env import REDIS_URL
+from app.env import settings
 
-redis_cli: Redis = from_url(REDIS_URL)
+redis_cli: Redis = from_url(str(settings.redis_url))

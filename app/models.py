@@ -168,3 +168,10 @@ class TokenDetails(Base):
 
     project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
     project = relationship("LaunchpadProject", back_populates="token_details")
+
+
+class HistoryStake(Base):
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    type = Column(String, nullable=False)  # noqa
+    token = Column(JSON(), server_default=text("'{}'::json"))

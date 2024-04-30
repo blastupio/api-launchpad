@@ -32,7 +32,7 @@ from app.services import Lock, Crypto as CryptoLaunchpad
 from onramp.services import Munzen, Crypto, AmountConverter
 
 
-async def get_launchpad_crypto() -> Crypto:
+def get_launchpad_crypto() -> CryptoLaunchpad:
     return CryptoLaunchpad(
         environment=CRYPTO_ENVIRONMENT,
         contracts={
@@ -52,7 +52,7 @@ async def get_launchpad_crypto() -> Crypto:
     )
 
 
-CryptoDep = Annotated[Crypto, Depends(get_launchpad_crypto)]
+CryptoDep = Annotated[CryptoLaunchpad, Depends(get_launchpad_crypto)]
 
 
 def get_redis() -> Redis:

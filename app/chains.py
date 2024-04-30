@@ -26,3 +26,13 @@ blast = ChainInfo(
     id=ChainId(81457),
     name="Blast",
 )
+blast_sepolia = ChainInfo(
+    id=ChainId(168587773),
+    name="Blast Testnet",
+    is_testnet=True,
+)
+ethereum_sepolia = ChainInfo(
+    id=ChainId(11155111),
+    name="Ethereum Testnet",
+    is_testnet=True,
+)

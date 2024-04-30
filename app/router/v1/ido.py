@@ -6,6 +6,7 @@ from app.dependencies import CryptoDep
 from app.env import IDO_SIGN_ACCOUNT_PRIVATE_KEY, LAUNCHPAD_CONTRACT_ADDRESS
 from app.schema import SignUserBalanceResponse
 from app.services.ido import generate_signature
+from app import chains
 
 
 router = APIRouter(prefix="/ido", tags=["ido"])
@@ -19,11 +20,11 @@ async def sign_user_balance(
     ),
     contract_address: str = Query(),
 ) -> SignUserBalanceResponse:
-    chains = ("eth", "polygon", "bsc", "blast")
-    chain_id = 81457 if crypto.environment == "mainnet" else 168587773
+    str_chains = ("eth", "polygon", "bsc", "blast")
+    chain_id = chains.blast.id if crypto.environment == "mainnet" else chains.blast_sepolia.id
 
     _balances = await asyncio.gather(
-        *[crypto.get_token_balance(chain, user_address) for chain in chains]
+        *[crypto.get_blastup_token_balance(chain, user_address) for chain in str_chains]
     )
     balance = sum(balance for balance in _balances if isinstance(balance, int))
 

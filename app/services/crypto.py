@@ -1,3 +1,5 @@
+import asyncio
+
 from typing import Any
 
 from eth_account import Account
@@ -203,15 +205,17 @@ class Crypto:
         return await web3.eth.get_transaction_receipt(tx_hash)
 
     @catch_web3_exceptions
-    async def get_token_balance(self, network: str, address: str) -> int:
+    async def get_blastup_token_balance(self, network: str, address: str) -> int:
         if self.contracts.get(network) is None:
             return 0
 
         contract = await self._contract(network)
-        balance = int(await contract.functions.balances(Web3.to_checksum_address(address)).call())
-        for c in await self._legacy_contracts(network):
-            balance += int(await c.functions.balances(Web3.to_checksum_address(address)).call())
-
+        address = Web3.to_checksum_address(address)
+        tasks = [contract.functions.balances(address).call()] + [
+            c.functions.balances(address).call() for c in await self._legacy_contracts(network)
+        ]
+        res = await asyncio.gather(*tasks, return_exceptions=True)
+        balance = sum(int(x) for x in res if x and isinstance(x, int))
         return balance
 
     @catch_web3_exceptions
@@ -299,7 +303,8 @@ class Crypto:
             "blast": PRESALE_BLAST_ABI,
         }[network]
         web3 = await web3_node.get_web3(network)
-        return web3.eth.contract(web3.to_checksum_address(self.contracts[network]), abi=abi)
+        contract_address = web3.to_checksum_address(self.contracts[network])
+        return web3.eth.contract(contract_address, abi=abi)
 
     async def _legacy_contracts(self, network) -> list[AsyncContract]:
         if self.environment == "testnet":

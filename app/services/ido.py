@@ -4,7 +4,11 @@ from eth_account import Account
 
 
 def generate_signature(
-    user_address: str, balance: int, chain_id: int, launcpad_contract_address: str, private_key: str
+    user_address: str,
+    balance: int,
+    chain_id: int,
+    launchpad_contract_address: str,
+    private_key: str,
 ) -> str:
     user_address = (
         Web3.to_checksum_address(user_address)
@@ -14,7 +18,7 @@ def generate_signature(
 
     payload = Web3.solidity_keccak(
         ["address", "uint256", "address", "uint256"],
-        [user_address, balance, launcpad_contract_address, chain_id],
+        [user_address, balance, launchpad_contract_address, chain_id],
     )
     msg = encode_defunct(payload)
     acc = Account.from_key(private_key)

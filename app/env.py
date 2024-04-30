@@ -4,7 +4,7 @@ from pydantic_settings import BaseSettings
 
 class Settings(BaseSettings):
     app_env: str = "dev"  # todo: use enum
-    app_version: str = "unstable"  # todo: use enum
+    app_version: str = "unstable"
 
     sentry_dsn: str | None = None
     logtail_token: str | None = None
@@ -56,12 +56,6 @@ class Settings(BaseSettings):
     contract_addr_polygon: str
     contract_addr_bsc: str
     contract_addr_blast: str
-
-    admin_username: str = ""
-    admin_password: str = ""
-    secret_key: str
-    algorithm: str = "HS256"
-    token_expiration: int = 30
 
     log_level: str = "DEBUG"  # todo: use enum
 

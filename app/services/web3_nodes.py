@@ -7,21 +7,7 @@ from datetime import timedelta
 from redis.asyncio import Redis, from_url
 from web3 import AsyncWeb3, AsyncHTTPProvider, exceptions
 
-from app.env import (
-    CRYPTO_API_KEY_POLYGON,
-    CRYPTO_API_KEY_ETH,
-    CRYPTO_API_KEY_BSC,
-    CRYPTO_API_KEY_BLAST,
-    REDIS_URL,
-    FALLBACK_API_URL_ETH,
-    FALLBACK_API_URL_BSC,
-    FALLBACK_API_URL_POLYGON,
-    FALLBACK_API_URL_BLAST,
-    FALLBACK_API_KEY_ETH,
-    FALLBACK_API_KEY_POLYGON,
-    FALLBACK_API_KEY_BSC,
-    FALLBACK_API_KEY_BLAST,
-)
+from app.env import settings
 from app.schema import ChainId
 from app.base import logger
 from app import chains
@@ -72,7 +58,7 @@ class Web3NodeRedis:
     @property
     def redis(self) -> Redis:
         if not self._redis:
-            self._redis = from_url(REDIS_URL)
+            self._redis = from_url(str(settings.redis_url))
         return self._redis
 
     async def get_fallback_node_url(self, chain_id: ChainId) -> str | None:
@@ -125,22 +111,22 @@ class Web3Node:
     def __init__(self, redis: Web3NodeRedis):
         self.node_redis = redis
         self._web3_by_chain_id = {
-            chains.polygon.id: AsyncWeb3(AsyncHTTPProvider(CRYPTO_API_KEY_POLYGON)),
-            chains.ethereum.id: AsyncWeb3(AsyncHTTPProvider(CRYPTO_API_KEY_ETH)),
-            chains.bsc.id: AsyncWeb3(AsyncHTTPProvider(CRYPTO_API_KEY_BSC)),
-            chains.blast.id: AsyncWeb3(AsyncHTTPProvider(CRYPTO_API_KEY_BLAST)),
+            chains.polygon.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_polygon)),
+            chains.ethereum.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_eth)),
+            chains.bsc.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_bsc)),
+            chains.blast.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_blast)),
         }
         self._fallback_node_urls_by_chain_id = {
-            chains.polygon.id: FALLBACK_API_URL_POLYGON,
-            chains.ethereum.id: FALLBACK_API_URL_ETH,
-            chains.bsc.id: FALLBACK_API_URL_BSC,
-            chains.blast.id: FALLBACK_API_URL_BLAST,
+            chains.polygon.id: settings.fallback_api_url_polygon,
+            chains.ethereum.id: settings.fallback_api_url_eth,
+            chains.bsc.id: settings.fallback_api_url_bsc,
+            chains.blast.id: settings.fallback_api_url_blast,
         }
         self._fallback_api_key_by_chain_id = {
-            chains.polygon.id: FALLBACK_API_KEY_POLYGON,
-            chains.ethereum.id: FALLBACK_API_KEY_ETH,
-            chains.bsc.id: FALLBACK_API_KEY_BSC,
-            chains.blast.id: FALLBACK_API_KEY_BLAST,
+            chains.polygon.id: settings.fallback_api_key_polygon,
+            chains.ethereum.id: settings.fallback_api_key_eth,
+            chains.bsc.id: settings.fallback_api_key_eth,
+            chains.blast.id: settings.fallback_api_key_blast,
         }
         assert (
             self._web3_by_chain_id.keys() == self._fallback_node_urls_by_chain_id.keys()

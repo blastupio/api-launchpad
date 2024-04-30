@@ -3,7 +3,7 @@ import asyncio
 from fastapi import APIRouter, Path, Query
 
 from app.dependencies import CryptoDep
-from app.env import IDO_SIGN_ACCOUNT_PRIVATE_KEY, LAUNCHPAD_CONTRACT_ADDRESS
+from app.env import settings
 from app.schema import SignUserBalanceResponse
 from app.services.ido import generate_signature
 from app import chains
@@ -33,6 +33,6 @@ async def sign_user_balance(
         balance=balance,
         chain_id=chain_id,
         launchpad_contract_address=contract_address,
-        private_key=IDO_SIGN_ACCOUNT_PRIVATE_KEY,
+        private_key=settings.ido_sign_account_private_key,
     )
     return {"signature": signature}

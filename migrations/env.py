@@ -8,7 +8,7 @@ from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 
-from app.env import DATABASE_URL
+from app.env import settings
 from app.base import Base
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
@@ -26,7 +26,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 target_metadata = Base.metadata
-config.set_main_option("sqlalchemy.url", DATABASE_URL)
+config.set_main_option("sqlalchemy.url", str(settings.database_url))
 
 
 def do_run_migrations(connection):

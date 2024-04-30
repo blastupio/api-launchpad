@@ -1,74 +1,75 @@
-from os import getenv
+from pydantic import PostgresDsn, RedisDsn
+from pydantic_settings import BaseSettings
 
-from dotenv import load_dotenv
 
-load_dotenv()
+class Settings(BaseSettings):
+    app_env: str = "dev"  # todo: use enum
+    app_version: str = "unstable"  # todo: use enum
 
-APP_ENV = getenv("APP_ENV", "dev")
-APP_VERSION = getenv("APP_VERSION", "unstable")
+    sentry_dsn: str | None = None
+    logtail_token: str | None = None
+    allowed_origins: str = "*"
 
-SENTRY_DSN = getenv("SENTRY_DSN", None)
-LOGTAIL_TOKEN = getenv("LOGTAIL_TOKEN")
+    database_url: PostgresDsn = "postgresql+asyncpg://blastup:blastup@postgres:5432/blastup"
+    redis_url: RedisDsn = "redis://localhost:6379"
+    celery_broker: str = "redis://localhost:6379/0"
+    celery_retry_after: int = 15
 
-ALLOWED_ORIGINS = getenv("ALLOWED_ORIGINS", "*").split(",")
+    controller_seed_phrase: str
 
-DATABASE_URL = getenv("DATABASE_URL", "postgresql+asyncpg://blastup:blastup@postgres:5432/blastup")
-REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379")
-CELERY_BROKER = getenv("CELERY_BROKER", "redis://localhost:6379/0")
-CELERY_RETRY_AFTER = int(getenv("CELERY_RETRY_AFTER", "15"))
+    ido_sign_account_private_key: str
+    launchpad_contract_address: str
 
-CONTROLLER_SEED_PHRASE = getenv("CONTROLLER_SEED_PHRASE")
+    coingecko_api_key: str | None = None
 
-IDO_SIGN_ACCOUNT_PRIVATE_KEY = getenv("IDO_SIGN_ACCOUNT_PRIVATE_KEY")
-LAUNCHPAD_CONTRACT_ADDRESS = getenv("LAUNCHPAD_CONTRACT_ADDRESS")
+    eth_price_feed_addr: str
 
-COINGECKO_API_KEY = getenv("COINGECKO_API_KEY")
+    munzen_environment: str = "sandbox"  # todo: use enum
+    munzen_api_key: str = ""
+    munzen_api_secret: str = ""
 
-# ONRAMP ONLY
-ETH_PRICE_FEED_ADDR = getenv("ETH_PRICE_FEED_ADDR")
+    onramp_recipient_addr: str
+    onramp_seed_phrase: str
+    onramp_sender_addr: str | None = None
+    onramp_sender_seed_phrase: str
 
-MUNZEN_ENVIRONMENT = getenv("MUNZEN_ENVIRONMENT", "sandbox")
-MUNZEN_API_KEY = getenv("MUNZEN_API_KEY", "")
-MUNZEN_API_SECRET = getenv("MUNZEN_API_SECRET", "")
+    usdt_contract_addr_eth: str
+    usdt_contract_addr_bsc: str
+    usdt_contract_addr_polygon: str
+    usdt_contract_addr_blast: str
 
-ONRAMP_RECIPIENT_ADDR = getenv("ONRAMP_RECIPIENT_ADDR")
-ONRAMP_SEED_PHRASE = getenv("ONRAMP_SEED_PHRASE", "")
-ONRAMP_SENDER_ADDR = getenv("ONRAMP_SENDER_ADDR")
-ONRAMP_SENDER_SEED_PHRASE = getenv("ONRAMP_SENDER_SEED_PHRASE")
-# ONRAMP ONLY
+    crypto_environment: str = "testnet"  # todo: use enum
+    crypto_api_key_eth: str = ""
+    crypto_api_key_polygon: str = ""
+    crypto_api_key_bsc: str = ""
+    crypto_api_key_blast: str = ""
+    fallback_api_url_eth: str = ""
+    fallback_api_url_bsc: str = ""
+    fallback_api_url_polygon: str = ""
+    fallback_api_url_blast: str = ""
+    fallback_api_key_eth: str = ""
+    fallback_api_key_bsc: str = ""
+    fallback_api_key_polygon: str = ""
+    fallback_api_key_blast: str = ""
 
-USDT_CONTRACT_ADDR_ETH = getenv("USDT_CONTRACT_ADDR_ETH")
-USDT_CONTRACT_ADDR_BSC = getenv("USDT_CONTRACT_ADDR_BSC")
-USDT_CONTRACT_ADDR_POLYGON = getenv("USDT_CONTRACT_ADDR_POLYGON")
-USDT_CONTRACT_ADDR_BLAST = getenv("USDT_CONTRACT_ADDR_BLAST")
+    contract_addr_eth: str
+    contract_addr_polygon: str
+    contract_addr_bsc: str
+    contract_addr_blast: str
 
-CRYPTO_ENVIRONMENT = getenv("CRYPTO_ENVIRONMENT", "testnet")
-CRYPTO_API_KEY_ETH = getenv("CRYPTO_API_KEY_ETH", "")
-CRYPTO_API_KEY_POLYGON = getenv("CRYPTO_API_KEY_POLYGON", "")
-CRYPTO_API_KEY_BSC = getenv("CRYPTO_API_KEY_BSC", "")
-CRYPTO_API_KEY_BLAST = getenv("CRYPTO_API_KEY_BLAST")
-FALLBACK_API_URL_ETH = getenv("FALLBACK_API_URL_ETH")
-FALLBACK_API_URL_POLYGON = getenv("FALLBACK_APY_URL_POLYGON")
-FALLBACK_API_URL_BSC = getenv("FALLBACK_APY_URL_BSC")
-FALLBACK_API_URL_BLAST = getenv("FALLBACK_APY_URL_BSC")
-FALLBACK_API_KEY_ETH = getenv("NODIES_API_KEY_ETH")
-FALLBACK_API_KEY_POLYGON = getenv("NODIES_API_KEY_POLYGON")
-FALLBACK_API_KEY_BSC = getenv("NODIES_API_KEY_BSC")
-FALLBACK_API_KEY_BLAST = getenv("NODIES_API_KEY_BLAST")
+    admin_username: str = ""
+    admin_password: str = ""
+    secret_key: str
+    algorithm: str = "HS256"
+    token_expiration: int = 30
 
-CONTRACT_ADDR_ETH = getenv("CONTRACT_ADDR_ETH")
-CONTRACT_ADDR_POLYGON = getenv("CONTRACT_ADDR_POLYGON")
-CONTRACT_ADDR_BSC = getenv("CONTRACT_ADDR_BSC")
-CONTRACT_ADDR_BLAST = getenv("CONTRACT_ADDR_BLAST")
+    log_level: str = "DEBUG"  # todo: use enum
 
-ADMIN_USERNAME = getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = getenv("ADMIN_PASSWORD")
 
-SECRET_KEY = getenv("SECRET_KEY")
-ALGORITHM = getenv("ALGORITHM")
-TOKEN_EXPIRATION = getenv("TOKEN_EXPIRATION")
+settings = Settings(_env_file=".env")
 
-_log_level = getenv("LOG_LEVEL", "DEBUG")
+
+_log_level = settings.log_level
 if _log_level not in ("CRITICAL", "FATAL", "ERROR", "WARNING", "INFO", "DEBUG"):
     _log_level = "INFO"
 

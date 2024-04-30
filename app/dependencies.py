@@ -29,12 +29,6 @@ def get_launchpad_crypto() -> CryptoLaunchpad:
             "bsc": settings.usdt_contract_addr_bsc,
             "blast": settings.usdt_contract_addr_blast,
         },
-        api_keys={
-            "polygon": settings.crypto_api_key_polygon,
-            "eth": settings.crypto_api_key_eth,
-            "bsc": settings.crypto_api_key_bsc,
-            "blast": settings.crypto_api_key_blast,
-        },
         private_key_seed=settings.controller_seed_phrase,
         onramp_private_key_seed=settings.onramp_seed_phrase,
     )

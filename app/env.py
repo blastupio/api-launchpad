@@ -43,6 +43,14 @@ class Settings(BaseSettings):
     crypto_api_key_polygon: str = ""
     crypto_api_key_bsc: str = ""
     crypto_api_key_blast: str = ""
+    fallback_api_url_eth: str = ""
+    fallback_api_url_bsc: str = ""
+    fallback_api_url_polygon: str = ""
+    fallback_api_url_blast: str = ""
+    fallback_api_key_eth: str = ""
+    fallback_api_key_bsc: str = ""
+    fallback_api_key_polygon: str = ""
+    fallback_api_key_blast: str = ""
 
     contract_addr_eth: str
     contract_addr_polygon: str

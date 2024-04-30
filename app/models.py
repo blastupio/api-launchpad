@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import shortuuid
-from sqlalchemy import Enum
+from sqlalchemy import Enum, CheckConstraint
 from sqlalchemy import (
     String,
     DECIMAL,
@@ -21,6 +21,12 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
+
+
+class HistoryStakeType(enum.Enum):
+    UNSTAKE = "UNSTAKE"
+    STAKE = "STAKE"
+    CLAIM_REWARDS = "CLAIM_REWARDS"
 
 
 class ProjectType(enum.Enum):
@@ -171,7 +177,16 @@ class TokenDetails(Base):
 
 
 class HistoryStake(Base):
+    __tablename__ = "stake_history"
+
     id = Column(BigIntegerType, primary_key=True)  # noqa
 
-    type = Column(String, nullable=False)  # noqa
-    token = Column(JSON(), server_default=text("'{}'::json"))
+    type = Column(Enum(HistoryStakeType), nullable=False)  # noqa
+    token_address = Column(String, nullable=False)
+    chain_id = Column(String, nullable=False)
+    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    user_address = Column(String, nullable=False, index=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (CheckConstraint(amount >= 0, name="check_positive_amount"), {})

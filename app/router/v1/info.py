@@ -3,7 +3,6 @@ from web3 import Web3
 
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
-from app.dependencies import RedisDep, CryptoDep
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -15,6 +14,7 @@ from app.schema import (
     InternalServerError,
     ErrorResponse,
 )
+from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -24,7 +24,6 @@ from app.services.tiers.consts import (
     diamond_tier,
 )
 from app.services.tiers.user_tier import get_user_tier
-from app.utils import get_data_with_cache
 from app.services.prices import get_tokens_price, get_any2any_prices
 
 router = APIRouter(prefix="/info", tags=["info"])
@@ -64,45 +63,18 @@ async def get_any2any_price_rate(
 
 @router.get("/user/{address}", response_model=UserInfoResponse | ErrorResponse)
 async def get_user_info(
-    redis: RedisDep,
-    crypto: CryptoDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
 ):
     try:
-        polygon = await get_data_with_cache(
-            f"address-balance:polygon:{address}",
-            lambda: crypto.get_token_balance("polygon", address),
-            redis,
-        )
-        eth = await get_data_with_cache(
-            f"address-balance:eth:{address}",
-            lambda: crypto.get_token_balance("eth", address),
-            redis,
-        )
-        bsc = await get_data_with_cache(
-            f"address-balance:bsc:{address}",
-            lambda: crypto.get_token_balance("bsc", address),
-            redis,
-        )
-        blast = await get_data_with_cache(
-            f"address-balance:blast:{address}",
-            lambda: crypto.get_token_balance("blast", address),
-            redis,
-        )
+        balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
         return InternalServerError("Failed to get user info")
     else:
-        blastup_balance_by_chain_id = {
-            ChainId(1): eth,
-            ChainId(56): bsc,
-            ChainId(137): polygon,
-            ChainId(81457): blast,
-        }
-        user_tier = get_user_tier(blastup_balance_by_chain_id)
-        return UserInfoResponse(tier=user_tier, blastup_balance=blastup_balance_by_chain_id)
+        user_tier = get_user_tier(balances_by_chain_id)
+        return UserInfoResponse(tier=user_tier, blastup_balance=balances_by_chain_id)
 
 
 @router.get("/tiers", response_model=TierInfoResponse)

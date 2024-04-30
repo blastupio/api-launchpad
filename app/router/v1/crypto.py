@@ -13,7 +13,8 @@ from app.schema import (
     PriceFeedResponseData,
     InternalServerError,
 )
-from app.utils import get_data_with_cache
+from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
+from app import chains
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
 
@@ -36,41 +37,19 @@ async def price_feed(redis: RedisDep, crypto: CryptoDep, token: str = Path()):
 
 
 @router.get("/{address}/balance", response_model=AddressBalanceResponse | ErrorResponse)
-async def get_address_balance(
-    redis: RedisDep, crypto: CryptoDep, address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")
-):
+async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")):
     try:
-        polygon = await get_data_with_cache(
-            f"address-balance:polygon:{address}",
-            lambda: crypto.get_token_balance("polygon", address),
-            redis,
-        )
-        eth = await get_data_with_cache(
-            f"address-balance:eth:{address}",
-            lambda: crypto.get_token_balance("eth", address),
-            redis,
-        )
-        bsc = await get_data_with_cache(
-            f"address-balance:bsc:{address}",
-            lambda: crypto.get_token_balance("bsc", address),
-            redis,
-        )
-        blast = await get_data_with_cache(
-            f"address-balance:blast:{address}",
-            lambda: crypto.get_token_balance("blast", address),
-            redis,
-        )
-
+        balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
         return AddressBalanceResponse(
             ok=True,
             data=AddressBalanceResponseData(
-                polygon=int(polygon),
-                eth=int(eth),
-                bsc=int(bsc),
-                blast=int(blast),
-                total=int(polygon) + int(eth) + int(bsc) + int(blast),
+                eth=balances_by_chain_id[chains.ethereum.id],
+                bsc=balances_by_chain_id[chains.bsc.id],
+                polygon=balances_by_chain_id[chains.polygon.id],
+                blast=balances_by_chain_id[chains.blast.id],
+                total=sum(balances_by_chain_id.values()),
             ),
         )
     except Exception as e:
-        logger.error(f"Cannot get address balance: {e}")
-        return InternalServerError("Failed to get balance data")
+        logger.error(f"Cannot get balance for {address}: {e}")
+        return InternalServerError("Failed to get user info")

@@ -1,10 +1,24 @@
 from sqlalchemy import select, func
+from sqlalchemy.dialects.postgresql import insert
 
 from app.base import BaseCrud
 from app.models import HistoryStake
+from app.schema import CreateHistoryStake
 
 
 class HistoryStakingCrud(BaseCrud):
+    async def add_history(self, params: CreateHistoryStake) -> None:
+        values = params.dict()
+        values["user_address"] = values["user_address"].lower()
+        values["token_address"] = values["token_address"].lower()
+        st = (
+            insert(HistoryStake)
+            .values(values)
+            .on_conflict_do_nothing(constraint="ux_stake_history_txn_hash")
+        )
+        await self.session.execute(st)
+        await self.session.commit()
+
     async def get_history(self, user_address: str, page: int, size: int):
         offset = (page - 1) * size
         st = (

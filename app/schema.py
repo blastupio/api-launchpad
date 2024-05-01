@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Literal, Any, NewType
+from typing import Dict, List, Optional, Literal, NewType
 
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
@@ -92,6 +92,7 @@ class LaunchpadProjectList(BaseModel):
     raise_goal_on_launchpad: Decimal | None
     total_raised: Decimal | None
     raised: str = "0"
+    contract_project_id: int | None
     registration_end_at: datetime
     start_at: datetime
     end_at: datetime
@@ -153,7 +154,7 @@ class LaunchpadProject(LaunchpadProjectList):
     updated_at: datetime | None
 
     profile_images: List[FileModel]
-    token_details: TokenDetailsData
+    token_details: TokenDetailsData | None
     token_address: str | None
 
     class Config:

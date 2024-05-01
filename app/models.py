@@ -187,6 +187,9 @@ class HistoryStake(Base):
     amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
     user_address = Column(String, nullable=False, index=True)
 
+    txn_hash = Column(String, unique=True, nullable=True)
+    block_number = Column(BigIntegerType, nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (CheckConstraint(amount >= 0, name="check_positive_amount"), {})

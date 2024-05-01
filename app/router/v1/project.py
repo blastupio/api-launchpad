@@ -68,4 +68,4 @@ async def retrieve_launchpad_project(
                 project.raised = total_balance.get("data", {}).get("usd")
     except Exception:
         return InternalServerError("Failed to get proxy data")
-    return {"ok": True, "data": {"project": LaunchpadProject.parse_obj(project)}}
+    return {"ok": True, "data": {"project": project}}

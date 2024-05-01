@@ -11,6 +11,7 @@ from app.schema import (
     ErrorResponse,
     NotFoundError,
     InternalServerError,
+    LaunchpadProject,
 )
 from app.utils import get_data_with_cache
 
@@ -37,7 +38,8 @@ async def list_launchpad_projects(
             total_balance = await get_data_with_cache(
                 f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
             )
-            project.raised = total_balance.get("data", {}).get("usd", "0")
+            if total_balance:
+                project.raised = total_balance.get("data", {}).get("usd", "0")
 
     return {"ok": True, "data": {"projects": projects}}
 
@@ -62,8 +64,8 @@ async def retrieve_launchpad_project(
             total_balance = await get_data_with_cache(
                 f"projects-list-raised-data:{project.slug}", get_proxy_data, redis
             )
-            project.raised = total_balance.get("data", {}).get("usd")
+            if total_balance:
+                project.raised = total_balance.get("data", {}).get("usd")
     except Exception:
         return InternalServerError("Failed to get proxy data")
-
-    return {"ok": True, "data": {"project": project}}
+    return {"ok": True, "data": {"project": LaunchpadProject.parse_obj(project)}}

@@ -68,6 +68,8 @@ class LaunchpadProject(Base):
     token_sale_details = Column(Text(), nullable=True)
     token_address = Column(String, nullable=True)
 
+    contract_project_id = Column(BigIntegerType, nullable=True)
+
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)
     total_raised = Column(DECIMAL, default=Decimal("0"), nullable=True)

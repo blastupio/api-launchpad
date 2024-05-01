@@ -57,6 +57,8 @@ class Settings(BaseSettings):
     contract_addr_bsc: str
     contract_addr_blast: str
 
+    yield_staking_contract_addr: str
+
     log_level: str = "DEBUG"  # todo: use enum
 
 

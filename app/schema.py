@@ -7,6 +7,8 @@ import numpy as np
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
+from app.models import HistoryStakeType
+
 Address = NewType("Address", str)
 
 ChainId = NewType("ChainId", int)
@@ -340,3 +342,13 @@ class GetPointsData(BaseModel):
 class GetPointsResponse(BaseModel):
     ok: bool
     data: GetPointsData
+
+
+class GetHistoryStake(BaseModel):
+    id: int  # noqa
+    type: HistoryStakeType  # noqa
+    token_address: str
+    amount: int
+    chain_id: int
+    user_address: str
+    created_at: datetime

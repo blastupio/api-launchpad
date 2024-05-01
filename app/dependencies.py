@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
+from app.crud.history_staking import HistoryStakingCrud
 
 from app.env import settings
 
@@ -59,6 +60,14 @@ async def get_launchpad_projects_crud(
 
     return LaunchpadProjectCrud(session)
 
+
+async def get_staking_history_crud(
+    session: AsyncSession = Depends(get_session),
+) -> HistoryStakingCrud:
+    return HistoryStakingCrud(session)
+
+
+HistoryStakingCrudDep = Annotated[HistoryStakingCrud, Depends(get_staking_history_crud)]
 
 LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_projects_crud)]
 

@@ -21,6 +21,7 @@ greenlet = "^3.0.2"
 shortuuid = "^1.0.13"
 itsdangerous = "^2.1.2"
 numpy = "^1.26.4"
+fastapi-pagination = "^0.12.24"
 pydantic-settings = "^2.2.1"
 redis = {version = "^5.0.4", extras = ["hiredis"]}
 

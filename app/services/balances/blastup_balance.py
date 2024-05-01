@@ -15,7 +15,9 @@ async def get_blastup_tokens_balance_for_chains(address: str) -> dict[ChainId, i
     }
     _chain_id_to_chain = {_chain_to_chain_id[chain]: chain for chain in _chain_to_chain_id}
 
-    balance_in_cache = await blastup_balance_redis.get(chain_ids=_chain_to_chain_id.values())
+    balance_in_cache = await blastup_balance_redis.get(
+        address=address, chain_ids=_chain_to_chain_id.values()
+    )
     if len(balance_in_cache) == len(_chain_to_chain_id):
         # balances for all chains are in cache
         return balance_in_cache
@@ -32,5 +34,5 @@ async def get_blastup_tokens_balance_for_chains(address: str) -> dict[ChainId, i
     res = dict(zip(chain_ids_via_blockchain, balances))
     res.update(balance_in_cache)
     if res:
-        await blastup_balance_redis.set(res)
+        await blastup_balance_redis.set(address, res)
     return res

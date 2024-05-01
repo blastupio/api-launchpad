@@ -351,5 +351,17 @@ class GetHistoryStake(BaseModel):
     token_address: str
     amount: int
     chain_id: int
+    txn_hash: str | None
+    block_number: int | None
     user_address: str
     created_at: datetime
+
+
+class CreateHistoryStake(BaseModel):
+    type: HistoryStakeType  # noqa
+    token_address: str
+    amount: int
+    chain_id: str
+    txn_hash: str
+    block_number: int
+    user_address: str

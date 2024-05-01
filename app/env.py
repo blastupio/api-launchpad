@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     logtail_token: str | None = None
     allowed_origins: str = "*"
 
-    database_url: PostgresDsn = "postgresql+asyncpg://blastup:blastup@postgres:5432/blastup"
+    database_url: PostgresDsn = "postgresql+asyncpg://launchpad:launchpad@localhost:5432/launchpad"
     redis_url: RedisDsn = "redis://localhost:6379"
     celery_broker: str = "redis://localhost:6379/0"
     celery_retry_after: int = 15
@@ -56,6 +56,8 @@ class Settings(BaseSettings):
     contract_addr_polygon: str
     contract_addr_bsc: str
     contract_addr_blast: str
+
+    yield_staking_contract_addr: str
 
     log_level: str = "DEBUG"  # todo: use enum
 

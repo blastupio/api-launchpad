@@ -70,7 +70,7 @@ class CoingeckoClient:
     async def get_coingecko_price(self, token_ids: list[str]) -> dict[str, dict[str, float]] | None:
         url = f"{self.__host}/simple/price/"
         logger.info(f"Getting coingecko price for {token_ids}")
-        params = {"ids": ",".join(token_ids), "vs_currencies": "usd"}
+        params = {"ids": ",".join(set(token_ids)), "vs_currencies": "usd"}
         resp = await self.get(url, params=params)
         return resp
 

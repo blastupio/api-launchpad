@@ -21,7 +21,7 @@ chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
 
 chain_id_to_testnet_coin_coingecko_id: dict[ChainId, dict[str, str]] = {
     ChainId(chains.blast_sepolia.id): {
-        "0x4200000000000000000000000000000000000022": "usdb",
-        "0x4200000000000000000000000000000000000023": "weth",
+        "0x3470769fba0aa949ecdaf83cad069fa2dc677389": "weth",
+        "0x66ed1eeb6cef5d4ace858890704af9c339266276": "usdb",
     }
 }

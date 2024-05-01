@@ -137,15 +137,15 @@ async def get_any2any_prices(
 
     rates: RatesForChainAndToken = defaultdict(dict)
 
-    from_price = prices_agg[from_token.chain_id].get(from_token.address)
+    from_price = prices_agg[from_token.chain_id].get(from_token.address.lower())
     if not from_price:
         return rates
     for to_token in to_tokens:
-        to_price = prices_agg.get(to_token.chain_id, {}).get(to_token.address)
+        to_price = prices_agg.get(to_token.chain_id, {}).get(to_token.address.lower())
         if not to_price:
-            rates[to_token.chain_id][to_token.address] = None
+            rates[to_token.chain_id][to_token.address.lower()] = None
             continue
-        rates[to_token.chain_id][to_token.address] = from_price / to_price
+        rates[to_token.chain_id][to_token.address.lower()] = from_price / to_price
     return rates
 
 

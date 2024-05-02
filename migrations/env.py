@@ -30,7 +30,7 @@ config.set_main_option("sqlalchemy.url", str(settings.database_url))
 
 
 def do_run_migrations(connection):
-    context.configure(connection=connection, target_metadata=target_metadata)
+    context.configure(connection=connection, target_metadata=target_metadata, compare_type=True)
 
     with context.begin_transaction():
         context.run_migrations()

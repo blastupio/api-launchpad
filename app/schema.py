@@ -349,7 +349,7 @@ class GetHistoryStake(BaseModel):
     id: int  # noqa
     type: HistoryStakeType  # noqa
     token_address: str
-    amount: int
+    amount: str
     chain_id: int
     txn_hash: str | None
     block_number: int | None
@@ -360,7 +360,7 @@ class GetHistoryStake(BaseModel):
 class CreateHistoryStake(BaseModel):
     type: HistoryStakeType  # noqa
     token_address: str
-    amount: int
+    amount: str
     chain_id: str
     txn_hash: str
     block_number: int

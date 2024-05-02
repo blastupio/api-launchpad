@@ -53,7 +53,7 @@ class ProcessHistoryStakingEvent(Command):
                         params=CreateHistoryStake(
                             type=HistoryStakeType.STAKE,
                             token_address=event.args["stakingToken"],
-                            amount=event.args["amount"],
+                            amount=str(event.args["amount"]),
                             txn_hash=event.transactionHash.hex(),
                             block_number=event.blockNumber,
                             chain_id=str(chain_id),
@@ -69,7 +69,7 @@ class ProcessHistoryStakingEvent(Command):
                         params=CreateHistoryStake(
                             type=HistoryStakeType.CLAIM_REWARDS,
                             token_address=event.args["stakingToken"],
-                            amount=event.args["amount"],
+                            amount=str(event.args["amount"]),
                             txn_hash=event.transactionHash.hex(),
                             block_number=event.blockNumber,
                             chain_id=str(chain_id),

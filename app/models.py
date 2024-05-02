@@ -186,7 +186,7 @@ class HistoryStake(Base):
     type = Column(Enum(HistoryStakeType), nullable=False)  # noqa
     token_address = Column(String, nullable=False)
     chain_id = Column(String, nullable=False)
-    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    amount = Column(Text(), nullable=False)
     user_address = Column(String, nullable=False, index=True)
 
     txn_hash = Column(String, unique=True, nullable=True)

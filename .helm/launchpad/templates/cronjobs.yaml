@@ -1,0 +1,77 @@
+{{- if and .Values.cron_enabled .Values.cron }}
+{{- range $name, $app := .Values.cron }}
+{{- if $app.enabled }}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  labels:
+    app: {{ $name }}-cron
+  name: {{ $name }}-cron
+  namespace: {{ $.Release.Namespace }}
+spec:
+  schedule: {{ $app.schedule | quote }}
+  concurrencyPolicy: {{ $app.concurrency_policy }}
+  successfulJobsHistoryLimit: {{ $app.history_limit }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          {{- with $.Values.image.secrets }}
+          imagePullSecrets:
+            {{- toYaml . | nindent 12 }}
+          {{- end }}
+          restartPolicy: {{ $app.restart_policy }}
+          containers:
+            - name: {{ $name }}-cron-primary
+              {{- if $app.image_from_dockerhub }}
+              {{- if and $app.image_tag $app.image_name }}
+              image: "{{ $app.image_name }}:{{ $app.image_tag }}"
+              {{- else if $app.image_name }}
+              image: "{{ $app.image_name }}:{{ $.Values.image.tag }}"
+              {{- else }}
+              image: "{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
+              {{- end }}
+              {{- else }}
+              {{- if and $app.image_tag $app.image_name }}
+              image: "{{ $.Values.image.registry }}/{{ $app.image_name }}:{{ $app.image_tag }}"
+              {{- else if $app.image_name }}
+              image: "{{ $.Values.image.registry }}/{{ $app.image_name }}:{{ $.Values.image.tag }}"
+              {{- else }}
+              image: "{{ $.Values.image.registry }}/{{ $.Values.image.name }}:{{ $.Values.image.tag }}"
+              {{- end }}
+              {{- end }}
+              imagePullPolicy: {{ $.Values.image.pullPolicy }}
+              {{- if $app.command }}
+              command:
+                {{- range $app.command }}
+                - {{ . }}
+                {{- end }}
+              {{- end }}
+              {{- if $app.args }}
+              args:
+                {{- range $app.args }}
+                - {{ . }}
+                {{- end }}
+              {{- end }}
+              env:
+              {{- range $commonEnvKey, $commonEnvValue := $.Values.env }}
+                - name: "{{ $commonEnvKey }}"
+                  value: "{{ $commonEnvValue }}"
+              {{- end }}
+              {{- if $app.pass_env }}
+              {{- if or (and $.Values.config $.Values.config.data) (and $.Values.secrets $.Values.secrets.data) }}
+              envFrom:
+                {{- if and $.Values.config $.Values.config.data }}
+                - configMapRef:
+                    name: {{ $.Chart.Name }}-config
+                {{- end }}
+                {{- if and $.Values.secrets $.Values.secrets.data }}
+                - secretRef:
+                    name: {{ $.Chart.Name }}-secret
+                {{- end }}
+              {{- end }}
+              {{- end }}
+---
+{{- end }}
+{{- end}}
+{{- end }}

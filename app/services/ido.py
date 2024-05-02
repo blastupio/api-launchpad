@@ -3,22 +3,39 @@ from eth_account.messages import encode_defunct
 from eth_account import Account
 
 
-def generate_signature(
+def generate_balance_signature(
     user_address: str,
     balance: int,
     chain_id: int,
     launchpad_contract_address: str,
     private_key: str,
 ) -> str:
-    user_address = (
-        Web3.to_checksum_address(user_address)
-        if not Web3.is_checksum_address(user_address)
-        else user_address
-    )
+    user_address = Web3.to_checksum_address(user_address)
+    launchpad_contract_address = Web3.to_checksum_address(launchpad_contract_address)
 
     payload = Web3.solidity_keccak(
         ["address", "uint256", "address", "uint256"],
         [user_address, balance, launchpad_contract_address, chain_id],
+    )
+    msg = encode_defunct(payload)
+    acc = Account.from_key(private_key)
+    signature = acc.sign_message(msg).signature.hex()
+    return signature
+
+
+def generate_approved_user_signature(
+    user_address: str,
+    contract_project_id: int,
+    chain_id: int,
+    launchpad_contract_address: str,
+    private_key: str,
+) -> str:
+    user_address = Web3.to_checksum_address(user_address)
+    launchpad_contract_address = Web3.to_checksum_address(launchpad_contract_address)
+
+    payload = Web3.solidity_keccak(
+        ["address", "uint256", "address", "uint256"],
+        [user_address, contract_project_id, launchpad_contract_address, chain_id],
     )
     msg = encode_defunct(payload)
     acc = Account.from_key(private_key)

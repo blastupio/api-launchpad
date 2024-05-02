@@ -156,6 +156,7 @@ class LaunchpadProject(LaunchpadProjectList):
     profile_images: List[FileModel]
     token_details: TokenDetailsData | None
     token_address: str | None
+    approve_for_registration_is_required: bool | None
 
     class Config:
         from_attributes = True

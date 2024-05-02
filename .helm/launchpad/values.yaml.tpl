@@ -55,6 +55,20 @@ apps:
       periodSeconds: 30
       initialDelaySeconds: 30
 
+cron_enabled: true
+cron:
+  schedule_listen_staking_events:
+    enabled: true
+    schedule: 0 * * * *
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "celery call app.tasks.process_history_staking_event"
+
 env:
   APP_ENV: dev
   APP_VERSION: unstable

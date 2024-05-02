@@ -57,7 +57,7 @@ apps:
 
 cron_enabled: true
 cron:
-  schedule_listen_staking_events:
+  schedule-listen-staking-events:
     enabled: true
     schedule: 0 * * * *
     concurrency_policy: Forbid

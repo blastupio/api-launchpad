@@ -34,21 +34,23 @@ class ProcessHistoryStakingEvent(Command):
             address=web3.to_checksum_address(settings.yield_staking_contract_addr),
             abi=staking_abi,
         )
-        while True:
-            from_block = last_checked_block + 1
-            # 2500 is limit, can't set larger than that
-            to_block = min(current_block, from_block + 3000)
-            logger.info(f"Monitoring from block {from_block} to block {to_block}")
+        n_stakes, n_claim_rewards = 0, 0
+        try:
+            while True:
+                from_block = last_checked_block + 1
+                # 3000 is limit, can't set larger than that
+                to_block = min(current_block, from_block + 3000)
+                logger.info(f"Monitoring from block {from_block} to block {to_block}")
 
-            if from_block > to_block:
-                logger.info(f"No events from block {from_block} to block {to_block}")
-                break
+                if from_block > to_block:
+                    logger.info(f"No events from block {from_block} to block {to_block}")
+                    break
 
-            try:
-                events = await staking_contract.events.Staked().get_logs(
+                stake_events = await staking_contract.events.Staked().get_logs(
                     fromBlock=from_block, toBlock=to_block
                 )
-                for event in events:
+                n_stakes += len(stake_events)
+                for event in stake_events:
                     await crud.add_history(
                         params=CreateHistoryStake(
                             type=HistoryStakeType.STAKE,
@@ -61,15 +63,16 @@ class ProcessHistoryStakingEvent(Command):
                         )
                     )
 
-                events = await staking_contract.events.Withdrawn().get_logs(
+                claim_reward_events = await staking_contract.events.RewardClaimed().get_logs(
                     fromBlock=from_block, toBlock=to_block
                 )
-                for event in events:
+                n_claim_rewards += len(claim_reward_events)
+                for event in claim_reward_events:
                     await crud.add_history(
                         params=CreateHistoryStake(
                             type=HistoryStakeType.CLAIM_REWARDS,
                             token_address=event.args["stakingToken"],
-                            amount=str(event.args["amount"]),
+                            amount=str(event.args["amountInStakingToken"]),
                             txn_hash=event.transactionHash.hex(),
                             block_number=event.blockNumber,
                             chain_id=str(chain_id),
@@ -79,9 +82,14 @@ class ProcessHistoryStakingEvent(Command):
 
                 last_checked_block = to_block
                 await stake_history_redis.set_last_checked_block(chain_id, to_block)
-            except Exception as e:
-                logger.error(f"Error processing events: {e}")
-                return CommandResult(success=False, need_retry=True)
-            time.sleep(0.5)
+                time.sleep(0.5)
+
+            if n_stakes or n_claim_rewards:
+                # one needs to commit only ones after while cycle
+                # don't commit inside add_history
+                await crud.session.commit()
+        except Exception as e:
+            logger.error(f"Error processing events: {e}")
+            return CommandResult(success=False, need_retry=True)
 
         return CommandResult(success=True, need_retry=False)

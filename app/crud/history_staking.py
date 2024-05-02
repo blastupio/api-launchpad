@@ -17,7 +17,6 @@ class HistoryStakingCrud(BaseCrud):
             .on_conflict_do_nothing(constraint="ux_stake_history_txn_hash")
         )
         await self.session.execute(st)
-        await self.session.commit()
 
     async def get_history(self, user_address: str, page: int, size: int):
         offset = (page - 1) * size

@@ -313,6 +313,10 @@ class SignUserBalanceResponse(BaseModel):
     signature: str
 
 
+class SignApprovedUserResponse(BaseModel):
+    signature: str
+
+
 class TierInfo(BaseModel):
     order: int
     title: str

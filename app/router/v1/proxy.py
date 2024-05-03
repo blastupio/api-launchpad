@@ -8,6 +8,7 @@ from httpx import Response
 
 from app.base import logger
 from app.dependencies import LaunchpadProjectCrudDep, RedisDep
+from app.env import settings
 from app.schema import (
     ProjectDataResponse,
     ErrorResponse,
@@ -200,7 +201,7 @@ async def get_profile_points(
         if (project := await projects_crud.find_by_id_or_slug(id_or_slug)) is None:
             return None
 
-        base_url = project.proxy_link.base_url
+        base_url = settings.proxy_base_url
         response = await fetch(
             f"{base_url}/users/profile/{address}/points?project_name={project.slug.upper()}"
         )

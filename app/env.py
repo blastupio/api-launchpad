@@ -61,6 +61,8 @@ class Settings(BaseSettings):
 
     log_level: str = "DEBUG"  # todo: use enum
 
+    proxy_base_url: str
+
 
 settings = Settings(_env_file=".env")
 

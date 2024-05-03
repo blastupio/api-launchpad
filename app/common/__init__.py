@@ -24,8 +24,9 @@ class Command:
     @staticmethod
     async def _execute_command(request: Request, dependant: Dependant):
         async with AsyncExitStack() as async_exit_stack:
-            values, errors, _1, _2, _3 = await solve_dependencies(request=request, dependant=dependant,
-                                                                  async_exit_stack=async_exit_stack)
+            values, errors, _1, _2, _3 = await solve_dependencies(
+                request=request, dependant=dependant, async_exit_stack=async_exit_stack
+            )
             if errors:
                 raise ValidationError(errors, None)
             if inspect.iscoroutinefunction(dependant.call):

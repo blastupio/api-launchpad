@@ -25,7 +25,7 @@ async def get_current_rpm(redis: Redis = Depends(get_redis)):
     for i in range(10):
         minute = int(time() / 60) * 60 - (1 + i) * 60
         if await redis.exists(f"rpm:{minute}"):
-            value = (await redis.get(f"rpm:{minute}")).decode('utf-8')
+            value = (await redis.get(f"rpm:{minute}")).decode("utf-8")
 
             if not value:
                 continue
@@ -38,5 +38,5 @@ async def get_current_rpm(redis: Redis = Depends(get_redis)):
             "probes": len(stats),
             "min": min(*stats) if len(stats) > 1 else 0,
             "max": max(*stats) if len(stats) > 1 else 0,
-        }
+        },
     }

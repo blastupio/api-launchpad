@@ -1,15 +1,39 @@
+from datetime import datetime
+from decimal import Decimal
+from enum import Enum
+from typing import Dict, List, Optional, Literal, NewType
+
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
-from typing import Dict, List, Optional, Literal
-from enum import Enum
-from decimal import Decimal
+from starlette.responses import JSONResponse
 
-from datetime import datetime
+from app.models import HistoryStakeType
+
+Address = NewType("Address", str)
+
+ChainId = NewType("ChainId", int)
+
+RatesForChainAndToken = NewType("RatesForChainAndToken", dict[ChainId, dict[Address, float | None]])
+
+
+class TokenInChain(BaseModel):
+    address: Address = Field(pattern=r"0x[0-9a-fA-F]{40}")
+    chain_id: ChainId
 
 
 class Language(BaseModel):
     current: str | None = Field(default=None)
-    all: list[str] = Field(default=[])
+    all: list[str] = Field(default=[])  # noqa
+
+
+class NotFoundError(JSONResponse):
+    def __init__(self, err: str):
+        super().__init__(content={"ok": False, "error": err}, status_code=404)
+
+
+class InternalServerError(JSONResponse):
+    def __init__(self, err: str):
+        super().__init__(content={"ok": False, "error": err}, status_code=500)
 
 
 class BaseResponse(BaseModel):
@@ -18,7 +42,7 @@ class BaseResponse(BaseModel):
 
 
 class FileModel(BaseModel):
-    id: int
+    id: int  # noqa
     title: str
     url: str
 
@@ -32,6 +56,7 @@ class ProjectLinkTypeEnum(str, Enum):
     DISCORD = "discord"
     TELEGRAM = "telegram"
 
+
 class ProjectStatusEnum(str, Enum):
     ONGOING = "ongoing"
     UPCOMING = "upcoming"
@@ -41,19 +66,19 @@ class ProjectStatusEnum(str, Enum):
 class LinkModel(BaseModel):
     name: str
     url: str
-    type: ProjectLinkTypeEnum
+    type: ProjectLinkTypeEnum  # noqa
 
     class Config:
         from_attributes = True
 
 
 class ProjectTypeEnum(str, Enum):
-    DEFAULT = 'default'
+    DEFAULT = "default"
     PRIVATE_PRESALE = "private_presale"
 
 
 class LaunchpadProjectList(BaseModel):
-    id: str
+    id: str  # noqa
     slug: str
     name: str
     is_active: bool
@@ -67,6 +92,7 @@ class LaunchpadProjectList(BaseModel):
     raise_goal_on_launchpad: Decimal | None
     total_raised: Decimal | None
     raised: str = "0"
+    contract_project_id: int | None
     registration_end_at: datetime
     start_at: datetime
     end_at: datetime
@@ -77,33 +103,34 @@ class LaunchpadProjectList(BaseModel):
     class Config:
         from_attributes = True
 
-    @field_validator('raise_goal')
+    @field_validator("raise_goal")
     @classmethod
     def convert_raise_goal(cls, value):
         if value is None:
             return Decimal(0)
-        return np.format_float_positional(value, trim='0')
+        return np.format_float_positional(value, trim="0")
 
-    @field_validator('total_raise')
+    @field_validator("total_raise")
     @classmethod
     def convert_total_raise(cls, value):
         if value is None:
             return Decimal(0)
-        return np.format_float_positional(value, trim='0')
+        return np.format_float_positional(value, trim="0")
 
-    @field_validator('raise_goal_on_launchpad')
+    @field_validator("raise_goal_on_launchpad")
     @classmethod
     def convert_raise_goal_on_launchpad(cls, value):
         if value is None:
             return Decimal(0)
-        return np.format_float_positional(value, trim='0')
+        return np.format_float_positional(value, trim="0")
 
-    @field_validator('total_raised')
+    @field_validator("total_raised")
     @classmethod
     def convert_total_raised(cls, value):
         if value is None:
             return Decimal(0)
-        return np.format_float_positional(value, trim='0')
+        return np.format_float_positional(value, trim="0")
+
 
 class TokenDetailsData(BaseModel):
     icon: str
@@ -127,7 +154,9 @@ class LaunchpadProject(LaunchpadProjectList):
     updated_at: datetime | None
 
     profile_images: List[FileModel]
-    token_details: TokenDetailsData
+    token_details: TokenDetailsData | None
+    token_address: str | None
+    approve_for_registration_is_required: bool | None
 
     class Config:
         from_attributes = True
@@ -278,3 +307,66 @@ class OnrampOrderRequest(BaseModel):
     device_resolution: str | None = Field(alias="deviceResolution", default=None)
     device_type: str | None = Field(alias="deviceType", default=None)
     referrer: str | None = Field(default=None)
+
+
+class SignUserBalanceResponse(BaseModel):
+    signature: str
+
+
+class SignApprovedUserResponse(BaseModel):
+    signature: str
+
+
+class TierInfo(BaseModel):
+    order: int
+    title: str
+    blp_amount: int
+
+
+class TierInfoResponse(BaseModel):
+    tiers: list[TierInfo]
+
+
+class UserInfoResponse(BaseModel):
+    tier: TierInfo | None = None
+    blastup_balance: dict[ChainId, int] | None = None
+
+
+class TokenPriceResponse(BaseModel):
+    price: dict[Address, float]
+
+
+class Any2AnyPriceResponse(BaseModel):
+    rate: RatesForChainAndToken
+
+
+class GetPointsData(BaseModel):
+    points: int
+    extra_points: int | None = None
+
+
+class GetPointsResponse(BaseModel):
+    ok: bool
+    data: GetPointsData
+
+
+class GetHistoryStake(BaseModel):
+    id: int  # noqa
+    type: HistoryStakeType  # noqa
+    token_address: str
+    amount: str
+    chain_id: int
+    txn_hash: str | None
+    block_number: int | None
+    user_address: str
+    created_at: datetime
+
+
+class CreateHistoryStake(BaseModel):
+    type: HistoryStakeType  # noqa
+    token_address: str
+    amount: str
+    chain_id: str
+    txn_hash: str
+    block_number: int
+    user_address: str

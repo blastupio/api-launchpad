@@ -5,10 +5,11 @@ from celery.exceptions import Retry
 
 from app.base import logger
 from app.common import run_command_and_get_result
-from app.env import CELERY_BROKER, CELERY_RETRY_AFTER
+from app.env import settings
+from app.services.stake_history.jobs import ProcessHistoryStakingEvent
 from onramp.jobs import ProcessMunzenOrder
 
-app = Celery("tasks", broker=CELERY_BROKER)
+app = Celery("tasks", broker=settings.celery_broker)
 
 
 @app.task(
@@ -20,12 +21,44 @@ def process_munzen_order(entity_id: str):
         result = run_command_and_get_result(ProcessMunzenOrder(entity_id))
 
         if result.need_retry:
-            retry_after = result.retry_after if result.retry_after is not None else CELERY_RETRY_AFTER
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
             process_munzen_order.apply_async(args=[entity_id], countdown=retry_after)
             return
     except Exception as e:
         if isinstance(e, Retry):
             raise e
 
-        logger.error(f"process_munzen_order[{entity_id}] Unhandled exception: {e}, {traceback.format_exc()}")
+        logger.error(
+            f"process_munzen_order[{entity_id}] Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def process_history_staking_event():
+    try:
+        result = run_command_and_get_result(ProcessHistoryStakingEvent())
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            process_history_staking_event.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"process_history_staking_event. Unhandled exception: {e}, {traceback.format_exc()}"
+        )
         raise Retry("", exc=e)

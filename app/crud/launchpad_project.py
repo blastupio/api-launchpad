@@ -1,22 +1,23 @@
-from typing import Sequence, Union
+from typing import Sequence
 
 from sqlalchemy import select, or_
-from sqlalchemy.orm import selectinload, joinedload, contains_eager
+from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
-from app.models import LaunchpadProject, StatusProject, ProxyLink
+from app.models import LaunchpadProject, StatusProject
 
 
 class LaunchpadProjectCrud(BaseCrud):
 
-    async def all_with_proxy(self, limit: int = 100, offset: int = 0, status: StatusProject = None) -> \
-            Sequence[LaunchpadProject]:
+    async def all(  # noqa
+        self, limit: int = 100, offset: int = 0, status: StatusProject = None
+    ) -> Sequence[LaunchpadProject]:
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
             .options(selectinload(LaunchpadProject.links))
             .options(contains_eager(LaunchpadProject.proxy_link))
-            .join(LaunchpadProject.proxy_link)
+            .join(LaunchpadProject.proxy_link, isouter=True)
             .order_by(LaunchpadProject.created_at.asc())
             .limit(limit)
             .offset(offset)
@@ -24,21 +25,20 @@ class LaunchpadProjectCrud(BaseCrud):
         if status:
             st = st.where(LaunchpadProject.status == status)
 
-        result = await self.session.execute(st)
+        result = await self.session.scalars(st)
 
-        return result.scalars().all()
+        return result.all()
 
-    async def retrieve(self, id_or_slug: Union[int, str]):
+    async def find_by_id_or_slug(self, id_or_slug: int | str):
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))
             .options(selectinload(LaunchpadProject.links))
-            .options(joinedload(LaunchpadProject.proxy_link))
             .options(selectinload(LaunchpadProject.token_details))
-            .where(ProxyLink.id != None)
+            .options(contains_eager(LaunchpadProject.proxy_link))
+            .join(LaunchpadProject.proxy_link, isouter=True)
             .where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         )
+        query = await self.session.scalars(st)
 
-        query = await self.session.execute(st)
-
-        return query.scalars().first()
+        return query.first()

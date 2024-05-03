@@ -1,61 +1,71 @@
-from os import getenv
+from pydantic import PostgresDsn, RedisDsn
+from pydantic_settings import BaseSettings
 
-from dotenv import load_dotenv
 
-load_dotenv()
+class Settings(BaseSettings):
+    app_env: str = "dev"  # todo: use enum
+    app_version: str = "unstable"
 
-APP_ENV = getenv("APP_ENV", "dev")
-APP_VERSION = getenv("APP_VERSION", "unstable")
+    sentry_dsn: str | None = None
+    logtail_token: str | None = None
+    allowed_origins: str = "*"
 
-SENTRY_DSN = getenv("SENTRY_DSN", None)
-LOGTAIL_TOKEN = getenv("LOGTAIL_TOKEN")
+    database_url: PostgresDsn = "postgresql+asyncpg://launchpad:launchpad@localhost:5432/launchpad"
+    redis_url: RedisDsn = "redis://localhost:6379"
+    celery_broker: str = "redis://localhost:6379/0"
+    celery_retry_after: int = 15
 
-ALLOWED_ORIGINS = getenv("ALLOWED_ORIGINS", "*").split(",")
+    controller_seed_phrase: str
 
-DATABASE_URL = getenv("DATABASE_URL", "postgresql+asyncpg://blastup:blastup@postgres:5432/blastup")
-REDIS_URL = getenv("REDIS_URL", "redis://localhost:6379")
-CELERY_BROKER = getenv("CELERY_BROKER", "redis://localhost:6379/0")
-CELERY_RETRY_AFTER = int(getenv("CELERY_RETRY_AFTER", "15"))
+    ido_sign_account_private_key: str
+    launchpad_contract_address: str
 
-CONTROLLER_SEED_PHRASE = getenv("CONTROLLER_SEED_PHRASE", "")
+    coingecko_api_key: str | None = None
 
-# ONRAMP ONLY
-ETH_PRICE_FEED_ADDR = getenv("ETH_PRICE_FEED_ADDR")
+    eth_price_feed_addr: str
 
-MUNZEN_ENVIRONMENT = getenv("MUNZEN_ENVIRONMENT", "sandbox")
-MUNZEN_API_KEY = getenv("MUNZEN_API_KEY", "")
-MUNZEN_API_SECRET = getenv("MUNZEN_API_SECRET", "")
+    munzen_environment: str = "sandbox"  # todo: use enum
+    munzen_api_key: str = ""
+    munzen_api_secret: str = ""
 
-ONRAMP_RECIPIENT_ADDR = getenv("ONRAMP_RECIPIENT_ADDR")
-ONRAMP_SEED_PHRASE = getenv("ONRAMP_SEED_PHRASE", "")
-ONRAMP_SENDER_ADDR = getenv("ONRAMP_SENDER_ADDR")
-ONRAMP_SENDER_SEED_PHRASE = getenv("ONRAMP_SENDER_SEED_PHRASE")
-# ONRAMP ONLY
+    onramp_recipient_addr: str
+    onramp_seed_phrase: str
+    onramp_sender_addr: str | None = None
+    onramp_sender_seed_phrase: str
 
-USDT_CONTRACT_ADDR_ETH = getenv("USDT_CONTRACT_ADDR_ETH")
-USDT_CONTRACT_ADDR_BSC = getenv("USDT_CONTRACT_ADDR_BSC")
-USDT_CONTRACT_ADDR_POLYGON = getenv("USDT_CONTRACT_ADDR_POLYGON")
-USDT_CONTRACT_ADDR_BLAST = getenv("USDT_CONTRACT_ADDR_BLAST")
+    usdt_contract_addr_eth: str
+    usdt_contract_addr_bsc: str
+    usdt_contract_addr_polygon: str
+    usdt_contract_addr_blast: str
 
-CRYPTO_ENVIRONMENT = getenv("CRYPTO_ENVIRONMENT", "testnet")
-CRYPTO_API_KEY_ETH = getenv("CRYPTO_API_KEY_ETH", "")
-CRYPTO_API_KEY_POLYGON = getenv("CRYPTO_API_KEY_POLYGON", "")
-CRYPTO_API_KEY_BSC = getenv("CRYPTO_API_KEY_BSC", "")
-CRYPTO_API_KEY_BLAST = getenv("CRYPTO_API_KEY_BLAST")
+    crypto_environment: str = "testnet"  # todo: use enum
+    crypto_api_key_eth: str = ""
+    crypto_api_key_polygon: str = ""
+    crypto_api_key_bsc: str = ""
+    crypto_api_key_blast: str = ""
+    fallback_api_url_eth: str = ""
+    fallback_api_url_bsc: str = ""
+    fallback_api_url_polygon: str = ""
+    fallback_api_url_blast: str = ""
+    fallback_api_key_eth: str = ""
+    fallback_api_key_bsc: str = ""
+    fallback_api_key_polygon: str = ""
+    fallback_api_key_blast: str = ""
 
-CONTRACT_ADDR_ETH = getenv("CONTRACT_ADDR_ETH")
-CONTRACT_ADDR_POLYGON = getenv("CONTRACT_ADDR_POLYGON")
-CONTRACT_ADDR_BSC = getenv("CONTRACT_ADDR_BSC")
-CONTRACT_ADDR_BLAST = getenv("CONTRACT_ADDR_BLAST")
+    contract_addr_eth: str
+    contract_addr_polygon: str
+    contract_addr_bsc: str
+    contract_addr_blast: str
 
-ADMIN_USERNAME = getenv("ADMIN_USERNAME")
-ADMIN_PASSWORD = getenv("ADMIN_PASSWORD")
+    yield_staking_contract_addr: str
 
-SECRET_KEY = getenv("SECRET_KEY")
-ALGORITHM = getenv("ALGORITHM")
-TOKEN_EXPIRATION = getenv("TOKEN_EXPIRATION")
+    log_level: str = "DEBUG"  # todo: use enum
 
-_log_level = getenv("LOG_LEVEL", "DEBUG")
+
+settings = Settings(_env_file=".env")
+
+
+_log_level = settings.log_level
 if _log_level not in ("CRITICAL", "FATAL", "ERROR", "WARNING", "INFO", "DEBUG"):
     _log_level = "INFO"
 

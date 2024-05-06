@@ -1,7 +1,10 @@
 import json
 from datetime import timedelta
+from typing import Literal
 
-from fastapi import APIRouter, Path
+from fastapi import APIRouter, Path, Query
+from web3 import Web3
+from web3.exceptions import TransactionNotFound
 
 from app.base import logger
 from app.dependencies import RedisDep, CryptoDep
@@ -53,3 +56,19 @@ async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
         return InternalServerError("Failed to get user info")
+
+
+@router.get("/txn-transaction-data")
+async def get_transaction_data(
+    crypto: CryptoDep,
+    network: Literal["eth", "bsc", "polygon", "blast"] = Query(),
+    txn_hash: str = Query(),
+):
+    try:
+        res = await crypto.get_transaction_data(network, txn_hash)
+        res = json.loads(Web3.to_json(res))
+        return res
+    except IndexError:
+        return {"error": "Invalid chain id"}
+    except TransactionNotFound:
+        return {"error": "Transaction not found"}

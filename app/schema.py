@@ -99,6 +99,7 @@ class LaunchpadProjectList(BaseModel):
     points_reward_start_at: datetime
     points_reward_end_at: datetime
     fcfs_opens_at: datetime
+    badges: list[dict]
 
     class Config:
         from_attributes = True

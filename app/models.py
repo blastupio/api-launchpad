@@ -17,6 +17,7 @@ from sqlalchemy import (
     text,
     Integer,
     Boolean,
+    ARRAY,
 )
 from sqlalchemy.orm import relationship
 
@@ -70,6 +71,7 @@ class LaunchpadProject(Base):
 
     contract_project_id = Column(BigIntegerType, nullable=True)
     approve_for_registration_is_required = Column(Boolean, nullable=True)
+    badges = Column(ARRAY(JSON), server_default="{}", nullable=False)
 
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)

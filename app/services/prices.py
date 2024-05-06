@@ -64,7 +64,9 @@ class TokenPriceCache:
         return res
 
 
-async def get_tokens_price(chain_id: ChainId, token_addresses: list[str]) -> dict[Address, float]:
+async def get_tokens_price(
+    chain_id: ChainId, token_addresses: list[str | Address]
+) -> dict[Address, float]:
     if not token_addresses:
         return {}
 

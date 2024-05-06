@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
 from app.models import HistoryStakeType
+from app.types import BadgeType
 
 Address = NewType("Address", str)
 
@@ -77,6 +78,10 @@ class ProjectTypeEnum(str, Enum):
     PRIVATE_PRESALE = "private_presale"
 
 
+class Badge(BaseModel):
+    type: BadgeType  # noqa
+
+
 class LaunchpadProjectList(BaseModel):
     id: str  # noqa
     slug: str
@@ -99,7 +104,7 @@ class LaunchpadProjectList(BaseModel):
     points_reward_start_at: datetime
     points_reward_end_at: datetime
     fcfs_opens_at: datetime
-    badges: list[dict]
+    badges: list[Badge]
 
     class Config:
         from_attributes = True

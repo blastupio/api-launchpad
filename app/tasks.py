@@ -1,12 +1,20 @@
+import asyncio
 import traceback
 
 from celery import Celery
 from celery.exceptions import Retry
+from web3 import Web3
 
+from app import chains
 from app.base import logger
 from app.common import run_command_and_get_result
+from app.consts import NATIVE_TOKEN_ADDRESS
+from app.dependencies import get_redis
 from app.env import settings
+from app.services.prices import get_tokens_price
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
+from app.services.web3_nodes import web3_node
+from app.tg import notification_bot
 from onramp.jobs import ProcessMunzenOrder
 
 app = Celery("tasks", broker=settings.celery_broker)
@@ -62,3 +70,58 @@ def process_history_staking_event():
             f"process_history_staking_event. Unhandled exception: {e}, {traceback.format_exc()}"
         )
         raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def monitor_onramp_bridge_balance():
+    logger.info("Monitoring onramp bridge balance")
+    redis = get_redis()
+    chain_id = chains.blast_sepolia.id if settings.app_env == "dev" else chains.blast.id
+
+    async def get_and_log_balance():
+        try:
+            web3 = await web3_node.get_web3(chain_id=chain_id)
+            balance_wei, balance_in_cache, blast_price = await asyncio.gather(
+                web3.eth.get_balance(settings.onramp_sender_addr),
+                redis.get("onramp_bridge_balance"),
+                get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+            )
+        except Exception as e:
+            logger.error(
+                f"monitor_onramp_bridge_balance. Unhandled exception: {e}, {traceback.format_exc()}"
+            )
+            monitor_onramp_bridge_balance.apply_async(countdown=10)
+            return
+        balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
+        if balance_wei == balance_in_cache:
+            return
+
+        # balance has changed
+        await redis.set("onramp_bridge_balance", balance_wei, ex=3600)
+
+        balance = float(Web3.from_wei(balance_wei, "ether"))
+        if not (blast_usd_price := blast_price.get(NATIVE_TOKEN_ADDRESS)):
+            logger.error(f"Can't get blast USD price for {NATIVE_TOKEN_ADDRESS}")
+            monitor_onramp_bridge_balance.apply_async(countdown=10)
+            return
+
+        if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
+            if settings.app_env == "dev":
+                msg = f"Onramp bridge balance is low: {balance:.6f} BLAST ({usd_balance:.2f} USD)"
+                logger.warning(msg)
+            else:
+                blast_scan_url = f"https://blastscan.io/address/{settings.onramp_sender_addr}"
+                msg = (
+                    f"<b>💸 WARNING 💸</b>\n\n"
+                    f"Onramp bridge balance is low\n"
+                    f"{balance:.6f} BLAST (<b>${usd_balance:.2f}</b>)\n"
+                    f"<a href='{blast_scan_url}'>Contract</a>"
+                )
+                await notification_bot.send_message(
+                    chat_id=settings.tg_notification_chat_id,
+                    text=msg,
+                    parse_mode="HTML",
+                    disable_web_page_preview=True,
+                )
+
+    asyncio.run(get_and_log_balance())

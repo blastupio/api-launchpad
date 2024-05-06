@@ -1,3 +1,4 @@
+import asyncio
 import json
 from uuid import UUID
 
@@ -9,6 +10,7 @@ from app.dependencies import get_onramp_crud, get_munzen, get_amount_converter
 from app.env import settings
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
+from app.tg import notification_bot
 from app.utils import validation_error
 from onramp.services import Munzen, AmountConverter
 from onramp.schema import (
@@ -65,12 +67,13 @@ async def get_payment_link(
         except ValueError:
             raise validation_error(error_message="Invalid amount", location=("body", "amount"))
 
-    if payload.currency == "ETH" and await amount_converter.convert("ETH", amount) < 11:  # 11 usd
+    currency = payload.currency
+    if currency == "ETH" and await amount_converter.convert("ETH", amount) < 11:  # 11 usd
         raise validation_error(
             error_message="Amount should be greater than 11 usd equivalent",
             location=("body", "amount"),
         )
-    if payload.currency == "USD" and amount < 11:
+    if currency == "USD" and amount < 11:
         raise validation_error(
             error_message="Amount should be greater than 11 usd equivalent",
             location=("body", "amount"),
@@ -78,15 +81,18 @@ async def get_payment_link(
 
     order = await crud.persist(
         OnRampOrder(
-            amount=f"{int(amount * 1e18)}" if payload.currency == "ETH" else f"{int(amount * 100)}",
-            currency=payload.currency,
+            amount=f"{int(amount * 1e18)}" if currency == "ETH" else f"{int(amount * 100)}",
+            currency=currency,
             status=ONRAMP_STATUS_NEW,
             address=payload.recipient.lower(),
         )
     )
 
-    amount_str = f"{amount:.8f}" if payload.currency == "ETH" else f"{amount:.2f}"
+    amount_str = f"{amount:.8f}" if currency == "ETH" else f"{amount:.2f}"
     payment_link = await munzen.generate_link(order.id, amount_str, order.currency)
+    asyncio.create_task(
+        notification_bot.new_onramp_order(order.id, str_amount=amount_str, currency=currency)
+    )
     return OnRampResponse(
         ok=True, data=OnRampResponseData(internal_uuid=str(order.id), link=payment_link)
     )

@@ -110,18 +110,9 @@ def monitor_onramp_bridge_balance():
                 msg = f"Onramp bridge balance is low: {balance:.6f} BLAST ({usd_balance:.2f} USD)"
                 logger.warning(msg)
             else:
-                blast_scan_url = f"https://blastscan.io/address/{settings.onramp_sender_addr}"
-                msg = (
-                    f"<b>💸 WARNING 💸</b>\n\n"
-                    f"Onramp bridge balance is low\n"
-                    f"{balance:.6f} BLAST (<b>${usd_balance:.2f}</b>)\n"
-                    f"<a href='{blast_scan_url}'>Contract</a>"
-                )
-                await notification_bot.send_message(
-                    chat_id=settings.tg_notification_chat_id,
-                    text=msg,
-                    parse_mode="HTML",
-                    disable_web_page_preview=True,
+                await notification_bot.send_low_onramp_bridge_balance(
+                    blast_balance=balance,
+                    usd_balance=usd_balance,
                 )
 
     asyncio.run(get_and_log_balance())

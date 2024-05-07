@@ -11,6 +11,7 @@ from app.env import settings
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
 from app.tg import notification_bot
+from app.types import MunzenWebhookEvent, MunzenOrderType
 from app.utils import validation_error
 from onramp.services import Munzen, AmountConverter
 from onramp.schema import (
@@ -90,9 +91,6 @@ async def get_payment_link(
 
     amount_str = f"{amount:.8f}" if currency == "ETH" else f"{amount:.2f}"
     payment_link = await munzen.generate_link(order.id, amount_str, order.currency)
-    asyncio.create_task(
-        notification_bot.new_onramp_order(order.id, str_amount=amount_str, currency=currency)
-    )
     return OnRampResponse(
         ok=True, data=OnRampResponseData(internal_uuid=str(order.id), link=payment_link)
     )
@@ -105,15 +103,17 @@ async def webhook_handler(
     payload: dict = Body(embed=True, alias="data"),
     signature: str = Body(embed=True),
 ):
+    payload: MunzenWebhookEvent
+
     if not await munzen.validate_webhook(payload, signature):
         raise HTTPException(detail="Invalid signature", status_code=400)
 
-    order = await crud.get_by_id(UUID(payload.get("merchantOrderId")))
-    if not order:
+    if not (order := await crud.get_by_id(UUID(payload.get("merchantOrderId")))):
         raise HTTPException(detail="Order not found", status_code=404)
+    order.munzen_txn_hash = payload.get("blockchainNetworkTxId")
 
     logger.info(f"[onramp webhook] Received webhook: {json.dumps(payload)}")
-    if payload.get("eventType") == "order_failed" and order.status not in [
+    if payload.get("eventType") == MunzenOrderType.ORDER_FAILED.value and order.status not in [
         ONRAMP_STATUS_COMPLETE,
         ONRAMP_STATUS_ERROR,
     ]:
@@ -121,7 +121,10 @@ async def webhook_handler(
         order.extra = payload
         await crud.persist(order)
 
-    if payload.get("eventType") == "order_complete" and order.status != ONRAMP_STATUS_COMPLETE:
+    if (
+        payload.get("eventType") == MunzenOrderType.ORDER_COMPLETE.value
+        and order.status != ONRAMP_STATUS_COMPLETE
+    ):
         order.received_amount = f"{int(float(payload.get('toAmount')) * 1e18)}"
         await crud.persist(order)
 

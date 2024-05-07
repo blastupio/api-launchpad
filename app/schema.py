@@ -106,6 +106,9 @@ class LaunchpadProjectList(BaseModel):
     fcfs_opens_at: datetime
     badges: list[Badge]
 
+    kys_required: bool
+    whitelist_required: bool
+
     class Config:
         from_attributes = True
 
@@ -329,7 +332,9 @@ class SignUserBalanceResponse(BaseModel):
 
 
 class SignApprovedUserResponse(BaseModel):
-    signature: str
+    ok: bool = True
+    error: str | None = None
+    signature: str | None = None
 
 
 class TierInfo(BaseModel):

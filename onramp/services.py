@@ -39,6 +39,10 @@ class Crypto:
             "decimals": int(await price_feed_contract.functions.decimals().call()),
         }
 
+    async def get_sender_balance(self) -> int:
+        balance_wei = int(await self.web3.eth.get_balance(self.address))
+        return balance_wei
+
     async def send_eth(self, recipient: str, amount: str) -> str | None:
         async def estimate_gas() -> int:
             block = await self.web3.eth.get_block("latest", full_transactions=True)

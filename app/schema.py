@@ -109,6 +109,15 @@ class LaunchpadProjectList(BaseModel):
     class Config:
         from_attributes = True
 
+    @field_validator("badges", mode="before")
+    @classmethod
+    def check_badges_is_list(cls, value) -> list[Badge]:
+        if value == {}:
+            return []
+        elif isinstance(value, (dict, Badge)):
+            return [value]
+        return value
+
     @field_validator("raise_goal")
     @classmethod
     def convert_raise_goal(cls, value):

@@ -19,6 +19,10 @@ class ProcessHistoryStakingEvent(Command):
         self,
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
     ) -> CommandResult:
+        if not settings.yield_staking_contract_addr:
+            logger.error("Yield staking contract address is not set")
+            return CommandResult(success=False, need_retry=False)
+
         web3 = AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_blast))
         chain_id = await web3.eth.chain_id
         current_block = await web3.eth.block_number

@@ -8,6 +8,7 @@ from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
 from app.models import HistoryStakeType
+from app.types import BadgeType
 
 Address = NewType("Address", str)
 
@@ -77,6 +78,10 @@ class ProjectTypeEnum(str, Enum):
     PRIVATE_PRESALE = "private_presale"
 
 
+class Badge(BaseModel):
+    type: BadgeType  # noqa
+
+
 class LaunchpadProjectList(BaseModel):
     id: str  # noqa
     slug: str
@@ -99,9 +104,22 @@ class LaunchpadProjectList(BaseModel):
     points_reward_start_at: datetime
     points_reward_end_at: datetime
     fcfs_opens_at: datetime
+    badges: list[Badge]
+
+    kys_required: bool
+    whitelist_required: bool
 
     class Config:
         from_attributes = True
+
+    @field_validator("badges", mode="before")
+    @classmethod
+    def check_badges_is_list(cls, value) -> list[Badge]:
+        if value == {}:
+            return []
+        elif isinstance(value, (dict, Badge)):
+            return [value]
+        return value
 
     @field_validator("raise_goal")
     @classmethod
@@ -314,7 +332,9 @@ class SignUserBalanceResponse(BaseModel):
 
 
 class SignApprovedUserResponse(BaseModel):
-    signature: str
+    ok: bool = True
+    error: str | None = None
+    signature: str | None = None
 
 
 class TierInfo(BaseModel):

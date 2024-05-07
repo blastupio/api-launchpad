@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     controller_seed_phrase: str
 
-    ido_sign_account_private_key: str
-    launchpad_contract_address: str
+    ido_sign_account_private_key: str | None = None  # todo: not None
+    launchpad_contract_address: str | None = None  # todo: not None
 
     coingecko_api_key: str | None = None
 
@@ -58,7 +58,7 @@ class Settings(BaseSettings):
     contract_addr_bsc: str
     contract_addr_blast: str
 
-    yield_staking_contract_addr: str
+    yield_staking_contract_addr: str | None = None  # todo: not None
 
     log_level: str = "DEBUG"  # todo: use enum
 

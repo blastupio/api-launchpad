@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import shortuuid
-from sqlalchemy import Enum, CheckConstraint
+from sqlalchemy import Enum, CheckConstraint, UniqueConstraint
 from sqlalchemy import (
     String,
     DECIMAL,
@@ -69,7 +69,12 @@ class LaunchpadProject(Base):
     token_address = Column(String, nullable=True)
 
     contract_project_id = Column(BigIntegerType, nullable=True)
+
     approve_for_registration_is_required = Column(Boolean, nullable=True)
+    kys_required = Column(Boolean, server_default="false", default=False, nullable=False)
+    whitelist_required = Column(Boolean, server_default="false", default=False, nullable=False)
+
+    badges = Column(JSON(), server_default="{}", nullable=False)
 
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)
@@ -98,6 +103,7 @@ class LaunchpadProject(Base):
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
+    whitelist_addresses = relationship("ProjectWhitelist", back_populates="project")
 
     @property
     def total_raise(self):
@@ -196,3 +202,20 @@ class HistoryStake(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (CheckConstraint(amount >= 0, name="check_positive_amount"), {})
+
+
+class ProjectWhitelist(Base):
+    __tablename__ = "project_whitelist"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    user_address = Column(String, index=True, nullable=False)
+
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
+    project = relationship("LaunchpadProject", back_populates="whitelist_addresses")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_address", name="uc_project_id_user_address"),
+    )

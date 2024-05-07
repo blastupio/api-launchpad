@@ -29,7 +29,7 @@ class LaunchpadProjectCrud(BaseCrud):
 
         return result.all()
 
-    async def find_by_id_or_slug(self, id_or_slug: int | str):
+    async def find_by_id_or_slug(self, id_or_slug: int | str) -> LaunchpadProject | None:
         st = (
             select(LaunchpadProject)
             .options(selectinload(LaunchpadProject.profile_images))

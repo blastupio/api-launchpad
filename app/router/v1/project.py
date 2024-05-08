@@ -11,7 +11,6 @@ from app.schema import (
     ErrorResponse,
     NotFoundError,
     InternalServerError,
-    LaunchpadProject,
 )
 from app.utils import get_data_with_cache
 

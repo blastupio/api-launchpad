@@ -390,3 +390,8 @@ class CreateHistoryStake(BaseModel):
     txn_hash: str
     block_number: int
     user_address: str
+
+
+class YieldPercentageResponse(BaseModel):
+    native: float
+    stablecoin: float

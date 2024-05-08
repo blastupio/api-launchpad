@@ -1243,3 +1243,58 @@ PRESALE_BLAST_ABI = [
         "type": "function",
     },
 ]
+
+LAUNCHPAD_PLACE_TOKENS_ABI = {
+    "inputs": [{"internalType": "uint256", "name": "", "type": "uint256"}],
+    "name": "placedTokens",
+    "outputs": [
+        {"internalType": "uint256", "name": "price", "type": "uint256"},
+        {"internalType": "uint256", "name": "volumeForYieldStakers", "type": "uint256"},
+        {"internalType": "uint256", "name": "volume", "type": "uint256"},
+        {"internalType": "uint256", "name": "initialVolumeForLowTiers", "type": "uint256"},
+        {"internalType": "uint256", "name": "initialVolumeForHighTiers", "type": "uint256"},
+        {"internalType": "uint256", "name": "lowTiersWeightsSum", "type": "uint256"},
+        {"internalType": "uint256", "name": "highTiersWeightsSum", "type": "uint256"},
+        {"internalType": "address", "name": "addressForCollected", "type": "address"},
+        {"internalType": "uint256", "name": "registrationStart", "type": "uint256"},
+        {"internalType": "uint256", "name": "registrationEnd", "type": "uint256"},
+        {"internalType": "uint256", "name": "publicSaleStart", "type": "uint256"},
+        {"internalType": "uint256", "name": "fcfsSaleStart", "type": "uint256"},
+        {"internalType": "uint256", "name": "saleEnd", "type": "uint256"},
+        {"internalType": "uint256", "name": "tgeStart", "type": "uint256"},
+        {"internalType": "uint256", "name": "vestingStart", "type": "uint256"},
+        {"internalType": "uint256", "name": "vestingDuration", "type": "uint256"},
+        {"internalType": "uint8", "name": "tokenDecimals", "type": "uint8"},
+        {"internalType": "uint8", "name": "tgePercent", "type": "uint8"},
+        {"internalType": "bool", "name": "approved", "type": "bool"},
+        {"internalType": "address", "name": "token", "type": "address"},
+    ],
+    "stateMutability": "view",
+    "type": "function",
+}
+TRY_AGGREGATE_ABI = {
+    "inputs": [
+        {"name": "requireSuccess", "type": "bool"},
+        {
+            "components": [
+                {"name": "target", "type": "address"},
+                {"name": "callData", "type": "bytes"},
+            ],
+            "name": "calls",
+            "type": "tuple[]",
+        },
+    ],
+    "name": "tryAggregate",
+    "outputs": [
+        {
+            "components": [
+                {"name": "success", "type": "bool"},
+                {"name": "returnData", "type": "bytes"},
+            ],
+            "name": "returnData",
+            "type": "tuple[]",
+        }
+    ],
+    "stateMutability": "nonpayable",
+    "type": "function",
+}

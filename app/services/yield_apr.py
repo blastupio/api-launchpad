@@ -7,7 +7,11 @@ async def get_native_yield() -> float:
     default_value = 3.0
     url = "https://eth-api.lido.fi/v1/protocol/steth/apr/sma"
     async with httpx.AsyncClient(timeout=10.0) as client:
-        response = (await client.get(url)).json()
+        response = await client.get(url)
+        if response.status_code != 200:
+            logger.error(f"Request to {url} failed with {response.status_code}\n{response.text}")
+            return default_value
+        response = response.json()
     value = response.get("data", {}).get("smaApr", default_value)
     return round(value, 4)
 

@@ -69,6 +69,19 @@ cron:
       - "-c"
       - "celery call app.tasks.process_history_staking_event"
 
+  schedule-update-project-total-raised:
+    enabled: true
+    schedule: */9 * * * *
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "celery call app.tasks.recalculate_project_total_raised"
+
+
 env:
   APP_ENV: dev
   APP_VERSION: unstable

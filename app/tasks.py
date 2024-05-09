@@ -13,6 +13,7 @@ from app.dependencies import get_redis
 from app.env import settings
 from app.services.prices import get_tokens_price
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
+from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.web3_nodes import web3_node
 from app.tg import notification_bot
 from onramp.jobs import ProcessMunzenOrder
@@ -68,6 +69,29 @@ def process_history_staking_event():
 
         logger.error(
             f"process_history_staking_event. Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task()
+def recalculate_project_total_raised():
+    try:
+        result = run_command_and_get_result(RecalculateProjectsTotalRaised())
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            recalculate_project_total_raised.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"recalculate_project_total_raised Unhandled exception: {e}, {traceback.format_exc()}"
         )
         raise Retry("", exc=e)
 

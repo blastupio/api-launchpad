@@ -1,10 +1,12 @@
+from decimal import Decimal, Context
 from typing import Sequence
 
-from sqlalchemy import select, or_
+from sqlalchemy import select, or_, Row, case, update
 from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
-from app.models import LaunchpadProject, StatusProject
+from app.models import LaunchpadProject, StatusProject, ProjectType
+from app.types import ProjectIdWithRaised
 
 
 class LaunchpadProjectCrud(BaseCrud):
@@ -42,3 +44,21 @@ class LaunchpadProjectCrud(BaseCrud):
         query = await self.session.scalars(st)
 
         return query.first()
+
+    async def get_data_for_total_raised_recalculating(self) -> Sequence[Row]:
+        st = select(
+            LaunchpadProject.id,
+            LaunchpadProject.contract_project_id,
+            LaunchpadProject.raise_goal_on_launchpad,
+        ).where(LaunchpadProject.project_type == ProjectType.DEFAULT)
+        result = await self.session.execute(st)
+        return result.fetchall()
+
+    async def update_raised_value(self, data: list[ProjectIdWithRaised]) -> None:
+        # todo: update with one query
+        for x in data:
+            await self.session.execute(
+                update(LaunchpadProject)
+                .where(LaunchpadProject.id == x.project_id)
+                .values(total_raised=x.raised)
+            )

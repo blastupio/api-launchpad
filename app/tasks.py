@@ -74,10 +74,11 @@ def process_history_staking_event():
         raise Retry("", exc=e)
 
 
-@app.task()
-def recalculate_project_total_raised():
+@app.task(max_retries=3)
+async def recalculate_project_total_raised():
     try:
-        result = run_command_and_get_result(RecalculateProjectsTotalRaised())
+        command = RecalculateProjectsTotalRaised()
+        result = await command.run()
 
         if result.need_retry:
             retry_after = (
@@ -98,7 +99,7 @@ def recalculate_project_total_raised():
 
 
 @app.task(max_retries=3, default_retry_delay=10)
-def monitor_onramp_bridge_balance():
+async def monitor_onramp_bridge_balance():
     logger.info("Monitoring onramp bridge balance")
     redis = get_redis()
 
@@ -106,43 +107,40 @@ def monitor_onramp_bridge_balance():
         logger.error("Onramp sender address is not set")
         return
 
-    async def get_and_log_balance():
-        try:
-            web3 = await web3_node.get_web3("blast")
-            chain_id = await web3.eth.chain_id
-            balance_wei, balance_in_cache, blast_price = await asyncio.gather(
-                web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
-                redis.get("onramp_bridge_balance"),
-                get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+    try:
+        web3 = await web3_node.get_web3("blast")
+        chain_id = await web3.eth.chain_id
+        balance_wei, balance_in_cache, blast_price = await asyncio.gather(
+            web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
+            redis.get("onramp_bridge_balance"),
+            get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+        )
+    except Exception as e:
+        logger.error(
+            f"monitor_onramp_bridge_balance. Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        return
+    balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
+    if balance_wei == balance_in_cache:
+        err = f"Monitoring onramp balance: balance in cache = blockchain balance: {balance_wei}"
+        logger.info(err)
+        return
+
+    # balance has changed
+    await redis.set("onramp_bridge_balance", balance_wei, ex=timedelta(hours=4))
+
+    balance = float(Web3.from_wei(balance_wei, "ether"))
+    if not (blast_usd_price := blast_price.get(NATIVE_TOKEN_ADDRESS)):
+        logger.error(f"Can't get blast USD price for {NATIVE_TOKEN_ADDRESS}")
+        monitor_onramp_bridge_balance.apply_async(countdown=10)
+        return
+
+    if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
+        if settings.app_env == "dev":
+            msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
+            logger.error(msg)
+        else:
+            await notification_bot.send_low_onramp_bridge_balance(
+                blast_balance=balance,
+                usd_balance=usd_balance,
             )
-        except Exception as e:
-            logger.error(
-                f"monitor_onramp_bridge_balance. Unhandled exception: {e}, {traceback.format_exc()}"
-            )
-            return
-        balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
-        if balance_wei == balance_in_cache:
-            err = f"Monitoring onramp balance: balance in cache = blockchain balance: {balance_wei}"
-            logger.info(err)
-            return
-
-        # balance has changed
-        await redis.set("onramp_bridge_balance", balance_wei, ex=timedelta(hours=4))
-
-        balance = float(Web3.from_wei(balance_wei, "ether"))
-        if not (blast_usd_price := blast_price.get(NATIVE_TOKEN_ADDRESS)):
-            logger.error(f"Can't get blast USD price for {NATIVE_TOKEN_ADDRESS}")
-            monitor_onramp_bridge_balance.apply_async(countdown=10)
-            return
-
-        if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
-            if settings.app_env == "dev":
-                msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
-                logger.error(msg)
-            else:
-                await notification_bot.send_low_onramp_bridge_balance(
-                    blast_balance=balance,
-                    usd_balance=usd_balance,
-                )
-
-    asyncio.run(get_and_log_balance())

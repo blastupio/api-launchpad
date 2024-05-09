@@ -51,11 +51,7 @@ class Command:
 
 
 def run_command_and_get_result(command: Command) -> CommandResult:
-    try:
-        loop = asyncio.get_event_loop()
-    except RuntimeError:
-        loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(loop)
+    loop = asyncio.get_event_loop()
     result = loop.run_until_complete(command.run())
 
     return result

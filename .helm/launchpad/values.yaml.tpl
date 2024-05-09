@@ -82,7 +82,7 @@ cron:
 
   schedule-update-project-total-raised:
     enabled: true
-    schedule: */9 * * * *
+    schedule: "*/9 * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true

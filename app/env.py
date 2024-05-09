@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     onramp_seed_phrase: str
     onramp_sender_addr: str | None = None
     onramp_sender_seed_phrase: str
+    onramp_usd_balance_threshold: int = 1000
 
     usdt_contract_addr_eth: str
     usdt_contract_addr_bsc: str
@@ -62,6 +63,9 @@ class Settings(BaseSettings):
     log_level: str = "DEBUG"  # todo: use enum
 
     proxy_base_url: str
+
+    tg_bot_notification_token: str
+    tg_notification_chat_id: str
 
 
 settings = Settings(_env_file=".env")

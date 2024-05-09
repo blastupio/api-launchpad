@@ -67,7 +67,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "python console.py listen-staking-events"
+      - "python3 console.py listen-staking-events"
   schedule-monitor-onramp-balance:
     enabled: true
     schedule: "*/7 * * * *"
@@ -78,8 +78,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "python console.py monitor-onramp-balance"
-
+      - "python3 console.py monitor-onramp-balance"
   schedule-update-project-total-raised:
     enabled: true
     schedule: "*/9 * * * *"
@@ -90,7 +89,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "python console.py update-project-total-raised"
+      - "python3 console.py update-project-total-raised"
 
 
 env:

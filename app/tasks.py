@@ -76,7 +76,6 @@ def process_history_staking_event():
 def monitor_onramp_bridge_balance():
     logger.info("Monitoring onramp bridge balance")
     redis = get_redis()
-    chain_id = chains.blast_sepolia.id if settings.app_env == "dev" else chains.blast.id
 
     if not settings.onramp_sender_addr:
         logger.error("Onramp sender address is not set")
@@ -84,7 +83,8 @@ def monitor_onramp_bridge_balance():
 
     async def get_and_log_balance():
         try:
-            web3 = await web3_node.get_web3(chain_id=chain_id)
+            web3 = await web3_node.get_web3("blast")
+            chain_id = await web3.eth.chainId
             balance_wei, balance_in_cache, blast_price = await asyncio.gather(
                 web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
                 redis.get("onramp_bridge_balance"),

@@ -1,3 +1,5 @@
+import asyncio
+
 from fastapi import APIRouter, Path, Query
 from web3 import Web3
 
@@ -13,6 +15,7 @@ from app.schema import (
     RatesForChainAndToken,
     InternalServerError,
     ErrorResponse,
+    YieldPercentageResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.tiers.consts import (
@@ -25,6 +28,7 @@ from app.services.tiers.consts import (
 )
 from app.services.tiers.user_tier import get_user_tier
 from app.services.prices import get_tokens_price, get_any2any_prices
+from app.services.yield_apr import get_native_yield, get_stablecoin_yield
 
 router = APIRouter(prefix="/info", tags=["info"])
 
@@ -82,3 +86,11 @@ async def get_all_tiers():
     return {
         "tiers": [bronze_tier, silver_tier, gold_tier, titanium_tier, platinum_tier, diamond_tier]
     }
+
+
+@router.get("/yield-percentage", response_model=YieldPercentageResponse)
+async def get_yield_percentage() -> YieldPercentageResponse:
+    native_yield, stablecoin_yield = await asyncio.gather(
+        get_native_yield(), get_stablecoin_yield()
+    )
+    return YieldPercentageResponse(native=native_yield, stablecoin=stablecoin_yield)

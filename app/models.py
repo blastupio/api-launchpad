@@ -18,6 +18,7 @@ from sqlalchemy import (
     Integer,
     Boolean,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
@@ -74,7 +75,7 @@ class LaunchpadProject(Base):
     kys_required = Column(Boolean, server_default="false", default=False, nullable=False)
     whitelist_required = Column(Boolean, server_default="false", default=False, nullable=False)
 
-    badges = Column(JSON(), server_default="{}", nullable=False)
+    badges = Column(JSONB(), server_default="{}", nullable=False)
 
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)

@@ -2,7 +2,9 @@ from typing import Optional
 
 from fastapi import APIRouter, Query
 from httpx import AsyncClient
+from pydantic import ValidationError
 
+from app.base import logger
 from app.dependencies import RedisDep, LaunchpadProjectCrudDep
 from app.models import StatusProject
 from app.schema import (
@@ -11,6 +13,9 @@ from app.schema import (
     ErrorResponse,
     NotFoundError,
     InternalServerError,
+    LaunchpadProject,
+    LaunchpadProjectsData,
+    LaunchpadProjectList,
 )
 from app.utils import get_data_with_cache
 
@@ -23,6 +28,7 @@ async def list_launchpad_projects(
     redis: RedisDep,
     status: Optional[StatusProject] = Query(None, description="Filter projects by status"),
 ):
+    projects_resp: list[LaunchpadProjectList] = []
     projects = await projects_crud.all(status=status)
     for project in projects:
         if project.proxy_link:
@@ -40,7 +46,13 @@ async def list_launchpad_projects(
             if total_balance:
                 project.raised = total_balance.get("data", {}).get("usd", "0")
 
-    return {"ok": True, "data": {"projects": projects}}
+        try:
+            projects_resp.append(LaunchpadProjectList.parse_obj(project))
+        except ValidationError as exc:
+            logger.error(f"Can't parse LaunchpadProjectsData in /list: {exc}")
+            continue
+
+    return {"ok": True, "data": {"projects": projects_resp}}
 
 
 @router.get("/{id_or_slug}", response_model=LaunchpadProjectResponse | ErrorResponse)

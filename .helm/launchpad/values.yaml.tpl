@@ -59,7 +59,7 @@ cron_enabled: true
 cron:
   schedule-listen-staking-events:
     enabled: true
-    schedule: 0 * * * *
+    schedule: */10 * * * *
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true
@@ -68,6 +68,17 @@ cron:
     args:
       - "-c"
       - "celery call app.tasks.process_history_staking_event"
+  schedule-monitor-onramp-balance:
+    enabled: true
+    schedule: */15 * * * *
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "celery call app.tasks.monitor_onramp_bridge_balance"
 
   schedule-update-project-total-raised:
     enabled: true

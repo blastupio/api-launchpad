@@ -141,13 +141,18 @@ class Web3Node:
     def get_fallback_api_key(self, chain_id: ChainId) -> str | None:
         return self._fallback_api_key_by_chain_id.get(chain_id)
 
-    async def get_web3(self, network: str) -> AsyncWeb3:
+    async def get_web3(
+        self, network: str | None = None, chain_id: ChainId | None = None
+    ) -> AsyncWeb3:
         """
         If there is fallback node in redis, use it.
         Otherwise, use the default node
         """
         # todo: use chain_id instead of network
-        chain_id = self._get_chain_id(network)
+        assert not all((network, chain_id)), "network and chain_id are mutually exclusive"
+        assert any((network, chain_id)), "at least one network or chain_id must be provided"
+        if network:
+            chain_id = self._get_chain_id(network)
         chain_id_ctx.set(chain_id)
 
         if url := (await self.node_redis.get_fallback_node_url(chain_id)):

@@ -37,7 +37,8 @@ class RecalculateProjectsTotalRaised(Command):
             web3=web3, contract_project_id_by_project_id=contract_project_id_by_project
         )
         usd_volume_left_by_project_id = {}
-        for (_, data), project_id in zip(output_data, contract_project_id_by_project.keys()):
+        for (success, data), project_id in zip(output_data, contract_project_id_by_project.keys()):
+            logger.info(f"Recalculating project {project_id}, {success=}")
             if not data:
                 # no data for contract_project_id
                 continue

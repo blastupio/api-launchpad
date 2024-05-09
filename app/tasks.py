@@ -1,5 +1,6 @@
 import asyncio
 import traceback
+from datetime import timedelta
 
 from celery import Celery
 from celery.exceptions import Retry
@@ -121,10 +122,12 @@ def monitor_onramp_bridge_balance():
             return
         balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
         if balance_wei == balance_in_cache:
+            err = f"Monitoring onramp balance: balance in cache = blockchain balance: {balance_wei}"
+            logger.info(err)
             return
 
         # balance has changed
-        await redis.set("onramp_bridge_balance", balance_wei, ex=3600)
+        await redis.set("onramp_bridge_balance", balance_wei, ex=timedelta(hours=4))
 
         balance = float(Web3.from_wei(balance_wei, "ether"))
         if not (blast_usd_price := blast_price.get(NATIVE_TOKEN_ADDRESS)):

@@ -27,7 +27,7 @@ class RecalculateProjectsTotalRaised(Command):
 
         contract_project_id_by_project, launchpad_goal_by_project = {}, {}
         for x in recalculating_data:
-            if not x.contract_project_id:
+            if x.contract_project_id is None:
                 logger.error(f"Contract project id is not set for default project {x.id}")
                 continue
             contract_project_id_by_project[x.id] = x.contract_project_id

@@ -108,7 +108,7 @@ def monitor_onramp_bridge_balance():
     async def get_and_log_balance():
         try:
             web3 = await web3_node.get_web3("blast")
-            chain_id = await web3.eth.chainId
+            chain_id = await web3.eth.chain_id
             balance_wei, balance_in_cache, blast_price = await asyncio.gather(
                 web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
                 redis.get("onramp_bridge_balance"),
@@ -118,7 +118,6 @@ def monitor_onramp_bridge_balance():
             logger.error(
                 f"monitor_onramp_bridge_balance. Unhandled exception: {e}, {traceback.format_exc()}"
             )
-            monitor_onramp_bridge_balance.apply_async(countdown=10)
             return
         balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
         if balance_wei == balance_in_cache:

@@ -78,11 +78,15 @@ def monitor_onramp_bridge_balance():
     redis = get_redis()
     chain_id = chains.blast_sepolia.id if settings.app_env == "dev" else chains.blast.id
 
+    if not settings.onramp_sender_addr:
+        logger.error("Onramp sender address is not set")
+        return
+
     async def get_and_log_balance():
         try:
             web3 = await web3_node.get_web3(chain_id=chain_id)
             balance_wei, balance_in_cache, blast_price = await asyncio.gather(
-                web3.eth.get_balance(settings.onramp_sender_addr),
+                web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
                 redis.get("onramp_bridge_balance"),
                 get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
             )
@@ -107,8 +111,8 @@ def monitor_onramp_bridge_balance():
 
         if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
             if settings.app_env == "dev":
-                msg = f"Onramp bridge balance is low: {balance:.6f} BLAST ({usd_balance:.2f} USD)"
-                logger.warning(msg)
+                msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
+                logger.error(msg)
             else:
                 await notification_bot.send_low_onramp_bridge_balance(
                     blast_balance=balance,

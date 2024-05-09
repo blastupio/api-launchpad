@@ -60,5 +60,5 @@ class LaunchpadProjectCrud(BaseCrud):
             await self.session.execute(
                 update(LaunchpadProject)
                 .where(LaunchpadProject.id == x.project_id)
-                .values(total_raised=x.raised)
+                .values(total_raised=str(x.raised))
             )

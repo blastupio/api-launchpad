@@ -59,7 +59,7 @@ cron_enabled: true
 cron:
   schedule-listen-staking-events:
     enabled: true
-    schedule: */10 * * * *
+    schedule: "*/10 * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true
@@ -70,7 +70,7 @@ cron:
       - "celery call app.tasks.process_history_staking_event"
   schedule-monitor-onramp-balance:
     enabled: true
-    schedule: */15 * * * *
+    schedule: "*/15 * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true

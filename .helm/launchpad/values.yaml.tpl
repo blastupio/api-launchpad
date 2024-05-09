@@ -67,7 +67,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "celery call app.tasks.process_history_staking_event"
+      - "python console.py listen-staking-events"
   schedule-monitor-onramp-balance:
     enabled: true
     schedule: "*/7 * * * *"
@@ -78,7 +78,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "celery call app.tasks.monitor_onramp_bridge_balance"
+      - "python console.py monitor-onramp-balance"
 
   schedule-update-project-total-raised:
     enabled: true
@@ -90,7 +90,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "celery call app.tasks.recalculate_project_total_raised"
+      - "python console.py update-project-total-raised"
 
 
 env:

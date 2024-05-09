@@ -13,8 +13,6 @@ from app.schema import (
     ErrorResponse,
     NotFoundError,
     InternalServerError,
-    LaunchpadProject,
-    LaunchpadProjectsData,
     LaunchpadProjectList,
 )
 from app.utils import get_data_with_cache
@@ -49,7 +47,7 @@ async def list_launchpad_projects(
         try:
             projects_resp.append(LaunchpadProjectList.parse_obj(project))
         except ValidationError as exc:
-            logger.error(f"Can't parse LaunchpadProjectsData in /list: {exc}")
+            logger.error(f"Can't parse LaunchpadProjectList in /list: {exc}")
             continue
 
     return {"ok": True, "data": {"projects": projects_resp}}

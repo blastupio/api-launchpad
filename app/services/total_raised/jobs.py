@@ -48,9 +48,10 @@ class RecalculateProjectsTotalRaised(Command):
             token_price = info.price / 10e18
             volume = info.volume / 10e18  # tokens left
             if volume < 1:
-                # no tokens left
-                continue
-            usd_volume_left_by_project_id[project_id] = volume * token_price
+                # no tokens left => 0 usd_volume_left
+                usd_volume_left_by_project_id[project_id] = 0
+            else:
+                usd_volume_left_by_project_id[project_id] = volume * token_price
         res = [
             ProjectIdWithRaised(
                 project_id=project_id,

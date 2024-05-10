@@ -2,6 +2,8 @@ from web3 import Web3
 from eth_account.messages import encode_defunct
 from eth_account import Account
 
+from app.base import logger
+
 
 def generate_balance_signature(
     user_address: str,
@@ -13,6 +15,9 @@ def generate_balance_signature(
     user_address = Web3.to_checksum_address(user_address)
     launchpad_contract_address = Web3.to_checksum_address(launchpad_contract_address)
 
+    logger.info(
+        f"Sign user balance: {user_address=} {balance=} {launchpad_contract_address=} {chain_id=}"
+    )
     payload = Web3.solidity_keccak(
         ["address", "uint256", "address", "uint256"],
         [user_address, balance, launchpad_contract_address, chain_id],

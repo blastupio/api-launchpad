@@ -14,6 +14,7 @@ def generate_balance_signature(
 ) -> str:
     user_address = Web3.to_checksum_address(user_address)
     launchpad_contract_address = Web3.to_checksum_address(launchpad_contract_address)
+    balance = int(balance * 10e18)
 
     logger.info(
         f"Sign user balance: {user_address=} {balance=} {launchpad_contract_address=} {chain_id=}"

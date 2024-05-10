@@ -40,7 +40,6 @@ class RecalculateProjectsTotalRaised(Command):
         for (success, data), project_id in zip(output_data, contract_project_id_by_project.keys()):
             logger.info(f"Recalculating project {project_id}, {success=}")
             if not data:
-                logger.error(f"No data for project {project_id}")
                 continue
             info = PlacedToken(
                 *decode(types=[x["type"] for x in LAUNCHPAD_PLACE_TOKENS_ABI["outputs"]], data=data)

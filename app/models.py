@@ -221,3 +221,16 @@ class ProjectWhitelist(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "user_address", name="uc_project_id_user_address"),
     )
+
+
+class LaunchpadContractEvents(Base):
+    __tablename__ = "launchpad_contract_events"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    user_address = Column(String, index=True, nullable=False)
+    token_address = Column(String, nullable=False)
+    contract_project_id = Column(BigIntegerType, nullable=True)
+    txn_hash = Column(String, unique=True, nullable=False)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

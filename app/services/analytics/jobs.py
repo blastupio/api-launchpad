@@ -2,6 +2,7 @@ import time
 
 from fastapi import Depends
 
+from app.abi import LAUNCHPAD_CONTRACT_ADDRESS_ABI
 from app.base import logger
 from app.common import Command, CommandResult
 from app.env import settings
@@ -35,24 +36,24 @@ class ProcessRegisteredUsersAndAllocations(Command):
 
         contract = web3.eth.contract(
             address=web3.to_checksum_address(settings.launchpad_contract_address),
-            # abi=staking_abi,
+            abi=LAUNCHPAD_CONTRACT_ADDRESS_ABI,
         )
-        n_stakes, n_claim_rewards = 0, 0
+        n_user_registered, n_allocations = 0, 0
         try:
             while True:
                 from_block = last_checked_block + 1
                 # 3000 is limit, can't set larger than that
                 to_block = min(current_block, from_block + 3000)
-                logger.info(f"Monitoring from block {from_block} to block {to_block}")
+                logger.info(f"Monitoring users and allocations from {from_block} to {to_block}")
 
                 if from_block > to_block:
-                    logger.info(f"No events from block {from_block} to block {to_block}")
+                    logger.info(f"No users and allocations events from {from_block} to {to_block}")
                     break
 
-                stake_events = await contract.events.Staked().get_logs(
+                user_registered_events = await contract.events.UserRegistered().get_logs(
                     fromBlock=from_block, toBlock=to_block
                 )
-                n_stakes += len(stake_events)
+                n_user_registered += len(user_registered_events)
                 # for event in stake_events:
                 # await crud.add_history(
                 #     params=CreateHistoryStake(
@@ -66,10 +67,10 @@ class ProcessRegisteredUsersAndAllocations(Command):
                 #     )
                 # )
 
-                claim_reward_events = await contract.events.RewardClaimed().get_logs(
+                tokens_allocations_events = await contract.events.TokensBought().get_logs(
                     fromBlock=from_block, toBlock=to_block
                 )
-                n_claim_rewards += len(claim_reward_events)
+                n_allocations += len(tokens_allocations_events)
                 # for event in claim_reward_events:
                 #     await crud.add_history(
                 #         params=CreateHistoryStake(
@@ -87,10 +88,10 @@ class ProcessRegisteredUsersAndAllocations(Command):
                 await reg_users_and_allocation_redis.set_last_checked_block(chain_id, to_block)
                 time.sleep(0.5)
 
-            # if n_stakes or n_claim_rewards:
-            #     # one needs to commit only ones after while cycle
-            #     # don't commit inside add_history
-            #     await crud.session.commit()
+            # if n_allocations or n_user_registered:
+            # one needs to commit only ones after while cycle
+            # don't commit inside add_history
+            # await crud.session.commit()
         except Exception as e:
             logger.error(f"Error processing events: {e}")
             return CommandResult(success=False, need_retry=True)

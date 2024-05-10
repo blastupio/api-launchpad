@@ -81,7 +81,7 @@ cron:
       - "python3 console.py monitor-onramp-balance"
   schedule-update-project-total-raised:
     enabled: true
-    schedule: "*/5 * * * *"
+    schedule: "*/1 * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true

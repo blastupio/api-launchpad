@@ -20,6 +20,7 @@ class LaunchpadProjectCrud(BaseCrud):
             .options(selectinload(LaunchpadProject.links))
             .options(contains_eager(LaunchpadProject.proxy_link))
             .join(LaunchpadProject.proxy_link, isouter=True)
+            .where(LaunchpadProject.slug != "testpepe")
             .order_by(LaunchpadProject.created_at.desc())
             .limit(limit)
             .offset(offset)

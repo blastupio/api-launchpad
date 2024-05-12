@@ -165,7 +165,7 @@ class TokenDetailsData(BaseModel):
 
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
-    description: str
+    description: str | None
     project_type: ProjectTypeEnum
 
     created_at: datetime
@@ -328,7 +328,9 @@ class OnrampOrderRequest(BaseModel):
 
 
 class SignUserBalanceResponse(BaseModel):
-    signature: str
+    ok: bool = True
+    error: str | None = None
+    signature: str | None = None
 
 
 class SignApprovedUserResponse(BaseModel):

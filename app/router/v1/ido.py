@@ -39,6 +39,8 @@ async def sign_user_balance(
         launchpad_contract_address=contract_address,
         private_key=settings.ido_sign_account_private_key,
     )
+    if not signature:
+        return SignUserBalanceResponse(ok=False, error="Signature generation failed")
     return SignUserBalanceResponse(signature=signature)
 
 

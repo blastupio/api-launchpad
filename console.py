@@ -6,6 +6,7 @@ import sys
 import sentry_sdk
 
 from app.env import settings
+from app.services.analytics.jobs import ProcessLaunchpadContractEvents
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from onramp.jobs import MonitorSenderBalance
@@ -24,6 +25,7 @@ async def main():
         "listen-staking-events",
         "monitor-onramp-balance",
         "update-project-total-raised",
+        "process-launchpad-contract-events",
     ]:
         subparsers.add_parser(command)
 
@@ -35,6 +37,8 @@ async def main():
             command = MonitorSenderBalance()
         case "update-project-total-raised":
             command = RecalculateProjectsTotalRaised()
+        case "process-launchpad-contract-events":
+            command = ProcessLaunchpadContractEvents()
         case _:
             command = None
 

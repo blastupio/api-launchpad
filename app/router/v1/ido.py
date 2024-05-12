@@ -2,6 +2,7 @@ import asyncio
 
 from fastapi import APIRouter, Path, Query
 
+from app.base import logger
 from app.dependencies import CryptoDep, ProjectWhitelistCrudDep, LaunchpadProjectCrudDep
 from app.env import settings
 from app.schema import SignUserBalanceResponse, SignApprovedUserResponse
@@ -26,6 +27,9 @@ async def sign_user_balance(
     _balances = await asyncio.gather(
         *[crypto.get_blastup_token_balance(chain, user_address) for chain in str_chains]
     )
+    for chain, balance in zip(str_chains, _balances):
+        logger.info(f"Sign user balance chain: {chain}, balance: {balance}")
+
     balance = sum(balance for balance in _balances if isinstance(balance, int))
 
     signature = generate_balance_signature(
@@ -35,6 +39,8 @@ async def sign_user_balance(
         launchpad_contract_address=contract_address,
         private_key=settings.ido_sign_account_private_key,
     )
+    if not signature:
+        return SignUserBalanceResponse(ok=False, error="Signature generation failed")
     return SignUserBalanceResponse(signature=signature)
 
 

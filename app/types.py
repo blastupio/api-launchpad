@@ -6,6 +6,7 @@ from typing_extensions import TypedDict
 class BadgeType(str, Enum):
     PRIVATE = "PRIVATE"
     PUBLIC = "PUBLIC"
+    BOOSTER = "BOOSTER"
 
 
 class PlacedToken(NamedTuple):

@@ -1,7 +1,7 @@
 from typing import Any
 
 from eth_utils import add_0x_prefix
-from web3 import AsyncWeb3
+from web3 import AsyncWeb3, Web3
 from web3._utils.contracts import encode_abi
 
 from app.abi import LAUNCHPAD_PLACE_TOKENS_ABI, TRY_AGGREGATE_ABI
@@ -14,9 +14,10 @@ async def get_multicall_token_placed(
     web3: AsyncWeb3, contract_project_id_by_project_id: dict[str, int]
 ) -> tuple[Any, ...]:
     # call tokenPlaced function for multiple contract_project_id at once
+    launchpad_address = Web3.to_checksum_address(settings.launchpad_contract_address)
     encoded = (
         (
-            settings.launchpad_contract_address,
+            launchpad_address,
             encode_abi(
                 web3,
                 LAUNCHPAD_PLACE_TOKENS_ABI,

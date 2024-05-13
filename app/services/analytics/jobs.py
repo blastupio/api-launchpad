@@ -1,4 +1,5 @@
 import time
+from base64 import b64decode
 from collections import defaultdict
 
 import pandas as pd
@@ -40,7 +41,7 @@ class ProcessLaunchpadContractEvents(Command):
         dataframe = pd.DataFrame(data)
 
         gc = pygsheets.authorize(
-            service_account_json=settings.google_service_account_json,
+            service_account_json=b64decode(settings.google_service_account_json),
         )
         try:
             sh = gc.open(settings.google_launchpad_events_report_filename)

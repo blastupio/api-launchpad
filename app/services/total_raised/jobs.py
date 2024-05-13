@@ -1,5 +1,6 @@
 from eth_abi import decode
 from fastapi import Depends
+from web3 import Web3
 
 from app.abi import LAUNCHPAD_PLACE_TOKENS_ABI
 from app.base import logger
@@ -44,13 +45,13 @@ class RecalculateProjectsTotalRaised(Command):
             info = PlacedToken(
                 *decode(types=[x["type"] for x in LAUNCHPAD_PLACE_TOKENS_ABI["outputs"]], data=data)
             )
-            token_price = info.price / 10e18
-            volume = info.volume / 10e18  # tokens left
+            token_price = Web3.from_wei(info.price, "ether")
+            volume = Web3.from_wei(info.volume, "ether")  # tokens left
             if volume < 1:
                 # no tokens left => 0 usd_volume_left
                 usd_volume_left_by_project_id[project_id] = 0
             else:
-                usd_volume_left_by_project_id[project_id] = volume * token_price
+                usd_volume_left_by_project_id[project_id] = float(volume * token_price)
         res = [
             ProjectIdWithRaised(
                 project_id=project_id,

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 from app.crud.history_staking import HistoryStakingCrud
+from app.crud.launchpad_events import LaunchpadContractEventsCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
 
 from app.env import settings
@@ -66,6 +67,12 @@ async def get_staking_history_crud(
     session: AsyncSession = Depends(get_session),
 ) -> HistoryStakingCrud:
     return HistoryStakingCrud(session)
+
+
+async def get_launchpad_contract_events_crud(
+    session: AsyncSession = Depends(get_session),
+) -> LaunchpadContractEventsCrud:
+    return LaunchpadContractEventsCrud(session)
 
 
 async def get_project_whitelist_crud(

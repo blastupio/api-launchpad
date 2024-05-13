@@ -90,6 +90,17 @@ cron:
     args:
       - "-c"
       - "python3 console.py update-project-total-raised"
+  schedule-process-launchpad-contract-events:
+    enabled: true
+    schedule: "*/15 * * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 console.py process-launchpad-contract-events"
 
 
 env:

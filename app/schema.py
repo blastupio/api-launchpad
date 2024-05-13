@@ -1,13 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Literal, NewType
+from typing import Dict, List, Optional, Literal, NewType, Any
 
 import numpy as np
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
-from app.models import HistoryStakeType
+from app.models import HistoryStakeType, LaunchpadContractEventType
 from app.types import BadgeType
 
 Address = NewType("Address", str)
@@ -397,3 +397,13 @@ class CreateHistoryStake(BaseModel):
 class YieldPercentageResponse(BaseModel):
     native: float
     stablecoin: float
+
+
+class CreateLaunchpadEvent(BaseModel):
+    user_address: str
+    token_address: str
+    contract_project_id: int | None
+    txn_hash: str
+    block_number: int
+    event_type: LaunchpadContractEventType
+    extra: dict[Any, Any] = Field(default_factory=dict)

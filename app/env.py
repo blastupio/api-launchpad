@@ -67,6 +67,9 @@ class Settings(BaseSettings):
     tg_bot_notification_token: str
     tg_notification_chat_id: str
 
+    google_service_account_json: str | None = None
+    google_launchpad_events_report_filename: str = "LaunchpadEvents"
+
 
 settings = Settings(_env_file=".env")
 

@@ -48,6 +48,11 @@ class StatusProject(enum.Enum):
     COMPLETED = "completed"
 
 
+class LaunchpadContractEventType(enum.Enum):
+    TOKENS_BOUGHT = "tokens_bought"
+    USER_REGISTERED = "user_registered"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -221,3 +226,20 @@ class ProjectWhitelist(Base):
     __table_args__ = (
         UniqueConstraint("project_id", "user_address", name="uc_project_id_user_address"),
     )
+
+
+class LaunchpadContractEvents(Base):
+    __tablename__ = "launchpad_contract_events"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    event_type = Column(Enum(LaunchpadContractEventType), nullable=False)
+    user_address = Column(String, index=True, nullable=False)
+    token_address = Column(String, nullable=False)
+
+    contract_project_id = Column(BigIntegerType, nullable=True)
+    extra = Column(JSON, default={}, server_default=text("'{}'::json"))
+    txn_hash = Column(String, unique=True, nullable=False)
+    block_number = Column(BigIntegerType, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

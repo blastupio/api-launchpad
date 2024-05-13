@@ -139,7 +139,6 @@ class ProcessLaunchpadContractEvents(Command):
             return CommandResult(success=False, need_retry=True)
         if new_events:
             # todo: append only new events, not all events
-            # await self.get_all_events_and_save_to_gs(crud)
-            self.get_all_events_and_save_to_gs(crud)
+            await self.get_all_events_and_save_to_gs(crud)
 
         return CommandResult(success=True, need_retry=False)

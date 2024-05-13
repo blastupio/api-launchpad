@@ -101,10 +101,10 @@ class LaunchpadProjectList(BaseModel):
     registration_end_at: datetime
     start_at: datetime
     end_at: datetime
-    points_reward_start_at: datetime
-    points_reward_end_at: datetime
+    points_reward_start_at: datetime | None
+    points_reward_end_at: datetime | None
     fcfs_opens_at: datetime
-    badges: list[Badge]
+    badges: list[Badge] = Field(default_factory=list)
 
     kys_required: bool
     whitelist_required: bool

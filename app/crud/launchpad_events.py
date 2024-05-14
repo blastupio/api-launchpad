@@ -1,4 +1,4 @@
-from sqlalchemy import select, Row, Sequence
+from sqlalchemy import select, Row, Sequence, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 
@@ -23,3 +23,17 @@ class LaunchpadContractEventsCrud(BaseCrud):
             .on_conflict_do_nothing(constraint="ux_launchpad_contract_events_txn_hash")
         )
         await self.session.execute(st)
+
+    async def get_tier_by_user_address_and_contract_project_id(
+        self, conn: AsyncConnection
+    ) -> dict[str, int]:
+        query = """
+        SELECT JSON_OBJECT_AGG(
+          user_address || '_' || contract_project_id,
+          (extra ->> 'tier')::int
+        ) AS result
+        FROM launchpad_contract_events
+        WHERE event_type = 'USER_REGISTERED'
+        """
+        res = (await conn.execute(text(query))).scalar_one_or_none()
+        return res or {}

@@ -34,6 +34,8 @@ class ProcessLaunchpadContractEvents(Command):
             info_by_contract_project_id = (
                 await project_crud.get_project_info_by_contract_project_id(conn)
             )
+            tier_info = await crud.get_tier_by_user_address_and_contract_project_id(conn)
+
             for event in events:
                 contr_project_id = event.contract_project_id
                 tier = event.extra.get("tier")
@@ -45,6 +47,8 @@ class ProcessLaunchpadContractEvents(Command):
                     event_type := event.event_type.value
                 ) == LaunchpadContractEventType.USER_REGISTERED.value:
                     tokens_amount, usd_amount, token_price = "", "", ""
+                elif event_type == LaunchpadContractEventType.TOKENS_BOUGHT.value:
+                    tier = tier_info.get(f"{event.user_address.lower()}_{contr_project_id}")
 
                 data["#"].append(event.id)
                 data["event_type"].append(event_type)

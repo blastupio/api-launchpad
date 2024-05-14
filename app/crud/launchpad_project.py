@@ -1,7 +1,7 @@
-from decimal import Decimal, Context
-from typing import Sequence
+from typing import Sequence, Any
 
-from sqlalchemy import select, or_, Row, case, update
+from sqlalchemy import select, or_, Row, update
+from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
@@ -63,3 +63,20 @@ class LaunchpadProjectCrud(BaseCrud):
                 .where(LaunchpadProject.id == x.project_id)
                 .values(total_raised=str(x.raised))
             )
+
+    async def get_project_info_by_contract_project_id(
+        self, conn: AsyncConnection
+    ) -> dict[int, dict[str, Any]]:
+        st = select(
+            LaunchpadProject.contract_project_id,
+            LaunchpadProject.name,
+            LaunchpadProject.token_price,
+        ).where(
+            LaunchpadProject.project_type == ProjectType.DEFAULT,
+            LaunchpadProject.contract_project_id.isnot(None),
+        )
+        result = await conn.execute(st)
+        return {
+            row.contract_project_id: {"name": row.name, "price": row.token_price}
+            for row in result.fetchall()
+        }

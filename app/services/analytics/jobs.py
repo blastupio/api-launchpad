@@ -6,12 +6,14 @@ import pandas as pd
 import pygsheets
 from fastapi import Depends
 from pygsheets import PyGsheetsException
+from web3 import Web3
 
 from app.abi import LAUNCHPAD_CONTRACT_ADDRESS_ABI
 from app.base import logger, engine
 from app.common import Command, CommandResult
+from app.crud import LaunchpadProjectCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
-from app.dependencies import get_launchpad_contract_events_crud
+from app.dependencies import get_launchpad_contract_events_crud, get_launchpad_projects_crud
 from app.env import settings
 from app.models import LaunchpadContractEventType
 from app.schema import CreateLaunchpadEvent
@@ -20,21 +22,40 @@ from app.services.web3_nodes import web3_node
 
 
 class ProcessLaunchpadContractEvents(Command):
-    async def get_all_events_and_save_to_gs(self, crud: LaunchpadContractEventsCrud):
+    async def get_all_events_and_save_to_gs(
+        self, crud: LaunchpadContractEventsCrud, project_crud: LaunchpadProjectCrud
+    ):
         if not settings.google_service_account_json:
             logger.error("Process launchpad events: google_service_account_json not set")
             return
         data = defaultdict(list)
         async with engine.begin() as conn:
             events = await crud.get_all_events(conn)
+            info_by_contract_project_id = (
+                await project_crud.get_project_info_by_contract_project_id(conn)
+            )
             for event in events:
+                contr_project_id = event.contract_project_id
+                tier = event.extra.get("tier")
+                project_name = info_by_contract_project_id.get(contr_project_id, {}).get("name", "")
+                tokens_amount = round(Web3.from_wei(int(event.extra.get("amount", 0)), "ether"), 6)
+                token_price = info_by_contract_project_id.get(contr_project_id, {}).get("price", 0)
+                usd_amount = round(tokens_amount * token_price, 2)
+                if (
+                    event_type := event.event_type.value
+                ) == LaunchpadContractEventType.USER_REGISTERED.value:
+                    tokens_amount, usd_amount, token_price = "", "", ""
+
                 data["#"].append(event.id)
-                data["event_type"].append(event.event_type.value)
+                data["event_type"].append(event_type)
+                data["project_name"].append(project_name)
+                data["contract_project_id"].append(contr_project_id)
+                data["tokens_amount"].append(tokens_amount)
+                data["usd_token_price"].append(token_price)
+                data["usd_amount"].append(usd_amount)
+                data["tier"].append(tier + 1 if tier is not None else "")
                 data["user_address"].append(event.user_address)
                 data["token_address"].append(event.token_address)
-                data["contract_project_id"].append(event.contract_project_id)
-                data["amount"].append(event.extra.get("amount"))
-                data["tier"].append(event.extra.get("tier"))
                 data["txn_hash"].append(event.txn_hash)
                 data["block_number"].append(event.block_number)
                 data["created_at"].append(event.created_at)
@@ -54,6 +75,7 @@ class ProcessLaunchpadContractEvents(Command):
     async def command(
         self,
         crud: LaunchpadContractEventsCrud = Depends(get_launchpad_contract_events_crud),
+        project_crud: LaunchpadProjectCrud = Depends(get_launchpad_projects_crud),
     ) -> CommandResult:
         if not settings.launchpad_contract_address:
             logger.error("Process launchpad events: launchpad contract address is not set")
@@ -133,12 +155,15 @@ class ProcessLaunchpadContractEvents(Command):
             if n_allocations or n_user_registered:
                 # one needs to commit only ones after while cycle
                 # don't commit inside add_event
+                logger.info(
+                    f"Process launchpad events: saving {n_allocations=}, {n_user_registered=}"
+                )
                 await crud.session.commit()
         except Exception as e:
             logger.error(f"Error processing events: {e}")
             return CommandResult(success=False, need_retry=True)
         if new_events:
             # todo: append only new events, not all events
-            await self.get_all_events_and_save_to_gs(crud)
+            await self.get_all_events_and_save_to_gs(crud, project_crud)
 
         return CommandResult(success=True, need_retry=False)

@@ -1,10 +1,13 @@
 import asyncio
+from math import ceil
 
 from fastapi import APIRouter, Path, Query
+from fastapi_pagination import Page
 from web3 import Web3
 
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
+from app.dependencies import LaunchpadProjectCrudDep
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -16,6 +19,7 @@ from app.schema import (
     InternalServerError,
     ErrorResponse,
     YieldPercentageResponse,
+    GetUserProjectsResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.tiers.consts import (
@@ -94,3 +98,19 @@ async def get_yield_percentage() -> YieldPercentageResponse:
         get_native_yield(), get_stablecoin_yield()
     )
     return YieldPercentageResponse(native=native_yield, stablecoin=stablecoin_yield)
+
+
+@router.get("/user-projects/{user_address}", response_model=GetUserProjectsResponse)
+async def get_user_projects(
+    projects_crud: LaunchpadProjectCrudDep,
+    user_address: str = Path(
+        pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
+    ),
+    page: int = Query(default=1, ge=1),
+    size: int = Query(default=30, ge=3, le=30),
+):
+    projects, total_rows = await projects_crud.get_user_projects(user_address, page, size)
+
+    total_pages = ceil(total_rows / size)
+    page = Page(total=total_rows, page=page, size=size, items=projects, pages=total_pages)
+    return GetUserProjectsResponse(data=page)

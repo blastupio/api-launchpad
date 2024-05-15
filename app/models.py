@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import shortuuid
-from sqlalchemy import Enum, CheckConstraint, UniqueConstraint
+from sqlalchemy import Enum, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy import (
     String,
     DECIMAL,
@@ -243,3 +243,14 @@ class LaunchpadContractEvents(Base):
     block_number = Column(BigIntegerType, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index(
+            "_user_contract_event_uc",
+            "user_address",
+            "contract_project_id",
+            "event_type",
+            unique=True,
+            postgresql_where=(event_type == "USER_REGISTERED"),
+        ),
+    )

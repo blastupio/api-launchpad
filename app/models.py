@@ -3,7 +3,7 @@ from decimal import Decimal
 from uuid import uuid4
 
 import shortuuid
-from sqlalchemy import Enum, CheckConstraint
+from sqlalchemy import Enum, CheckConstraint, UniqueConstraint, Index
 from sqlalchemy import (
     String,
     DECIMAL,
@@ -18,6 +18,7 @@ from sqlalchemy import (
     Integer,
     Boolean,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 
 from app.base import Base, BigIntegerType
@@ -47,6 +48,11 @@ class StatusProject(enum.Enum):
     COMPLETED = "completed"
 
 
+class LaunchpadContractEventType(enum.Enum):
+    TOKENS_BOUGHT = "tokens_bought"
+    USER_REGISTERED = "user_registered"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -69,7 +75,12 @@ class LaunchpadProject(Base):
     token_address = Column(String, nullable=True)
 
     contract_project_id = Column(BigIntegerType, nullable=True)
+
     approve_for_registration_is_required = Column(Boolean, nullable=True)
+    kys_required = Column(Boolean, server_default="false", default=False, nullable=False)
+    whitelist_required = Column(Boolean, server_default="false", default=False, nullable=False)
+
+    badges = Column(JSONB(), server_default="{}", nullable=False)
 
     raise_goal = Column(DECIMAL, default=Decimal("0"), nullable=True)
     raise_goal_on_launchpad = Column(DECIMAL, default=Decimal("0"), nullable=True)
@@ -98,6 +109,7 @@ class LaunchpadProject(Base):
     links = relationship("ProjectLink", back_populates="project")
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
+    whitelist_addresses = relationship("ProjectWhitelist", back_populates="project")
 
     @property
     def total_raise(self):
@@ -141,6 +153,7 @@ class OnRampOrder(Base):
     amount = Column(Text(), nullable=False)
     received_amount = Column(Text(), nullable=True)
     currency = Column(Text(), nullable=True)
+    munzen_txn_hash = Column(Text(), nullable=True)
     status = Column(Text(), default=ONRAMP_STATUS_NEW, server_default=ONRAMP_STATUS_NEW)
     extra = Column(JSON(), default=lambda: {}, server_default=text("'{}'::jsonb"))
 
@@ -196,3 +209,48 @@ class HistoryStake(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     __table_args__ = (CheckConstraint(amount >= 0, name="check_positive_amount"), {})
+
+
+class ProjectWhitelist(Base):
+    __tablename__ = "project_whitelist"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    user_address = Column(String, index=True, nullable=False)
+
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
+    project = relationship("LaunchpadProject", back_populates="whitelist_addresses")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("project_id", "user_address", name="uc_project_id_user_address"),
+    )
+
+
+class LaunchpadContractEvents(Base):
+    __tablename__ = "launchpad_contract_events"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    event_type = Column(Enum(LaunchpadContractEventType), nullable=False)
+    user_address = Column(String, index=True, nullable=False)
+    token_address = Column(String, nullable=False)
+
+    contract_project_id = Column(BigIntegerType, nullable=True)
+    extra = Column(JSON, default={}, server_default=text("'{}'::json"))
+    txn_hash = Column(String, unique=True, nullable=False)
+    block_number = Column(BigIntegerType, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    __table_args__ = (
+        Index(
+            "_user_contract_event_uc",
+            "user_address",
+            "contract_project_id",
+            "event_type",
+            unique=True,
+            postgresql_where=(event_type == "USER_REGISTERED"),
+        ),
+    )

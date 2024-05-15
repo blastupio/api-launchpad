@@ -1,13 +1,23 @@
+import asyncio
 import traceback
+from datetime import timedelta
 
 from celery import Celery
 from celery.exceptions import Retry
+from web3 import Web3
 
+from app import chains
 from app.base import logger
 from app.common import run_command_and_get_result
+from app.consts import NATIVE_TOKEN_ADDRESS
+from app.dependencies import get_redis
 from app.env import settings
+from app.services.prices import get_tokens_price
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
-from onramp.jobs import ProcessMunzenOrder
+from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
+from app.services.web3_nodes import web3_node
+from app.tg import notification_bot
+from onramp.jobs import ProcessMunzenOrder, MonitorSenderBalance
 
 app = Celery("tasks", broker=settings.celery_broker)
 
@@ -60,5 +70,53 @@ def process_history_staking_event():
 
         logger.error(
             f"process_history_staking_event. Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3)
+async def recalculate_project_total_raised():
+    try:
+        command = RecalculateProjectsTotalRaised()
+        result = await command.run()
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            recalculate_project_total_raised.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"recalculate_project_total_raised Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+async def monitor_onramp_bridge_balance():
+    try:
+        command = MonitorSenderBalance()
+        result = await command.run()
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            monitor_onramp_bridge_balance.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"monitor_onramp_bridge_balance Unhandled exception: {e}, {traceback.format_exc()}"
         )
         raise Retry("", exc=e)

@@ -4,7 +4,6 @@ from logging.config import fileConfig
 from sys import path
 
 from alembic import context
-from dotenv import load_dotenv
 from sqlalchemy import engine_from_config, pool
 from sqlalchemy.ext.asyncio import AsyncEngine
 
@@ -13,7 +12,6 @@ from app.base import Base
 
 current_dir = os.path.dirname(os.path.abspath(__file__))
 root_dir = os.path.dirname(current_dir)
-load_dotenv(os.path.join(root_dir, ".env"))
 path.append(root_dir)
 
 # this is the Alembic Config object, which provides

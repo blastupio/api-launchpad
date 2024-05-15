@@ -1,13 +1,15 @@
 from datetime import datetime
 from decimal import Decimal
 from enum import Enum
-from typing import Dict, List, Optional, Literal, NewType
+from typing import Dict, List, Optional, Literal, NewType, Any
 
 import numpy as np
+from fastapi_pagination import Page
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
-from app.models import HistoryStakeType
+from app.models import HistoryStakeType, LaunchpadContractEventType, StatusProject
+from app.types import BadgeType
 
 Address = NewType("Address", str)
 
@@ -77,6 +79,10 @@ class ProjectTypeEnum(str, Enum):
     PRIVATE_PRESALE = "private_presale"
 
 
+class Badge(BaseModel):
+    type: BadgeType  # noqa
+
+
 class LaunchpadProjectList(BaseModel):
     id: str  # noqa
     slug: str
@@ -96,12 +102,25 @@ class LaunchpadProjectList(BaseModel):
     registration_end_at: datetime
     start_at: datetime
     end_at: datetime
-    points_reward_start_at: datetime
-    points_reward_end_at: datetime
+    points_reward_start_at: datetime | None
+    points_reward_end_at: datetime | None
     fcfs_opens_at: datetime
+    badges: list[Badge] = Field(default_factory=list)
+
+    kys_required: bool
+    whitelist_required: bool
 
     class Config:
         from_attributes = True
+
+    @field_validator("badges", mode="before")
+    @classmethod
+    def check_badges_is_list(cls, value) -> list[Badge]:
+        if value == {}:
+            return []
+        elif isinstance(value, (dict, Badge)):
+            return [value]
+        return value
 
     @field_validator("raise_goal")
     @classmethod
@@ -147,7 +166,7 @@ class TokenDetailsData(BaseModel):
 
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
-    description: str
+    description: str | None
     project_type: ProjectTypeEnum
 
     created_at: datetime
@@ -310,11 +329,15 @@ class OnrampOrderRequest(BaseModel):
 
 
 class SignUserBalanceResponse(BaseModel):
-    signature: str
+    ok: bool = True
+    error: str | None = None
+    signature: str | None = None
 
 
 class SignApprovedUserResponse(BaseModel):
-    signature: str
+    ok: bool = True
+    error: str | None = None
+    signature: str | None = None
 
 
 class TierInfo(BaseModel):
@@ -370,3 +393,36 @@ class CreateHistoryStake(BaseModel):
     txn_hash: str
     block_number: int
     user_address: str
+
+
+class YieldPercentageResponse(BaseModel):
+    native: float
+    stablecoin: float
+
+
+class CreateLaunchpadEvent(BaseModel):
+    user_address: str
+    token_address: str
+    contract_project_id: int | None
+    txn_hash: str
+    block_number: int
+    event_type: LaunchpadContractEventType
+    extra: dict[Any, Any] = Field(default_factory=dict)
+
+
+class UserProject(BaseModel):
+    id: str  # noqa
+    slug: str
+    name: str
+    logo_url: str | None
+    contract_project_id: int | None
+    status: StatusProject
+
+    class Config:
+        from_attributes = True
+
+
+class GetUserProjectsResponse(BaseModel):
+    data: Page[UserProject]
+    ok: bool = True
+    error: str | None = None

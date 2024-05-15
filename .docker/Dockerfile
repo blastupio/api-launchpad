@@ -22,6 +22,7 @@ COPY entrypoint.sh main.py poetry.lock pyproject.toml alembic.ini ./
 RUN poetry install
 COPY app ./app
 COPY onramp ./onramp
+COPY console.py ./console.py
 COPY migrations ./migrations
 
 CMD ["sh", "entrypoint.sh"]

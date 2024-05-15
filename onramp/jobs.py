@@ -1,13 +1,22 @@
+import asyncio
+import traceback
+from datetime import timedelta
 from uuid import UUID
 
 from fastapi import Depends
+from web3 import Web3
 
 from app.base import logger
 from app.common import Command, CommandResult
+from app.consts import NATIVE_TOKEN_ADDRESS
 from app.crud import OnRampCrud
-from app.dependencies import get_lock, get_onramp_crud, get_crypto
+from app.dependencies import get_lock, get_onramp_crud, get_crypto, get_redis
+from app.env import settings
 from app.models import ONRAMP_STATUS_COMPLETE
 from app.services import Lock
+from app.services.prices import get_tokens_price
+from app.services.web3_nodes import web3_node
+from app.tg import notification_bot
 from onramp.services import Crypto
 
 
@@ -34,16 +43,89 @@ class ProcessMunzenOrder(Command):
                 logger.info(f"[ProcessMunzenOrder({self.order_id})] Order already completed")
                 return CommandResult(success=False, need_retry=False)
 
+            balance = await crypto.get_sender_balance()
+            logger.info(
+                f"[ProcessMunzenOrder({self.order_id})] Sending {order.received_amount} to {order.address}"  # noqa: E501
+            )
             try:
-                tx_hash = await crypto.send_eth(order.address, order.received_amount)
-                if tx_hash:
+                if tx_hash := await crypto.send_eth(order.address, order.received_amount):
                     order.status = ONRAMP_STATUS_COMPLETE
                     order.hash = tx_hash
                     await crud.persist(order)
+                    logger.info(
+                        f"[ProcessMunzenOrder({self.order_id})] Sent to {order.address}: {tx_hash}"
+                    )
+                    balance_after_txn = balance - int(order.received_amount)
+                    await notification_bot.completed_onramp_order(
+                        order_id=self.order_id,
+                        tx_hash=tx_hash,
+                        munzen_txn_hash=order.munzen_txn_hash,
+                        balance_after_txn=balance_after_txn,
+                    )
+
                     return CommandResult(success=True)
             except Exception as e:
-                logger.error(f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}")
+                err = f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}"
+                logger.error(err)
+                await notification_bot.onramp_order_failed(
+                    order_id=self.order_id, balance_wei=balance, error=err
+                )
                 return CommandResult(success=False, need_retry=True, retry_after=60)
         finally:
             await lock.release(f"munzen-order:{self.order_id}")
             await lock.release(f"munzen-order:{self.order_id}")
+
+
+class MonitorSenderBalance(Command):
+    async def command(
+        self,
+    ) -> CommandResult:
+        logger.info("Monitoring onramp bridge balance")
+        redis = get_redis()
+
+        if not settings.onramp_sender_addr:
+            logger.error("Onramp sender address is not set")
+            return CommandResult(success=False, need_retry=False)
+
+        try:
+            web3 = await web3_node.get_web3("blast")
+            chain_id = await web3.eth.chain_id
+            balance_wei, balance_in_cache, blast_price = await asyncio.gather(
+                web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
+                redis.get("onramp_bridge_balance"),
+                get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+            )
+        except Exception as e:
+            logger.error(
+                f"monitor_onramp_bridge_balance. Unhandled exception: {e}, {traceback.format_exc()}"
+            )
+            return CommandResult(success=False, need_retry=True, retry_after=10)
+
+        balance_in_cache = int(balance_in_cache) if balance_in_cache else 0
+        if balance_wei == balance_in_cache:
+            err = f"Monitoring onramp balance: balance in cache = blockchain balance: {balance_wei}"
+            logger.info(err)
+            return CommandResult(success=True)
+
+        # balance has changed
+        await redis.set("onramp_bridge_balance", balance_wei, ex=timedelta(hours=4))
+
+        balance = float(Web3.from_wei(balance_wei, "ether"))
+        if not (blast_usd_price := blast_price.get(NATIVE_TOKEN_ADDRESS)):
+            logger.error(f"Can't get blast USD price for {NATIVE_TOKEN_ADDRESS}")
+            return CommandResult(success=False, need_retry=True, retry_after=10)
+
+        if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
+            if settings.app_env == "dev":
+                msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
+                logger.error(msg)
+            else:
+                await notification_bot.send_low_onramp_bridge_balance(
+                    blast_balance=balance,
+                    usd_balance=usd_balance,
+                )
+
+        logger.info(
+            f"Monitoring onramp bridge balance is done: {balance:.6f} ETH ({usd_balance:.2f} USD)"
+        )
+        return CommandResult(success=True)

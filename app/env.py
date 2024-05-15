@@ -17,8 +17,8 @@ class Settings(BaseSettings):
 
     controller_seed_phrase: str
 
-    ido_sign_account_private_key: str
-    launchpad_contract_address: str
+    ido_sign_account_private_key: str | None = None  # todo: not None
+    launchpad_contract_address: str | None = None  # todo: not None
 
     coingecko_api_key: str | None = None
 
@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     onramp_seed_phrase: str
     onramp_sender_addr: str | None = None
     onramp_sender_seed_phrase: str
+    onramp_usd_balance_threshold: int = 1000
 
     usdt_contract_addr_eth: str
     usdt_contract_addr_bsc: str
@@ -57,9 +58,17 @@ class Settings(BaseSettings):
     contract_addr_bsc: str
     contract_addr_blast: str
 
-    yield_staking_contract_addr: str
+    yield_staking_contract_addr: str | None = None  # todo: not None
 
     log_level: str = "DEBUG"  # todo: use enum
+
+    proxy_base_url: str
+
+    tg_bot_notification_token: str
+    tg_notification_chat_id: str
+
+    google_service_account_json: str | None = None
+    google_launchpad_events_report_filename: str = "LaunchpadEvents"
 
 
 settings = Settings(_env_file=".env")

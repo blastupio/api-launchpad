@@ -49,6 +49,19 @@ class Command:
             dependant = get_dependant(path=f"command:{self.__class__.__name__}", call=self.command)
             return await self._execute_command(request, dependant)
 
+    async def run_async(self):
+        async with AsyncExitStack() as cm:
+            request = Request(
+                {
+                    "type": "http",
+                    "headers": [],
+                    "query_string": "",
+                    "fastapi_astack": cm,
+                }
+            )
+            dependant = get_dependant(path=f"command:{self.__class__.__name__}", call=self.command)
+            return await self._execute_command(request, dependant)
+
 
 def run_command_and_get_result(command: Command) -> CommandResult:
     loop = asyncio.get_event_loop()

@@ -20,7 +20,7 @@ class ProcessHistoryStakingEvent(Command):
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
     ) -> CommandResult:
         if not settings.yield_staking_contract_addr:
-            logger.error("Yield staking contract address is not set")
+            logger.error("Staking events: yield staking contract address is not set")
             return CommandResult(success=False, need_retry=False)
 
         web3 = AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_blast))
@@ -44,10 +44,10 @@ class ProcessHistoryStakingEvent(Command):
                 from_block = last_checked_block + 1
                 # 3000 is limit, can't set larger than that
                 to_block = min(current_block, from_block + 3000)
-                logger.info(f"Monitoring from block {from_block} to block {to_block}")
+                logger.info(f"Staking events: monitoring {from_block=} {to_block=}")
 
                 if from_block > to_block:
-                    logger.info(f"No events from block {from_block} to block {to_block}")
+                    logger.info(f"Staking events: No events {from_block=} {to_block=}")
                     break
 
                 stake_events = await staking_contract.events.Staked().get_logs(
@@ -91,9 +91,10 @@ class ProcessHistoryStakingEvent(Command):
             if n_stakes or n_claim_rewards:
                 # one needs to commit only ones after while cycle
                 # don't commit inside add_history
+                logger.info(f"Staking events: {n_stakes=}, {n_claim_rewards=}")
                 await crud.session.commit()
         except Exception as e:
-            logger.error(f"Error processing events: {e}")
+            logger.error(f"Staking events: error with processing:\n{e}")
             return CommandResult(success=False, need_retry=True)
 
         return CommandResult(success=True, need_retry=False)

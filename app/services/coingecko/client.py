@@ -102,13 +102,19 @@ class CoingeckoClient:
             81457: {"0x963eec23618bbc8e1766661d5f263f18094ae4d5": "cybro"}
         }
         """
-        if _value := await self.redis.get("coingecko_id_by_chain_id_and_address"):
+        _value = await self.redis.get("coingecko_id_by_chain_id_and_address")
+        value = json.loads(_value) if _value else {}
+        if value:
             # json.loads returns dicts with string chain_ids, so we need to convert them to int
-            return {int(key): value for key, value in json.loads(_value).items()}
+            return {int(key): value for key, value in value.items()}
 
         res: dict[ChainId, dict[Address, CoinGeckoCoinId]] = defaultdict(dict)
         list_of_coins: list[ListCoin] | None = await self.get_coingecko_list_of_coins()
-        for coin in list_of_coins or []:
+        if not list_of_coins:
+            logger.error("Coingecko: no list of coins")
+            return {}
+
+        for coin in list_of_coins:
             for platform_name, token_address_on_platform in coin["platforms"].items():
                 if chain_id := from_platform_to_chain_id.get(platform_name):
                     res[chain_id][Address(token_address_on_platform)] = CoinGeckoCoinId(coin["id"])
@@ -135,14 +141,19 @@ class CoingeckoClient:
         chain_id: ChainId,
         coingecko_id_by_chain_id_and_address: dict[ChainId, dict[Address, CoinGeckoCoinId]],
     ) -> dict[CoinGeckoCoinId, Address]:
-        if _value := await self.redis.get(f"token_address_by_coingecko_id_{chain_id}"):
-            return json.loads(_value)
+        _value = await self.redis.get(f"token_address_by_coingecko_id_{chain_id}")
+        value = json.loads(_value) if _value else {}
+        if value:
+            return value
 
         res = {}
         for token_address, coingecko_id in coingecko_id_by_chain_id_and_address.get(
             chain_id, {}
         ).items():
             res[coingecko_id] = token_address
+
+        if not res:
+            return {}
 
         await self.redis.setex(
             f"token_address_by_coingecko_id_{chain_id}", timedelta(minutes=30), json.dumps(res)

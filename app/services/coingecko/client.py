@@ -23,7 +23,7 @@ class CoingeckoClient:
     def __init__(self, redis_cli: Redis, api_key: str | None = None):
         self.__redis = redis_cli
         self.__api_key = api_key
-        self.__DEFAULT_PARAMS = {"x_cg_pro_api_key": self.__api_key} if self.__api_key else {}
+        self.__DEFAULT_HEADERS = {"x-cg-pro-api-key": self.__api_key} if self.__api_key else {}
         self.__host = (
             "https://pro-api.coingecko.com/api/v3"
             if self.__api_key
@@ -43,8 +43,7 @@ class CoingeckoClient:
         headers = headers or {}
         params = params or {}
 
-        if hasattr(self, "__DEFAULT_PARAMS"):
-            params |= self.__DEFAULT_PARAMS
+        headers |= self.__DEFAULT_HEADERS
 
         for i in range(1, 5):
             try:

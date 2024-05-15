@@ -4,10 +4,11 @@ from enum import Enum
 from typing import Dict, List, Optional, Literal, NewType, Any
 
 import numpy as np
+from fastapi_pagination import Page
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
-from app.models import HistoryStakeType, LaunchpadContractEventType
+from app.models import HistoryStakeType, LaunchpadContractEventType, StatusProject
 from app.types import BadgeType
 
 Address = NewType("Address", str)
@@ -407,3 +408,21 @@ class CreateLaunchpadEvent(BaseModel):
     block_number: int
     event_type: LaunchpadContractEventType
     extra: dict[Any, Any] = Field(default_factory=dict)
+
+
+class UserProject(BaseModel):
+    id: str  # noqa
+    slug: str
+    name: str
+    logo_url: str | None
+    contract_project_id: int | None
+    status: StatusProject
+
+    class Config:
+        from_attributes = True
+
+
+class GetUserProjectsResponse(BaseModel):
+    data: Page[UserProject]
+    ok: bool = True
+    error: str | None = None

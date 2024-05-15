@@ -1,11 +1,17 @@
 from typing import Sequence, Any
 
-from sqlalchemy import select, or_, Row, update
+from sqlalchemy import select, or_, Row, update, func
 from sqlalchemy.ext.asyncio import AsyncConnection
 from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
-from app.models import LaunchpadProject, StatusProject, ProjectType
+from app.models import (
+    LaunchpadProject,
+    StatusProject,
+    ProjectType,
+    LaunchpadContractEvents,
+    LaunchpadContractEventType,
+)
 from app.types import ProjectIdWithRaised
 
 
@@ -80,3 +86,31 @@ class LaunchpadProjectCrud(BaseCrud):
             row.contract_project_id: {"name": row.name, "price": row.token_price}
             for row in result.fetchall()
         }
+
+    async def get_user_projects(
+        self, user_address: str, page: int, size: int
+    ) -> tuple[Sequence[Row], int]:
+        offset = (page - 1) * size
+        general_st = (
+            select(
+                LaunchpadProject.id,
+                LaunchpadProject.name,
+                LaunchpadProject.logo_url,
+                LaunchpadProject.contract_project_id,
+                LaunchpadProject.slug,
+                LaunchpadProject.status,
+            )
+            .join(
+                LaunchpadContractEvents,
+                LaunchpadProject.contract_project_id == LaunchpadContractEvents.contract_project_id,
+            )
+            .where(
+                LaunchpadContractEvents.user_address == user_address.lower(),
+                LaunchpadContractEvents.event_type == LaunchpadContractEventType.USER_REGISTERED,
+            )
+        )
+        paginated_st = general_st.limit(size).offset(offset)
+        count_st = select(func.count()).select_from(general_st)
+        count: int = await self.session.scalar(count_st)
+        projects = (await self.session.execute(paginated_st)).all()
+        return projects, count

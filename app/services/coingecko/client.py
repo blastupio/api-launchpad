@@ -25,7 +25,7 @@ class CoingeckoClient:
         self.__api_key = api_key
         self.__DEFAULT_PARAMS = {"x_cg_pro_api_key": self.__api_key} if self.__api_key else {}
         self.__host = (
-            "https://api-pro.coingecko.com/api/v3"
+            "https://pro-api.coingecko.com/api/v3"
             if self.__api_key
             else "https://api.coingecko.com/api/v3"
         )

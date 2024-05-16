@@ -1,22 +1,13 @@
-import asyncio
 import traceback
-from datetime import timedelta
 
 from celery import Celery
 from celery.exceptions import Retry
-from web3 import Web3
 
-from app import chains
 from app.base import logger
 from app.common import run_command_and_get_result
-from app.consts import NATIVE_TOKEN_ADDRESS
-from app.dependencies import get_redis
 from app.env import settings
-from app.services.prices import get_tokens_price
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
-from app.services.web3_nodes import web3_node
-from app.tg import notification_bot
 from onramp.jobs import ProcessMunzenOrder, MonitorSenderBalance
 
 app = Celery("tasks", broker=settings.celery_broker)

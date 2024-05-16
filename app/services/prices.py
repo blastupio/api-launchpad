@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import get_redis
+from app.env import settings
 from app.schema import ChainId, Address, TokenInChain, RatesForChainAndToken
 from app.services.coingecko.client import coingecko_cli
 from app.services.coingecko.consts import chain_id_to_native_coin_coingecko_id
@@ -29,6 +30,9 @@ class TokenPriceCache:
     def __get_cache_key(self, chain_id: ChainId, address: Address) -> str:
         return f"tkn-price-{chain_id}-{address.lower()}"
 
+    def __get_long_cache_key(self, chain_id: ChainId, address: Address) -> str:
+        return f"long:tkn-price-{chain_id}-{address.lower()}"
+
     def __get_chain_id_with_address_from_cache_key(self, cache_key: str) -> tuple[ChainId, Address]:
         chain_id, address = cache_key.split("-")[2:]
         return ChainId(int(chain_id)), Address(address)
@@ -38,31 +42,46 @@ class TokenPriceCache:
         for chain_id, addr_to_price in prices.items():
             for address, price in addr_to_price.items():
                 cache_key = self.__get_cache_key(chain_id, address)
+                long_cache_key = self.__get_long_cache_key(chain_id, address)
                 if price:
                     tasks.append(
                         self.redis.set(
                             cache_key, price, ex=timedelta(minutes=TOKEN_PRICE_TTL_MINUTES)
                         )
                     )
+                    tasks.append(
+                        self.redis.set(
+                            long_cache_key,
+                            price,
+                            ex=timedelta(minutes=settings.price_long_cache_minutes),
+                        )
+                    )
         await asyncio.gather(*tasks)
 
     async def get(
-        self, addresses_by_chain_id: dict[ChainId, list[str]]
+        self, addresses_by_chain_id: dict[ChainId, list[str]], get_from_long_cache: bool = False
     ) -> dict[ChainId, dict[Address, float]]:
+        res: dict[ChainId, dict[Address, float]] = {}
+        key_func = self.__get_long_cache_key if get_from_long_cache else self.__get_cache_key
+
         keys = [
-            self.__get_cache_key(chain_id, Address(address))
+            key_func(chain_id, Address(address))
             for chain_id, addr_list in addresses_by_chain_id.items()
             for address in addr_list
         ]
-        if not (data := await self.redis.mget(keys)):
-            return {}
-
-        res: dict[ChainId, dict[Address, float]] = {}
-        for key, value in zip(keys, data):
-            chain_id, address = self.__get_chain_id_with_address_from_cache_key(key)
-            if value:
-                res.setdefault(chain_id, {})[address] = float(value)
+        if values := [value for value in await self.redis.mget(keys) if value]:
+            for key, value in zip(keys, values):
+                chain_id, address = self.__get_chain_id_with_address_from_cache_key(key)
+                if value:
+                    res.setdefault(chain_id, {})[address] = float(value)
         return res
+
+
+def _use_long_cache_to_get_prices(errors_count: int) -> bool:
+    if errors_count >= settings.price_errors_count_to_switch_to_long_cache:
+        logger.info(f"Prices: {errors_count=}, switching to long cache")
+        return True
+    return False
 
 
 async def get_tokens_price(
@@ -71,8 +90,12 @@ async def get_tokens_price(
     if not token_addresses:
         return {}
 
+    provider_errors_count = await coingecko_cli.get_errors_count()
     # try to get from cache
-    cached_prices_for_chain_id = await token_price_cache.get({chain_id: token_addresses})
+    cached_prices_for_chain_id = await token_price_cache.get(
+        {chain_id: token_addresses},
+        get_from_long_cache=_use_long_cache_to_get_prices(provider_errors_count),
+    )
     cached_prices = cached_prices_for_chain_id.get(chain_id, {})
 
     if len(token_addresses) == len(cached_prices):

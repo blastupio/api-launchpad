@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     launchpad_contract_address: str | None = None  # todo: not None
 
     coingecko_api_key: str | None = None
+    coingecko_errors_in_cache_minutes: int = 3
+
+    price_errors_count_to_switch_to_long_cache: int = 10
+    price_long_cache_minutes: int = 10
 
     eth_price_feed_addr: str
 

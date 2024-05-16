@@ -1,4 +1,3 @@
-import asyncio
 import json
 from uuid import UUID
 
@@ -10,7 +9,6 @@ from app.dependencies import get_onramp_crud, get_munzen, get_amount_converter
 from app.env import settings
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
-from app.tg import notification_bot
 from app.types import MunzenWebhookEvent, MunzenOrderType
 from app.utils import validation_error
 from onramp.services import Munzen, AmountConverter

@@ -86,15 +86,8 @@ class Web3NodeRedis:
 
     async def increment_web3_errors_count(self, chain_id: ChainId) -> int:
         key = f"web3_errors_count_{chain_id}"
-        if self.redis.exists(key):
-            await self.redis.incr(key)
-        else:
-            count = 1
-            await self.redis.setex(
-                key,
-                value=json.dumps(count),
-                time=timedelta(minutes=self.__WEB3_ERRORS_INTERVAL_MINUTES),
-            )
+        if (count := await self.redis.incr(key)) == 1:
+            await self.redis.expire(key, timedelta(minutes=self.__WEB3_ERRORS_INTERVAL_MINUTES))
         return count
 
 

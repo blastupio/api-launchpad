@@ -6,6 +6,7 @@ from typing import Any
 
 from redis.asyncio import Redis
 
+from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import get_redis
 from app.schema import ChainId, Address, TokenInChain, RatesForChainAndToken
@@ -75,6 +76,7 @@ async def get_tokens_price(
     cached_prices = cached_prices_for_chain_id.get(chain_id, {})
 
     if len(token_addresses) == len(cached_prices):
+        logger.info(f"Prices: cache hit for {chain_id=}, {token_addresses=}")
         # all tokens in cache
         return cached_prices
 
@@ -103,6 +105,10 @@ async def get_tokens_price(
         token_ids.append(native_coin_id)
         token_address_by_coingecko_id[native_coin_id] = NATIVE_TOKEN_ADDRESS
 
+    if not token_ids:
+        logger.warning(f"Prices: no token ids for {chain_id=}, {token_addresses=}")
+        return {}
+
     coingecko_prices: dict[CoinGeckoCoinId, dict[str, float]] | None = (
         await coingecko_cli.get_coingecko_price(token_ids)
     )
@@ -116,6 +122,7 @@ async def get_tokens_price(
             res[Address(token_address)] = usd_price
 
     if res:
+        logger.info(f"Prices: cache {chain_id=}, {token_addresses=}")
         await token_price_cache.set({chain_id: res})  # cache result from coingecko
     res.update(cached_prices)
     return res

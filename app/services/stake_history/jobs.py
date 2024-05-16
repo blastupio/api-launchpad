@@ -15,6 +15,50 @@ from app.services.stake_history.redis_cli import stake_history_redis
 
 
 class ProcessHistoryStakingEvent(Command):
+    async def _save_stake_events(self, crud: HistoryStakingCrud, chain_id: int, events) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateHistoryStake(
+                    type=HistoryStakeType.STAKE,
+                    token_address=event.args["stakingToken"],
+                    amount=str(event.args["amount"]),
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(chain_id),
+                    user_address=event.args["user"],
+                )
+            )
+
+    async def _save_claim_rewards_events(
+        self, crud: HistoryStakingCrud, chain_id: int, events
+    ) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateHistoryStake(
+                    type=HistoryStakeType.CLAIM_REWARDS,
+                    token_address=event.args["stakingToken"],
+                    amount=str(event.args["amountInStakingToken"]),
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(chain_id),
+                    user_address=event.args["user"],
+                )
+            )
+
+    async def _save_unstake_events(self, crud: HistoryStakingCrud, chain_id: int, events) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateHistoryStake(
+                    type=HistoryStakeType.UNSTAKE,
+                    token_address=event.args["stakingToken"],
+                    amount=str(event.args["amount"]),
+                    user_address=event.args["user"],
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(chain_id),
+                )
+            )
+
     async def command(
         self,
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
@@ -38,7 +82,7 @@ class ProcessHistoryStakingEvent(Command):
             address=web3.to_checksum_address(settings.yield_staking_contract_addr),
             abi=staking_abi,
         )
-        n_stakes, n_claim_rewards = 0, 0
+        n_stakes, n_claim_rewards, n_unstake = 0, 0, 0
         try:
             while True:
                 from_block = last_checked_block + 1
@@ -54,44 +98,28 @@ class ProcessHistoryStakingEvent(Command):
                     fromBlock=from_block, toBlock=to_block
                 )
                 n_stakes += len(stake_events)
-                for event in stake_events:
-                    await crud.add_history(
-                        params=CreateHistoryStake(
-                            type=HistoryStakeType.STAKE,
-                            token_address=event.args["stakingToken"],
-                            amount=str(event.args["amount"]),
-                            txn_hash=event.transactionHash.hex(),
-                            block_number=event.blockNumber,
-                            chain_id=str(chain_id),
-                            user_address=event.args["user"],
-                        )
-                    )
+                await self._save_stake_events(crud, chain_id, stake_events)
 
                 claim_reward_events = await staking_contract.events.RewardClaimed().get_logs(
                     fromBlock=from_block, toBlock=to_block
                 )
                 n_claim_rewards += len(claim_reward_events)
-                for event in claim_reward_events:
-                    await crud.add_history(
-                        params=CreateHistoryStake(
-                            type=HistoryStakeType.CLAIM_REWARDS,
-                            token_address=event.args["stakingToken"],
-                            amount=str(event.args["amountInStakingToken"]),
-                            txn_hash=event.transactionHash.hex(),
-                            block_number=event.blockNumber,
-                            chain_id=str(chain_id),
-                            user_address=event.args["user"],
-                        )
-                    )
+                await self._save_claim_rewards_events(crud, chain_id, claim_reward_events)
+
+                unstake_events = await staking_contract.events.Withdrawn().get_logs(
+                    fromBlock=from_block, toBlock=to_block
+                )
+                n_unstake += len(unstake_events)
+                await self._save_unstake_events(crud, chain_id, unstake_events)
 
                 last_checked_block = to_block
                 await stake_history_redis.set_last_checked_block(chain_id, to_block)
                 time.sleep(0.5)
 
-            if n_stakes or n_claim_rewards:
+            if any((n_stakes, n_claim_rewards, n_unstake)):
                 # one needs to commit only ones after while cycle
                 # don't commit inside add_history
-                logger.info(f"Staking events: {n_stakes=}, {n_claim_rewards=}")
+                logger.info(f"Staking events: saving {n_stakes=}, {n_claim_rewards=}, {n_unstake=}")
                 await crud.session.commit()
         except Exception as e:
             logger.error(f"Staking events: error with processing:\n{e}")

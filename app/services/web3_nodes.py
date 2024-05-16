@@ -5,7 +5,8 @@ import traceback
 from datetime import timedelta
 
 from redis.asyncio import Redis, from_url
-from web3 import AsyncWeb3, AsyncHTTPProvider, exceptions
+from web3 import AsyncWeb3, AsyncHTTPProvider
+from web3.exceptions import Web3Exception, TransactionNotFound
 
 from app.env import settings
 from app.schema import ChainId
@@ -28,10 +29,9 @@ def catch_web3_exceptions(func):
     async def wrapper(self, *args, **kwargs):
         try:
             return await func(self, *args, **kwargs)
-        except exceptions.Web3Exception as e:
-            # todo: catch more specific errors, not just Web3Exception
-            logger.error(f"Caught web3 error: {e}\n\n{traceback.format_exc()}")
-            if chain_id := chain_id_ctx.get():
+        except (Web3Exception, ValueError) as e:
+            if chain_id := chain_id_ctx.get() and not isinstance(e, TransactionNotFound):
+                logger.error(f"Caught web3 error: {e}\n\n{traceback.format_exc()}")
                 # Increment the error count for this chain_id
                 err_counts = await web3_node_redis.increment_web3_errors_count(chain_id)
                 logger.info(f"Error count for {chain_id=}: {err_counts}")

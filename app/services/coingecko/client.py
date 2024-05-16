@@ -76,10 +76,8 @@ class CoingeckoClient:
 
     async def __increment_errors_count(self) -> int:
         key = "coingecko_errors_count"
-        exist_count = await self.redis.get(key)
-        if exist_count:
-            count = json.loads(exist_count) + 1
-            await self.redis.set(key, count)
+        if self.redis.exists(key):
+            await self.redis.incr(key)
         else:
             count = 1
             await self.redis.setex(

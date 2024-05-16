@@ -9,6 +9,7 @@ from redis.asyncio import Redis
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import get_redis
+from app.env import settings
 from app.schema import ChainId, Address, TokenInChain, RatesForChainAndToken
 from app.services.coingecko.client import coingecko_cli
 from app.services.coingecko.consts import chain_id_to_native_coin_coingecko_id
@@ -16,8 +17,6 @@ from app.services.coingecko.types import CoinGeckoCoinId
 
 
 TOKEN_PRICE_TTL_MINUTES = 1
-LONG_TOKEN_PRICE_TTL_MINUTES = 10
-ERRORS_COUNT_TO_SWITCH_TO_LONG_CACHE = 10
 
 
 class TokenPriceCache:
@@ -54,7 +53,7 @@ class TokenPriceCache:
                         self.redis.set(
                             long_cache_key,
                             price,
-                            ex=timedelta(minutes=LONG_TOKEN_PRICE_TTL_MINUTES),
+                            ex=timedelta(minutes=settings.price_long_cache_minutes),
                         )
                     )
         await asyncio.gather(*tasks)
@@ -79,7 +78,7 @@ class TokenPriceCache:
 
 
 def _use_long_cache_to_get_prices(errors_count: int) -> bool:
-    if errors_count >= ERRORS_COUNT_TO_SWITCH_TO_LONG_CACHE:
+    if errors_count >= settings.price_errors_count_to_switch_to_long_cache:
         logger.info(f"Prices: {errors_count=}, switching to long cache")
         return True
     return False

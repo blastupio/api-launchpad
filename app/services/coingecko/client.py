@@ -20,8 +20,6 @@ from app.services.coingecko.types import ListCoin, CoinGeckoCoinId
 
 
 class CoingeckoClient:
-    __ERRORS_IN_CACHE_MINUTES_TTL = 3
-
     def __init__(self, redis_cli: Redis, api_key: str | None = None):
         self.__redis = redis_cli
         self.__api_key = api_key
@@ -87,7 +85,7 @@ class CoingeckoClient:
             await self.redis.setex(
                 key,
                 value=json.dumps(count),
-                time=timedelta(minutes=self.__ERRORS_IN_CACHE_MINUTES_TTL),
+                time=timedelta(minutes=settings.coingecko_errors_in_cache_minutes),
             )
         return count
 

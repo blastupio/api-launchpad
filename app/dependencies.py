@@ -9,6 +9,7 @@ from app.crud import OnRampCrud, LaunchpadProjectCrud
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
+from app.crud.supported_tokens import SupportedTokensCrud
 
 from app.env import settings
 
@@ -79,6 +80,12 @@ async def get_project_whitelist_crud(
     session: AsyncSession = Depends(get_session),
 ) -> ProjectWhitelistCrud:
     return ProjectWhitelistCrud(session)
+
+
+async def get_supported_tokens_crud(
+    session: AsyncSession = Depends(get_session),
+) -> SupportedTokensCrud:
+    return SupportedTokensCrud(session)
 
 
 HistoryStakingCrudDep = Annotated[HistoryStakingCrud, Depends(get_staking_history_crud)]

@@ -46,11 +46,13 @@ async def get_token_price(
     ),
 ) -> TokenPriceResponse:
     _list_tokens_addresses = token_addresses.split(",")
-    filtered_list_tokens_addresses = [
-        address
-        for address in _list_tokens_addresses
-        if Web3.is_address(address) or address == NATIVE_TOKEN_ADDRESS
-    ]
+    filtered_list_tokens_addresses = list(
+        {
+            address
+            for address in _list_tokens_addresses
+            if Web3.is_address(address) or address == NATIVE_TOKEN_ADDRESS
+        }
+    )
     if not filtered_list_tokens_addresses:
         return TokenPriceResponse(price={})
     prices = await get_tokens_price(

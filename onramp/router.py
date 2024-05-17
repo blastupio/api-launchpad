@@ -88,7 +88,7 @@ async def get_payment_link(
     )
 
     amount_str = f"{amount:.8f}" if currency == "ETH" else f"{amount:.2f}"
-    payment_link = await munzen.generate_link(order.id, amount_str, order.currency)
+    payment_link = munzen.generate_link(order.id, amount_str, order.currency)
     return OnRampResponse(
         ok=True, data=OnRampResponseData(internal_uuid=str(order.id), link=payment_link)
     )
@@ -103,15 +103,15 @@ async def webhook_handler(
 ):
     payload: MunzenWebhookEvent
 
-    if not await munzen.validate_webhook(payload, signature):
+    if not munzen.validate_webhook(payload, signature):
         logger.info(f"[onramp webhook] Invalid signature: {signature}")
         raise HTTPException(detail="Invalid signature", status_code=400)
 
     if not (order := await crud.get_by_id(UUID(payload.get("merchantOrderId")))):
         logger.info(f"[onramp webhook] Order not found: {payload.get('merchantOrderId')}")
         raise HTTPException(detail="Order not found", status_code=404)
-    order.munzen_txn_hash = payload.get("blockchainNetworkTxId")
 
+    order.munzen_order_id = payload.get("orderId")
     logger.info(f"[onramp webhook] Received webhook: {json.dumps(payload)}")
     if payload.get("eventType") == MunzenOrderType.ORDER_FAILED.value and order.status not in [
         ONRAMP_STATUS_COMPLETE,

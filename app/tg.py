@@ -12,7 +12,8 @@ class NotificationBot:
 
     async def send(self, message: str) -> None:
         logger.info(f"NotificationBot:\nSending message: {message}")
-        env_prefix = "DEV"
+        env_prefix = "🧑‍💻<b>DEV</b>" if settings.app_env == "dev" else ""
+        message = f"{env_prefix} {message}"
         await self.bot.send_message(
             self.chat_id, message, parse_mode="HTML", disable_web_page_preview=True
         )
@@ -32,16 +33,25 @@ class NotificationBot:
         await self.send(msg)
 
     async def completed_onramp_order(
-        self, order_id: str, tx_hash: str, munzen_txn_hash: str, balance_after_txn: int
+        self,
+        order_id: str,
+        tx_hash: str,
+        balance_after_txn_wei: int,
+        munzen_txn_hash: str | None = None,
     ) -> None:
         scanner_url = f"https://blastscan.io/tx/{tx_hash}"
-        munzen_scanner_url = f"https://etherscan.io/tx/{munzen_txn_hash}"
-        balance = float(Web3.from_wei(balance_after_txn, "ether"))
+        munzen_bridge_transaction = "Can't get munzen transaction"
+        if munzen_txn_hash:
+            munzen_bridge_transaction = (
+                f"<a href='https://etherscan.io/tx/{munzen_txn_hash}'>scanner</a>"
+            )
+
+        balance = float(Web3.from_wei(balance_after_txn_wei, "ether"))
         msg = (
             f"<b>✅ COMPLETED Munzen Order</b>\n\n"
             f"<b>ID:</b> {order_id}\n"
-            f"<b>Transaction Munzen -> Bridge:</b> <a href='{munzen_scanner_url}'>tx_hash</a>\n"
-            f"<b>Transaction Bridge -> User:</b> <a href='{scanner_url}'>tx_hash</a>\n"
+            f"<b>Munzen -> Bridge:</b> {munzen_bridge_transaction}\n"
+            f"<b>Bridge -> User:</b> <a href='{scanner_url}'>tx_hash</a>\n"
             f"<b>Onramp wallet balance:</b> {balance:.6f} ETH"
         )
         await self.send(msg)

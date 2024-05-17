@@ -117,7 +117,7 @@ class Munzen:
         self.environment = environment
         self.onramp_wallet = onramp_wallet
 
-    async def calculate_signature(self, payload: dict) -> str:
+    def calculate_signature(self, payload: dict) -> str:
         signature_payload = payload.copy()
         if "apiKey" in signature_payload:
             del signature_payload["apiKey"]
@@ -130,7 +130,7 @@ class Munzen:
             digestmod=hashlib.sha256,
         ).hexdigest()
 
-    async def generate_link(self, merchant_order_id: str | UUID, amount: str, currency: str) -> str:
+    def generate_link(self, merchant_order_id: str | UUID, amount: str, currency: str) -> str:
         if currency == "ETH":
             query_params = {
                 "toWallet": self.onramp_wallet,
@@ -149,14 +149,14 @@ class Munzen:
                 "merchantOrderId": str(merchant_order_id),
                 "apiKey": self.api_key,
             }
-        query_params["signature"] = await self.calculate_signature(query_params)
+        query_params["signature"] = self.calculate_signature(query_params)
 
         return f"{self.base_url}?{urlencode(query_params)}"
 
     async def get_order_data(self, munzen_order_id: str) -> dict:
         async with AsyncClient() as client:
             input_data = {
-                "signature": await self.calculate_signature({"orderId": munzen_order_id}),
+                "signature": self.calculate_signature({"orderId": munzen_order_id}),
                 "apiKey": self.api_key,
                 "payload[orderId]": munzen_order_id,
             }
@@ -170,8 +170,8 @@ class Munzen:
             json_response = response.json()
         return json_response
 
-    async def validate_webhook(self, payload: dict, signature: str) -> bool:
-        computed_signature = await self.calculate_signature(payload)
+    def validate_webhook(self, payload: dict, signature: str) -> bool:
+        computed_signature = self.calculate_signature(payload)
 
         if computed_signature != signature:
             logger.debug(

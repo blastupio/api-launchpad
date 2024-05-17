@@ -56,11 +56,12 @@ class ProcessMunzenOrder(Command):
                         f"[ProcessMunzenOrder({self.order_id})] Sent to {order.address}: {tx_hash}"
                     )
                     balance_after_txn = balance - int(order.received_amount)
+                    # order.
                     await notification_bot.completed_onramp_order(
                         order_id=self.order_id,
                         tx_hash=tx_hash,
                         munzen_txn_hash=order.munzen_txn_hash,
-                        balance_after_txn=balance_after_txn,
+                        balance_after_txn_wei=balance_after_txn,
                     )
 
                     return CommandResult(success=True)

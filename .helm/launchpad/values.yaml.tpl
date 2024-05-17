@@ -59,7 +59,7 @@ cron_enabled: true
 cron:
   schedule-listen-staking-events:
     enabled: true
-    schedule: "*/10 * * * *"
+    schedule: "*/1 * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true

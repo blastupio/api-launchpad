@@ -1,8 +1,13 @@
 from telegram import Bot
 from web3 import Web3
 
+from app import chains
 from app.base import logger
+from app.consts import NATIVE_TOKEN_ADDRESS
+from app.dependencies import get_munzen
 from app.env import settings
+from app.models import OnRampOrder
+from app.services.prices import get_tokens_price
 
 
 class NotificationBot:
@@ -34,25 +39,40 @@ class NotificationBot:
 
     async def completed_onramp_order(
         self,
-        order_id: str,
-        tx_hash: str,
-        balance_after_txn_wei: int,
-        munzen_txn_hash: str | None = None,
+        order: OnRampOrder,
+        wei_balance_after_txn: int,
     ) -> None:
-        scanner_url = f"https://blastscan.io/tx/{tx_hash}"
-        munzen_bridge_transaction = "Can't get munzen transaction"
-        if munzen_txn_hash:
-            munzen_bridge_transaction = (
-                f"<a href='https://etherscan.io/tx/{munzen_txn_hash}'>scanner</a>"
-            )
+        scanner_url = f"https://blastscan.io/tx/{order.hash}"
 
-        balance = float(Web3.from_wei(balance_after_txn_wei, "ether"))
+        munzen_bridge_transaction = "Can't get munzen transaction"
+        if munzen_order_id := order.munzen_order_id:
+            try:
+                munzen = get_munzen()
+                order_data = (await munzen.get_order_data(munzen_order_id)).get("result")
+                munzen_txn_hash = order_data.get("blockchainNetworkTxId")
+                munzen_bridge_transaction = (
+                    f"<a href='https://etherscan.io/tx/{munzen_txn_hash}'>scanner</a>"
+                )
+            except Exception as e:
+                logger.error(f"Can't get munzen order data: {e}")
+        balance = float(Web3.from_wei(wei_balance_after_txn, "ether"))
+
+        _eth_price = await get_tokens_price(chains.blast.id, [NATIVE_TOKEN_ADDRESS])
+        eth_price = _eth_price.get(NATIVE_TOKEN_ADDRESS)
+        dollar_balance = round(balance * eth_price, 2) if eth_price else "unknown"
+
+        amount = (
+            float(order.amount) / 100
+            if order.currency == "USD"
+            else Web3.from_wei(int(order.amount), "ether")
+        )
         msg = (
             f"<b>✅ COMPLETED Munzen Order</b>\n\n"
-            f"<b>ID:</b> {order_id}\n"
+            f"<b>ID:</b> {order.id}\n"
+            f"<b>Amount:</b> {amount:.6f} {order.currency}\n"
             f"<b>Munzen -> Bridge:</b> {munzen_bridge_transaction}\n"
-            f"<b>Bridge -> User:</b> <a href='{scanner_url}'>tx_hash</a>\n"
-            f"<b>Onramp wallet balance:</b> {balance:.6f} ETH"
+            f"<b>Bridge -> User:</b> <a href='{scanner_url}'>scanner</a>\n"
+            f"<b>Onramp wallet balance:</b> {balance:.6f} ETH ($ {dollar_balance})"
         )
         await self.send(msg)
 

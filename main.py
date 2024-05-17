@@ -12,7 +12,7 @@ from app.env import settings
 environment = settings.app_env
 
 if settings.sentry_dsn is not None:
-    sentry_sdk.init(dsn=settings.sentry_dsn, enable_tracing=True)
+    sentry_sdk.init(dsn=settings.sentry_dsn, enable_tracing=True, environment=environment)
 app = FastAPI(debug=not environment.startswith("prod"))
 app.include_router(router)
 app.include_router(onramp_router)

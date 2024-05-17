@@ -92,7 +92,7 @@ async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRam
     return OnRampCrud(session)
 
 
-async def get_munzen() -> Munzen:
+def get_munzen() -> Munzen:
     return Munzen(
         settings.munzen_api_key,
         settings.munzen_api_secret,

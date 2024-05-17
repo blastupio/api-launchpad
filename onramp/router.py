@@ -2,6 +2,7 @@ import json
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Body, HTTPException, Path
+from web3 import Web3
 
 from app.base import logger
 from app.crud import OnRampCrud
@@ -125,7 +126,7 @@ async def webhook_handler(
         payload.get("eventType") == MunzenOrderType.ORDER_COMPLETE.value
         and order.status != ONRAMP_STATUS_COMPLETE
     ):
-        order.received_amount = f"{int(float(payload.get('toAmount')) * 1e18)}"
+        order.received_amount = str(Web3.to_wei(payload.get("toAmount"), "ether"))
         await crud.persist(order)
 
         logger.info(f"[onramp webhook] Scheduled job for id {order.id}")

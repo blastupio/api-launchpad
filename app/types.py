@@ -7,6 +7,8 @@ class BadgeType(str, Enum):
     PRIVATE = "PRIVATE"
     PUBLIC = "PUBLIC"
     BOOSTER = "BOOSTER"
+    BLAST = "BLAST"
+    MULTICHAIN = "MULTICHAIN"
 
 
 class PlacedToken(NamedTuple):

@@ -23,6 +23,7 @@ from app.schema import (
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
+from app.services.prices.cache import token_price_cache
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -120,9 +121,11 @@ async def get_user_projects(
 
 @router.get("/supported-tokens")
 async def get_supported_tokens(tokens_crud: SupportedTokensCrudDep):
-    rows = await tokens_crud.get_supported_tokens()
+    last_updated_at, rows = await asyncio.gather(
+        token_price_cache.get_token_price_cache_updated_at(), tokens_crud.get_supported_tokens()
+    )
     token_addresses_by_chain_id = {}
     for row in rows:
         token_addresses_by_chain_id.setdefault(row.chain_id, []).append(row.token_address)
 
-    return token_addresses_by_chain_id
+    return {"tokens": token_addresses_by_chain_id, "cache_updated_at": last_updated_at}

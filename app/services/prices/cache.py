@@ -1,5 +1,5 @@
 import asyncio
-from datetime import timedelta
+from datetime import timedelta, datetime
 
 from redis.asyncio import Redis
 
@@ -21,6 +21,14 @@ class TokenPriceCache:
     def __get_chain_id_with_address_from_cache_key(self, cache_key: str) -> tuple[ChainId, Address]:
         chain_id, address = cache_key.split("-")[2:]
         return ChainId(int(chain_id)), Address(address)
+
+    async def set_token_price_cache_updated_at(self):
+        key = "tkn-price-updated_at"
+        await self.redis.set(key, datetime.utcnow().isoformat())
+
+    async def get_token_price_cache_updated_at(self) -> str | None:
+        key = "tkn-price-updated_at"
+        return await self.redis.get(key)
 
     async def set(  # noqa
         self, prices: dict[ChainId, dict[Address, float | None]], ex: timedelta | None = None

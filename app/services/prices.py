@@ -61,21 +61,19 @@ class TokenPriceCache:
     async def get(
         self, addresses_by_chain_id: dict[ChainId, list[str]], get_from_long_cache: bool = False
     ) -> dict[ChainId, dict[Address, float]]:
-        res: dict[ChainId, dict[Address, float]] = {}
-
-        # key_func = self.__get_long_cache_key if get_from_long_cache else self.__get_cache_key
-        key_func = self.__get_cache_key
-
         keys = [
-            key_func(chain_id, Address(address))
+            self.__get_cache_key(chain_id, Address(address))
             for chain_id, addr_list in addresses_by_chain_id.items()
             for address in addr_list
         ]
-        if values := [value for value in await self.redis.mget(keys) if value]:
-            for key, value in zip(keys, values):
-                chain_id, address = self.__get_chain_id_with_address_from_cache_key(key)
-                if value:
-                    res.setdefault(chain_id, {})[address] = float(value)
+        if not (data := await self.redis.mget(keys)):
+            return {}
+
+        res: dict[ChainId, dict[Address, float]] = {}
+        for key, value in zip(keys, data):
+            chain_id, address = self.__get_chain_id_with_address_from_cache_key(key)
+            if value:
+                res.setdefault(chain_id, {})[address] = float(value)
         return res
 
 

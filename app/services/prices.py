@@ -62,7 +62,9 @@ class TokenPriceCache:
         self, addresses_by_chain_id: dict[ChainId, list[str]], get_from_long_cache: bool = False
     ) -> dict[ChainId, dict[Address, float]]:
         res: dict[ChainId, dict[Address, float]] = {}
-        key_func = self.__get_long_cache_key if get_from_long_cache else self.__get_cache_key
+
+        # key_func = self.__get_long_cache_key if get_from_long_cache else self.__get_cache_key
+        key_func = self.__get_cache_key
 
         keys = [
             key_func(chain_id, Address(address))

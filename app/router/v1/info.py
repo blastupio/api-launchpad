@@ -22,6 +22,7 @@ from app.schema import (
     GetUserProjectsResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
+from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -31,7 +32,6 @@ from app.services.tiers.consts import (
     diamond_tier,
 )
 from app.services.tiers.user_tier import get_user_tier
-from app.services.prices import get_tokens_price, get_any2any_prices
 from app.services.yield_apr import get_native_yield, get_stablecoin_yield
 
 router = APIRouter(prefix="/info", tags=["info"])
@@ -55,7 +55,7 @@ async def get_token_price(
     )
     if not filtered_list_tokens_addresses:
         return TokenPriceResponse(price={})
-    prices = await get_tokens_price(
+    prices = await get_tokens_price_for_chain(
         chain_id=chain_id, token_addresses=filtered_list_tokens_addresses
     )
     return TokenPriceResponse(price=prices)

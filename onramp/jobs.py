@@ -14,7 +14,7 @@ from app.dependencies import get_lock, get_onramp_crud, get_crypto, get_redis
 from app.env import settings
 from app.models import ONRAMP_STATUS_COMPLETE
 from app.services import Lock
-from app.services.prices import get_tokens_price
+from app.services.prices import get_tokens_price_for_chain
 from app.services.web3_nodes import web3_node
 from app.tg import notification_bot
 from onramp.services import Crypto
@@ -93,7 +93,9 @@ class MonitorSenderBalance(Command):
             balance_wei, balance_in_cache, blast_price = await asyncio.gather(
                 web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
                 redis.get("onramp_bridge_balance"),
-                get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+                get_tokens_price_for_chain(
+                    chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]
+                ),
             )
         except Exception as e:
             logger.error(

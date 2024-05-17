@@ -12,6 +12,7 @@ class NotificationBot:
 
     async def send(self, message: str) -> None:
         logger.info(f"NotificationBot:\nSending message: {message}")
+        env_prefix = "DEV"
         await self.bot.send_message(
             self.chat_id, message, parse_mode="HTML", disable_web_page_preview=True
         )

@@ -118,7 +118,7 @@ class MonitorSenderBalance(Command):
         if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
             if settings.app_env == "dev":
                 msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
-                logger.error(msg)
+                logger.warning(msg)
             else:
                 await notification_bot.send_low_onramp_bridge_balance(
                     blast_balance=balance,

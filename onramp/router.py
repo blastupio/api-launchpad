@@ -104,9 +104,11 @@ async def webhook_handler(
     payload: MunzenWebhookEvent
 
     if not await munzen.validate_webhook(payload, signature):
+        logger.info(f"[onramp webhook] Invalid signature: {signature}")
         raise HTTPException(detail="Invalid signature", status_code=400)
 
     if not (order := await crud.get_by_id(UUID(payload.get("merchantOrderId")))):
+        logger.info(f"[onramp webhook] Order not found: {payload.get('merchantOrderId')}")
         raise HTTPException(detail="Order not found", status_code=404)
     order.munzen_txn_hash = payload.get("blockchainNetworkTxId")
 

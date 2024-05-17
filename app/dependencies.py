@@ -94,6 +94,8 @@ ProjectWhitelistCrudDep = Annotated[ProjectWhitelistCrud, Depends(get_project_wh
 
 LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_projects_crud)]
 
+SupportedTokensCrudDep = Annotated[SupportedTokensCrud, Depends(get_supported_tokens_crud)]
+
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)

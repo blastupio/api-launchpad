@@ -7,7 +7,7 @@ from web3 import Web3
 
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
-from app.dependencies import LaunchpadProjectCrudDep
+from app.dependencies import LaunchpadProjectCrudDep, SupportedTokensCrudDep
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -116,3 +116,13 @@ async def get_user_projects(
     total_pages = ceil(total_rows / size)
     page = Page(total=total_rows, page=page, size=size, items=projects, pages=total_pages)
     return GetUserProjectsResponse(data=page)
+
+
+@router.get("/supported-tokens")
+async def get_supported_tokens(tokens_crud: SupportedTokensCrudDep):
+    rows = await tokens_crud.get_supported_tokens()
+    token_addresses_by_chain_id = {}
+    for row in rows:
+        token_addresses_by_chain_id.setdefault(row.chain_id, []).append(row.token_address)
+
+    return token_addresses_by_chain_id

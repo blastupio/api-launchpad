@@ -38,12 +38,6 @@ class Settings(BaseSettings):
     onramp_sender_seed_phrase: str
     onramp_usd_balance_threshold: int = 1000
 
-    usdt_contract_addr_eth: str
-    usdt_contract_addr_bsc: str
-    usdt_contract_addr_polygon: str
-    usdt_contract_addr_blast: str
-    usdt_contract_addr_base: str
-
     crypto_environment: str = "testnet"  # todo: use enum
     crypto_api_key_eth: str = ""
     crypto_api_key_polygon: str = ""
@@ -54,6 +48,7 @@ class Settings(BaseSettings):
     fallback_api_url_bsc: str = ""
     fallback_api_url_polygon: str = ""
     fallback_api_url_blast: str = ""
+    fallback_api_url_base: str = ""
     fallback_api_key_base: str = ""
     fallback_api_key_eth: str = ""
     fallback_api_key_bsc: str = ""

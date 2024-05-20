@@ -20,13 +20,11 @@ class Crypto:
         self,
         environment: str,
         contracts: dict[str, str],
-        usdt_contracts: dict[str, str],
         private_key_seed: str,
         onramp_private_key_seed: str,
     ):
         self.environment = environment
         self.contracts = contracts
-        self.usdt_contracts = usdt_contracts
 
         seed = seed_from_mnemonic(private_key_seed, passphrase="")
         private_key = key_from_seed(seed, account_path="m/44'/60'/0'/0/{}".format(0))

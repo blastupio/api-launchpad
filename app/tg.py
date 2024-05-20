@@ -42,7 +42,8 @@ class NotificationBot:
         order: OnRampOrder,
         wei_balance_after_txn: int,
     ) -> None:
-        scanner_url = f"https://blastscan.io/tx/{order.hash}"
+        scanner_prefix = "sepolia." if settings.app_env == "dev" else ""
+        scanner_url = f"https://{scanner_prefix}blastscan.io/tx/{order.hash}"
 
         munzen_bridge_transaction = "Can't get munzen transaction"
         if munzen_order_id := order.munzen_order_id:
@@ -50,9 +51,8 @@ class NotificationBot:
                 munzen = get_munzen()
                 order_data = (await munzen.get_order_data(munzen_order_id)).get("result")
                 munzen_txn_hash = order_data.get("blockchainNetworkTxId")
-                munzen_bridge_transaction = (
-                    f"<a href='https://etherscan.io/tx/{munzen_txn_hash}'>scanner</a>"
-                )
+                munzen_txn_url = f"https://{scanner_prefix}etherscan.io/tx/{munzen_txn_hash}"
+                munzen_bridge_transaction = f"<a href='{munzen_txn_url}'>scanner</a>"
             except Exception as e:
                 logger.error(f"Can't get munzen order data: {e}")
         balance = float(Web3.from_wei(wei_balance_after_txn, "ether"))

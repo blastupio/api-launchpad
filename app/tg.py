@@ -50,9 +50,10 @@ class NotificationBot:
             try:
                 munzen = get_munzen()
                 order_data = (await munzen.get_order_data(munzen_order_id)).get("result")
-                munzen_txn_hash = order_data.get("blockchainNetworkTxId")
+                munzen_txn_hash = order_data.get("blockchainNetworkTxId", "")
                 munzen_txn_url = f"https://{scanner_prefix}etherscan.io/tx/{munzen_txn_hash}"
-                munzen_bridge_transaction = f"<a href='{munzen_txn_url}'>scanner</a>"
+                short_hash = f"{munzen_txn_hash[:6]}...{munzen_txn_hash[-6:]}"
+                munzen_bridge_transaction = f"<a href='{munzen_txn_url}'>{short_hash}</a>"
             except Exception as e:
                 logger.error(f"Can't get munzen order data: {e}")
         balance = float(Web3.from_wei(wei_balance_after_txn, "ether"))
@@ -61,18 +62,26 @@ class NotificationBot:
         eth_price = _eth_price.get(NATIVE_TOKEN_ADDRESS)
         dollar_balance = round(balance * eth_price, 2) if eth_price else "unknown"
 
-        amount = (
-            float(order.amount) / 100
-            if order.currency == "USD"
-            else Web3.from_wei(int(order.amount), "ether")
-        )
+        if order.currency == "USD":
+            amount = float(order.amount) / 100
+            str_amount = f"${amount:.2f}"
+        else:
+            amount = Web3.from_wei(int(order.amount), "ether")
+            dollar_amount = round(amount * eth_price, 2) if eth_price else "unknown"
+            str_amount = f"{amount:.6f} ETH (${dollar_amount})"
+
+        if order.hash:
+            short_hash = f"{order.hash[:6]}...{order.hash[-6:]}"
+        else:
+            short_hash = "null hash"
+        user_bridge_transaction = f"<a href='{scanner_url}'>{short_hash}</a>"
         msg = (
             f"<b>✅ COMPLETED Munzen Order</b>\n\n"
             f"<b>ID:</b> {order.id}\n"
-            f"<b>Amount:</b> {amount:.6f} {order.currency}\n"
+            f"<b>Amount:</b> {str_amount}\n"
             f"<b>Munzen -> Bridge:</b> {munzen_bridge_transaction}\n"
-            f"<b>Bridge -> User:</b> <a href='{scanner_url}'>scanner</a>\n"
-            f"<b>Onramp wallet balance:</b> {balance:.6f} ETH ($ {dollar_balance})"
+            f"<b>Bridge -> User:</b> {user_bridge_transaction}\n"
+            f"<b>Onramp wallet balance:</b> {balance:.6f} ETH (${dollar_balance})"
         )
         await self.send(msg)
 

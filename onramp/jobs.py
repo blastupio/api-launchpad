@@ -44,6 +44,7 @@ class ProcessMunzenOrder(Command):
                 return CommandResult(success=False, need_retry=False)
 
             balance = await crypto.get_sender_balance()
+            balance_after_txn = balance - int(order.received_amount)
             logger.info(
                 f"[ProcessMunzenOrder({self.order_id})] Sending {order.received_amount} to {order.address}"  # noqa: E501
             )
@@ -55,13 +56,6 @@ class ProcessMunzenOrder(Command):
                     logger.info(
                         f"[ProcessMunzenOrder({self.order_id})] Sent to {order.address}: {tx_hash}"
                     )
-                    balance_after_txn = balance - int(order.received_amount)
-                    await notification_bot.completed_onramp_order(
-                        order=order,
-                        wei_balance_after_txn=balance_after_txn,
-                    )
-
-                    return CommandResult(success=True)
             except Exception as e:
                 err = f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}"
                 logger.error(err)
@@ -69,6 +63,12 @@ class ProcessMunzenOrder(Command):
                     order_id=self.order_id, balance_wei=balance, error=err
                 )
                 return CommandResult(success=False, need_retry=True, retry_after=60)
+            else:
+                await notification_bot.completed_onramp_order(
+                    order=order,
+                    wei_balance_after_txn=balance_after_txn,
+                )
+                return CommandResult(success=True)
         finally:
             await lock.release(f"munzen-order:{self.order_id}")
             await lock.release(f"munzen-order:{self.order_id}")

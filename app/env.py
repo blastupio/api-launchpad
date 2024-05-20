@@ -42,16 +42,19 @@ class Settings(BaseSettings):
     usdt_contract_addr_bsc: str
     usdt_contract_addr_polygon: str
     usdt_contract_addr_blast: str
+    usdt_contract_addr_base: str
 
     crypto_environment: str = "testnet"  # todo: use enum
     crypto_api_key_eth: str = ""
     crypto_api_key_polygon: str = ""
     crypto_api_key_bsc: str = ""
     crypto_api_key_blast: str = ""
+    crypto_api_key_base: str = ""
     fallback_api_url_eth: str = ""
     fallback_api_url_bsc: str = ""
     fallback_api_url_polygon: str = ""
     fallback_api_url_blast: str = ""
+    fallback_api_key_base: str = ""
     fallback_api_key_eth: str = ""
     fallback_api_key_bsc: str = ""
     fallback_api_key_polygon: str = ""
@@ -61,6 +64,7 @@ class Settings(BaseSettings):
     contract_addr_polygon: str
     contract_addr_bsc: str
     contract_addr_blast: str
+    contract_addr_base: str
 
     yield_staking_contract_addr: str | None = None  # todo: not None
 

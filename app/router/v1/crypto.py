@@ -50,6 +50,7 @@ async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$
                 bsc=balances_by_chain_id[chains.bsc.id],
                 polygon=balances_by_chain_id[chains.polygon.id],
                 blast=balances_by_chain_id[chains.blast.id],
+                base=balances_by_chain_id[chains.base.id],
                 total=sum(balances_by_chain_id.values()),
             ),
         )

@@ -22,6 +22,10 @@ polygon = ChainInfo(
     id=ChainId(137),
     name="Polygon",
 )
+base = ChainInfo(
+    id=ChainId(8453),
+    name="Base",
+)
 blast = ChainInfo(
     id=ChainId(81457),
     name="Blast",
@@ -34,5 +38,10 @@ blast_sepolia = ChainInfo(
 ethereum_sepolia = ChainInfo(
     id=ChainId(11155111),
     name="Ethereum Testnet",
+    is_testnet=True,
+)
+base_sepolia = ChainInfo(
+    id=ChainId(84532),
+    name="Base Testnet",
     is_testnet=True,
 )

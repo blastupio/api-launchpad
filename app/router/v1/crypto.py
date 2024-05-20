@@ -62,7 +62,7 @@ async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$
 @router.get("/txn-transaction-data")
 async def get_transaction_data(
     crypto: CryptoDep,
-    network: Literal["eth", "bsc", "polygon", "blast"] = Query(),
+    network: Literal["eth", "bsc", "polygon", "blast", "base"] = Query(),
     txn_hash: str = Query(),
 ):
     try:

@@ -62,12 +62,16 @@ class Crypto:
 
     @catch_web3_exceptions
     async def get_price_feed(self, token) -> dict[str, float | int]:
-        if token.lower() not in ["eth", "matic", "bnb", "weth"]:
+        if token.lower() not in ["eth", "matic", "bnb", "weth", "weth_base"]:
             return {}
 
-        network = {"eth": "eth", "matic": "polygon", "bnb": "bsc", "weth": "blast"}[token.lower()]
-        if self.usdt_contracts.get(network) is None:
-            return {}
+        network = {
+            "eth": "eth",
+            "matic": "polygon",
+            "bnb": "bsc",
+            "weth": "blast",
+            "weth_base": "base",
+        }[token.lower()]
 
         contract = await self._contract(network)
         price_feed_addr = await contract.functions.COIN_PRICE_FEED().call()

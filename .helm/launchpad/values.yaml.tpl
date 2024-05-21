@@ -103,7 +103,7 @@ cron:
       - "python3 console.py process-launchpad-contract-events"
   schedule-update-tokens-cache:
     enabled: true
-    schedule: "*/1 * * * *"
+    schedule: "* * * * *"
     concurrency_policy: Forbid
     restart_policy: OnFailure
     pass_env: true

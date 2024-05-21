@@ -89,6 +89,7 @@ class LaunchpadProjectList(BaseModel):
     name: str
     is_active: bool
     status: ProjectStatusEnum
+    project_type: ProjectTypeEnum
     short_description: str
     logo_url: str | None
     links: List[LinkModel]
@@ -167,7 +168,6 @@ class TokenDetailsData(BaseModel):
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
     description: str | None
-    project_type: ProjectTypeEnum
 
     created_at: datetime
     updated_at: datetime | None
@@ -207,6 +207,7 @@ class AddressBalanceResponseData(BaseModel):
     eth: int
     bsc: int
     blast: int
+    base: int | None
     total: int
 
 

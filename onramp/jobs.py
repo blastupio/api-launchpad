@@ -12,7 +12,7 @@ from app.consts import NATIVE_TOKEN_ADDRESS
 from app.crud import OnRampCrud
 from app.dependencies import get_lock, get_onramp_crud, get_crypto, get_redis
 from app.env import settings
-from app.models import ONRAMP_STATUS_COMPLETE
+from app.models import ONRAMP_STATUS_COMPLETE, OnRampOrder
 from app.services import Lock
 from app.services.prices import get_tokens_price_for_chain
 from app.services.web3_nodes import web3_node
@@ -38,12 +38,13 @@ class ProcessMunzenOrder(Command):
             return CommandResult(success=False, need_retry=True, retry_after=60)
 
         try:
-            order = await crud.get_by_id(UUID(self.order_id))
+            order: OnRampOrder = await crud.get_by_id(UUID(self.order_id))
             if order.status == ONRAMP_STATUS_COMPLETE:
                 logger.info(f"[ProcessMunzenOrder({self.order_id})] Order already completed")
                 return CommandResult(success=False, need_retry=False)
 
             balance = await crypto.get_sender_balance()
+            balance_after_txn = balance - int(order.received_amount)
             logger.info(
                 f"[ProcessMunzenOrder({self.order_id})] Sending {order.received_amount} to {order.address}"  # noqa: E501
             )
@@ -55,15 +56,6 @@ class ProcessMunzenOrder(Command):
                     logger.info(
                         f"[ProcessMunzenOrder({self.order_id})] Sent to {order.address}: {tx_hash}"
                     )
-                    balance_after_txn = balance - int(order.received_amount)
-                    await notification_bot.completed_onramp_order(
-                        order_id=self.order_id,
-                        tx_hash=tx_hash,
-                        munzen_txn_hash=order.munzen_txn_hash,
-                        balance_after_txn=balance_after_txn,
-                    )
-
-                    return CommandResult(success=True)
             except Exception as e:
                 err = f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}"
                 logger.error(err)
@@ -71,6 +63,12 @@ class ProcessMunzenOrder(Command):
                     order_id=self.order_id, balance_wei=balance, error=err
                 )
                 return CommandResult(success=False, need_retry=True, retry_after=60)
+            else:
+                await notification_bot.completed_onramp_order(
+                    order=order,
+                    wei_balance_after_txn=balance_after_txn,
+                )
+                return CommandResult(success=True)
         finally:
             await lock.release(f"munzen-order:{self.order_id}")
             await lock.release(f"munzen-order:{self.order_id}")
@@ -120,7 +118,7 @@ class MonitorSenderBalance(Command):
         if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
             if settings.app_env == "dev":
                 msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
-                logger.error(msg)
+                logger.warning(msg)
             else:
                 await notification_bot.send_low_onramp_bridge_balance(
                     blast_balance=balance,

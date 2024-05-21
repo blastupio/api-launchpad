@@ -59,7 +59,7 @@ class Settings(BaseSettings):
     contract_addr_polygon: str
     contract_addr_bsc: str
     contract_addr_blast: str
-    contract_addr_base: str | None = None
+    contract_addr_base: str | None = None  # todo: not None
 
     yield_staking_contract_addr: str | None = None  # todo: not None
 

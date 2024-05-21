@@ -121,11 +121,11 @@ async def monitor_onramp_bridge_balance():
     max_retries=3,
     default_retry_delay=15,
 )
-async def telegram_notify_completed_transaction(entity_id: str, wei_balance_after_txn: int):
+def telegram_notify_completed_transaction(entity_id: str, wei_balance_after_txn: int):
     try:
-        result = await TelegramNotifyCompletedOnrampTransaction(
-            entity_id, wei_balance_after_txn
-        ).run()
+        result = run_command_and_get_result(
+            TelegramNotifyCompletedOnrampTransaction(entity_id, wei_balance_after_txn)
+        )
 
         if result.need_retry:
             retry_after = (
@@ -151,9 +151,11 @@ async def telegram_notify_completed_transaction(entity_id: str, wei_balance_afte
     max_retries=3,
     default_retry_delay=15,
 )
-async def telegram_notify_failed_transaction(entity_id: str, wei_balance: int, error: str):
+def telegram_notify_failed_transaction(entity_id: str, wei_balance: int, error: str):
     try:
-        result = await TelegramNotifyErrorOnrampTransaction(entity_id, wei_balance, error).run()
+        result = run_command_and_get_result(
+            TelegramNotifyErrorOnrampTransaction(entity_id, wei_balance, error)
+        )
 
         if result.need_retry:
             retry_after = (

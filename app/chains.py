@@ -14,6 +14,10 @@ ethereum = ChainInfo(
     id=ChainId(1),
     name="Ethereum",
 )
+optimism = ChainInfo(
+    id=ChainId(10),
+    name="Optimism",
+)
 bsc = ChainInfo(
     id=ChainId(56),
     name="Binance Smart Chain",
@@ -26,9 +30,27 @@ base = ChainInfo(
     id=ChainId(8453),
     name="Base",
 )
+arbitrum = ChainInfo(
+    id=ChainId(42161),
+    name="Arbitrum",
+)
+linea = ChainInfo(
+    id=ChainId(59144),
+    name="Linea",
+)
+linea_sepolia = ChainInfo(
+    id=ChainId(59141),
+    name="Linea Testnet",
+    is_testnet=True,
+)
 blast = ChainInfo(
     id=ChainId(81457),
     name="Blast",
+)
+arbitrum_sepolia = ChainInfo(
+    id=ChainId(421614),
+    name="Arbitrum Testnet",
+    is_testnet=True,
 )
 blast_sepolia = ChainInfo(
     id=ChainId(168587773),

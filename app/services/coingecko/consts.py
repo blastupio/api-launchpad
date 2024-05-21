@@ -9,6 +9,9 @@ from_platform_to_chain_id = {
     CoinGeckoPlatform("blast"): ChainId(chains.blast.id),
     CoinGeckoPlatform("polygon-pos"): ChainId(chains.polygon.id),
     CoinGeckoPlatform("base"): ChainId(chains.base.id),
+    CoinGeckoPlatform("optimistic-ethereum"): ChainId(chains.optimism.id),
+    CoinGeckoPlatform("arbitrum-one"): ChainId(chains.arbitrum.id),
+    CoinGeckoPlatform("linea"): ChainId(chains.linea.id),
 }
 
 chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
@@ -19,6 +22,12 @@ chain_id_to_native_coin_coingecko_id: dict[ChainId, str] = {
     ChainId(chains.blast_sepolia.id): "ethereum",
     ChainId(chains.ethereum_sepolia.id): "ethereum",
     ChainId(chains.base_sepolia.id): "ethereum",
+    ChainId(chains.base.id): "ethereum",
+    ChainId(chains.optimism.id): "ethereum",
+    ChainId(chains.linea.id): "ethereum",
+    ChainId(chains.linea_sepolia.id): "ethereum",
+    ChainId(chains.arbitrum.id): "ethereum",
+    ChainId(chains.arbitrum_sepolia.id): "ethereum",
 }
 
 chain_id_to_testnet_coin_coingecko_id: dict[ChainId, dict[str, str]] = {

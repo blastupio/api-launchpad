@@ -21,7 +21,7 @@ async def sign_user_balance(
     ),
     contract_address: str = Query(),
 ) -> SignUserBalanceResponse:
-    str_chains = ("eth", "polygon", "bsc", "blast")
+    str_chains = ("eth", "polygon", "bsc", "blast", "base")
     chain_id = chains.blast.id if crypto.environment == "mainnet" else chains.blast_sepolia.id
 
     _balances = await asyncio.gather(

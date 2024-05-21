@@ -12,6 +12,7 @@ async def get_blastup_tokens_balance_for_chains(address: str) -> dict[ChainId, i
         "bsc": chains.bsc.id,
         "polygon": chains.polygon.id,
         "blast": chains.blast.id,
+        "base": chains.base.id,
     }
     _chain_id_to_chain = {_chain_to_chain_id[chain]: chain for chain in _chain_to_chain_id}
 

@@ -7,7 +7,7 @@ from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import get_munzen
 from app.env import settings
 from app.models import OnRampOrder
-from app.services.prices import get_tokens_price
+from app.services.prices import get_tokens_price_for_chain
 
 
 class NotificationBot:
@@ -58,7 +58,7 @@ class NotificationBot:
                 logger.error(f"Can't get munzen order data: {e}")
         balance = float(Web3.from_wei(wei_balance_after_txn, "ether"))
 
-        _eth_price = await get_tokens_price(chains.blast.id, [NATIVE_TOKEN_ADDRESS])
+        _eth_price = await get_tokens_price_for_chain(chains.blast.id, [NATIVE_TOKEN_ADDRESS])
         eth_price = _eth_price.get(NATIVE_TOKEN_ADDRESS)
         dollar_balance = round(balance * eth_price, 2) if eth_price else "unknown"
 

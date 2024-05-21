@@ -37,7 +37,7 @@ class TokenPriceCache:
         for chain_id, addr_to_price in prices.items():
             for address, price in addr_to_price.items():
                 cache_key = self.__get_cache_key(chain_id, address)
-                if price:
+                if price and isinstance(price, float):
                     tasks.append(self.redis.set(cache_key, price, ex=ex))
         await asyncio.gather(*tasks)
 

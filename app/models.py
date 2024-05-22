@@ -258,3 +258,16 @@ class LaunchpadContractEvents(Base):
             postgresql_where=(event_type == "USER_REGISTERED"),
         ),
     )
+
+
+class SupportedTokens(Base):
+    __tablename__ = "supported_tokens"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    token_address = Column(String, nullable=False)
+    chain_id = Column(BigIntegerType, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("token_address", "chain_id", name="uc_token_address_chain_id"),
+    )

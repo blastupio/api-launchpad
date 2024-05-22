@@ -101,6 +101,17 @@ cron:
     args:
       - "-c"
       - "python3 console.py process-launchpad-contract-events"
+  schedule-update-tokens-cache:
+    enabled: true
+    schedule: "* * * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 console.py update-supported-tokens-cache"
 
 
 env:

@@ -90,6 +90,9 @@ class LaunchpadProject(Base):
     project_type = Column(Enum(ProjectType))
     status = Column(Enum(StatusProject))
 
+    seo_title = Column(Text(), nullable=True)
+    seo_description = Column(Text(), nullable=True)
+
     registration_start_at = Column(DateTime(), nullable=False)
     registration_end_at = Column(DateTime(), nullable=False)
     start_at = Column(DateTime(), nullable=False)

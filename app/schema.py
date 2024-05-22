@@ -177,6 +177,9 @@ class LaunchpadProject(LaunchpadProjectList):
     token_address: str | None
     approve_for_registration_is_required: bool | None
 
+    seo_title: str | None
+    seo_description: str | None
+
     class Config:
         from_attributes = True
 

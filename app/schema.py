@@ -83,6 +83,16 @@ class Badge(BaseModel):
     type: BadgeType  # noqa
 
 
+class KybInfo(BaseModel):
+    proof_of_identity: Any | None = None
+    company_name: Any | None = None
+    legal_form: Any | None = None
+
+    jurisdiction: Any | None = None
+    business_proof_file: Any | None = None
+    register_entry_file: Any | None = None
+
+
 class LaunchpadProjectList(BaseModel):
     id: str  # noqa
     slug: str
@@ -179,6 +189,8 @@ class LaunchpadProject(LaunchpadProjectList):
 
     seo_title: str | None
     seo_description: str | None
+
+    kyb_info: KybInfo | None
 
     class Config:
         from_attributes = True

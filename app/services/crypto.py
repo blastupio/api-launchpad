@@ -20,21 +20,9 @@ class Crypto:
         self,
         environment: str,
         contracts: dict[str, str],
-        private_key_seed: str,
-        onramp_private_key_seed: str,
     ):
         self.environment = environment
         self.contracts = contracts
-
-        seed = seed_from_mnemonic(private_key_seed, passphrase="")
-        private_key = key_from_seed(seed, account_path="m/44'/60'/0'/0/{}".format(0))
-        self.private_key = private_key
-        self.address = Account.from_key(private_key).address
-
-        seed = seed_from_mnemonic(onramp_private_key_seed, passphrase="")
-        private_key = key_from_seed(seed, account_path="m/44'/60'/0'/0/{}".format(0))
-        self.onramp_private_key = private_key
-        self.onramp_address = Account.from_key(private_key).address
 
     @catch_web3_exceptions
     async def get_transaction_data(self, network: str, tx_hash: str):

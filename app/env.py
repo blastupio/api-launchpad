@@ -15,8 +15,6 @@ class Settings(BaseSettings):
     celery_broker: str = "redis://localhost:6379/0"
     celery_retry_after: int = 15
 
-    controller_seed_phrase: str
-
     ido_sign_account_private_key: str | None = None  # todo: not None
     launchpad_contract_address: str | None = None  # todo: not None
 
@@ -33,7 +31,6 @@ class Settings(BaseSettings):
     munzen_api_secret: str = ""
 
     onramp_recipient_addr: str
-    onramp_seed_phrase: str
     onramp_sender_addr: str | None = None
     onramp_sender_seed_phrase: str
     onramp_usd_balance_threshold: int = 1000

@@ -28,8 +28,6 @@ def get_launchpad_crypto() -> CryptoLaunchpad:
             "blast": settings.contract_addr_blast,
             "base": settings.contract_addr_base,
         },
-        private_key_seed=settings.controller_seed_phrase,
-        onramp_private_key_seed=settings.onramp_seed_phrase,
     )
 
 

@@ -1,7 +1,5 @@
 import asyncio
 
-from eth_account import Account
-from eth_account.hdaccount import seed_from_mnemonic, key_from_seed
 from web3 import Web3
 from web3.contract import AsyncContract
 

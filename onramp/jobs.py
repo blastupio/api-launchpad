@@ -3,6 +3,7 @@ import traceback
 from datetime import timedelta
 from uuid import UUID
 
+from celery import Celery
 from fastapi import Depends
 from web3 import Web3
 
@@ -16,12 +17,13 @@ from app.models import ONRAMP_STATUS_COMPLETE, OnRampOrder
 from app.services import Lock
 from app.services.prices import get_tokens_price_for_chain
 from app.services.web3_nodes import web3_node
-from app.tg import notification_bot
+from app.tg_notifications.cli import notification_bot
 from onramp.services import Crypto
 
 
 class ProcessMunzenOrder(Command):
-    def __init__(self, order_id: str):
+    def __init__(self, order_id: str, app: Celery | None = None):
+        self.app = app
         self.order_id = order_id
 
     async def command(
@@ -30,11 +32,15 @@ class ProcessMunzenOrder(Command):
         crud: OnRampCrud = Depends(get_onramp_crud),
         crypto: Crypto = Depends(get_crypto),
     ) -> CommandResult:
-        if not await lock.acquire("is-ready:munzen-processing"):
+        order_lock_key = f"munzen-order:{self.order_id}"
+        global_lock_key = "is-ready:munzen-processing"
+
+        if not await lock.acquire(global_lock_key):
             logger.debug(f"[ProcessMunzenOrder({self.order_id})] Another order in progress")
             return CommandResult(success=False, need_retry=True, retry_after=10)
 
-        if not await lock.acquire(f"munzen-order:{self.order_id}"):
+        if not await lock.acquire(order_lock_key):
+            logger.debug(f"[ProcessMunzenOrder({self.order_id})] this order in progress")
             return CommandResult(success=False, need_retry=True, retry_after=60)
 
         try:
@@ -59,19 +65,24 @@ class ProcessMunzenOrder(Command):
             except Exception as e:
                 err = f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}"
                 logger.error(err)
-                await notification_bot.onramp_order_failed(
-                    order_id=self.order_id, balance_wei=balance, error=err
-                )
+                if self.app:
+                    self.app.send_task(
+                        "app.tasks.telegram_notify_failed_transaction",
+                        (self.order_id, balance, err),
+                        countdown=1,
+                    )
                 return CommandResult(success=False, need_retry=True, retry_after=60)
             else:
-                await notification_bot.completed_onramp_order(
-                    order=order,
-                    wei_balance_after_txn=balance_after_txn,
-                )
+                if self.app:
+                    self.app.send_task(
+                        "app.tasks.telegram_notify_completed_transaction",
+                        (self.order_id, balance_after_txn),
+                        countdown=1,
+                    )
                 return CommandResult(success=True)
         finally:
-            await lock.release(f"munzen-order:{self.order_id}")
-            await lock.release(f"munzen-order:{self.order_id}")
+            await lock.release(order_lock_key)
+            await lock.release(global_lock_key)
 
 
 class MonitorSenderBalance(Command):

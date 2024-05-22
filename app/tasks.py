@@ -8,6 +8,10 @@ from app.common import run_command_and_get_result
 from app.env import settings
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
+from app.tg_notifications.jobs import (
+    TelegramNotifyCompletedOnrampTransaction,
+    TelegramNotifyErrorOnrampTransaction,
+)
 from onramp.jobs import ProcessMunzenOrder, MonitorSenderBalance
 
 app = Celery("tasks", broker=settings.celery_broker)
@@ -19,7 +23,7 @@ app = Celery("tasks", broker=settings.celery_broker)
 )
 def process_munzen_order(entity_id: str):
     try:
-        result = run_command_and_get_result(ProcessMunzenOrder(entity_id))
+        result = run_command_and_get_result(ProcessMunzenOrder(entity_id, app))
 
         if result.need_retry:
             retry_after = (
@@ -109,5 +113,65 @@ async def monitor_onramp_bridge_balance():
 
         logger.error(
             f"monitor_onramp_bridge_balance Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=3,
+    default_retry_delay=15,
+)
+def telegram_notify_completed_transaction(entity_id: str, wei_balance_after_txn: int):
+    try:
+        result = run_command_and_get_result(
+            TelegramNotifyCompletedOnrampTransaction(entity_id, wei_balance_after_txn)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            telegram_notify_completed_transaction.apply_async(
+                args=[entity_id, wei_balance_after_txn], countdown=retry_after
+            )
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"telegram_notify_completed_transaction[{entity_id}] "
+            f"Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=3,
+    default_retry_delay=15,
+)
+def telegram_notify_failed_transaction(entity_id: str, wei_balance: int, error: str):
+    try:
+        result = run_command_and_get_result(
+            TelegramNotifyErrorOnrampTransaction(entity_id, wei_balance, error)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            telegram_notify_failed_transaction.apply_async(
+                args=[entity_id, wei_balance, error], countdown=retry_after
+            )
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"telegram_notify_failed_transaction[{entity_id}] "
+            f"Unhandled exception: {e}, {traceback.format_exc()}"
         )
         raise Retry("", exc=e)

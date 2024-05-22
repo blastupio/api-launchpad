@@ -86,17 +86,8 @@ class Web3NodeRedis:
 
     async def increment_web3_errors_count(self, chain_id: ChainId) -> int:
         key = f"web3_errors_count_{chain_id}"
-        exist_count = await self.redis.get(key)
-        if exist_count:
-            count = json.loads(exist_count) + 1
-            await self.redis.set(key, count)
-        else:
-            count = 1
-            await self.redis.setex(
-                key,
-                value=json.dumps(count),
-                time=timedelta(minutes=self.__WEB3_ERRORS_INTERVAL_MINUTES),
-            )
+        if (count := await self.redis.incr(key)) == 1:
+            await self.redis.expire(key, timedelta(minutes=self.__WEB3_ERRORS_INTERVAL_MINUTES))
         return count
 
 
@@ -106,6 +97,7 @@ class Web3Node:
         "polygon": chains.polygon.id,
         "bsc": chains.bsc.id,
         "blast": chains.blast.id,
+        "base": chains.base.id,
     }
 
     def __init__(self, redis: Web3NodeRedis):
@@ -115,12 +107,14 @@ class Web3Node:
             chains.ethereum.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_eth)),
             chains.bsc.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_bsc)),
             chains.blast.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_blast)),
+            chains.base.id: AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_base)),
         }
         self._fallback_node_urls_by_chain_id = {
             chains.polygon.id: settings.fallback_api_url_polygon,
             chains.ethereum.id: settings.fallback_api_url_eth,
             chains.bsc.id: settings.fallback_api_url_bsc,
             chains.blast.id: settings.fallback_api_url_blast,
+            chains.base.id: settings.fallback_api_url_base,
         }
         self._fallback_api_key_by_chain_id = {
             chains.polygon.id: settings.fallback_api_key_polygon,

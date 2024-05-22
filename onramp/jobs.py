@@ -3,6 +3,7 @@ import traceback
 from datetime import timedelta
 from uuid import UUID
 
+from celery import Celery
 from fastapi import Depends
 from web3 import Web3
 
@@ -12,16 +13,17 @@ from app.consts import NATIVE_TOKEN_ADDRESS
 from app.crud import OnRampCrud
 from app.dependencies import get_lock, get_onramp_crud, get_crypto, get_redis
 from app.env import settings
-from app.models import ONRAMP_STATUS_COMPLETE
+from app.models import ONRAMP_STATUS_COMPLETE, OnRampOrder
 from app.services import Lock
-from app.services.prices import get_tokens_price
+from app.services.prices import get_tokens_price_for_chain
 from app.services.web3_nodes import web3_node
-from app.tg import notification_bot
+from app.tg_notifications.cli import notification_bot
 from onramp.services import Crypto
 
 
 class ProcessMunzenOrder(Command):
-    def __init__(self, order_id: str):
+    def __init__(self, order_id: str, app: Celery | None = None):
+        self.app = app
         self.order_id = order_id
 
     async def command(
@@ -30,20 +32,25 @@ class ProcessMunzenOrder(Command):
         crud: OnRampCrud = Depends(get_onramp_crud),
         crypto: Crypto = Depends(get_crypto),
     ) -> CommandResult:
-        if not await lock.acquire("is-ready:munzen-processing"):
+        order_lock_key = f"munzen-order:{self.order_id}"
+        global_lock_key = "is-ready:munzen-processing"
+
+        if not await lock.acquire(global_lock_key):
             logger.debug(f"[ProcessMunzenOrder({self.order_id})] Another order in progress")
             return CommandResult(success=False, need_retry=True, retry_after=10)
 
-        if not await lock.acquire(f"munzen-order:{self.order_id}"):
+        if not await lock.acquire(order_lock_key):
+            logger.debug(f"[ProcessMunzenOrder({self.order_id})] this order in progress")
             return CommandResult(success=False, need_retry=True, retry_after=60)
 
         try:
-            order = await crud.get_by_id(UUID(self.order_id))
+            order: OnRampOrder = await crud.get_by_id(UUID(self.order_id))
             if order.status == ONRAMP_STATUS_COMPLETE:
                 logger.info(f"[ProcessMunzenOrder({self.order_id})] Order already completed")
                 return CommandResult(success=False, need_retry=False)
 
             balance = await crypto.get_sender_balance()
+            balance_after_txn = balance - int(order.received_amount)
             logger.info(
                 f"[ProcessMunzenOrder({self.order_id})] Sending {order.received_amount} to {order.address}"  # noqa: E501
             )
@@ -55,25 +62,27 @@ class ProcessMunzenOrder(Command):
                     logger.info(
                         f"[ProcessMunzenOrder({self.order_id})] Sent to {order.address}: {tx_hash}"
                     )
-                    balance_after_txn = balance - int(order.received_amount)
-                    await notification_bot.completed_onramp_order(
-                        order_id=self.order_id,
-                        tx_hash=tx_hash,
-                        munzen_txn_hash=order.munzen_txn_hash,
-                        balance_after_txn=balance_after_txn,
-                    )
-
-                    return CommandResult(success=True)
             except Exception as e:
                 err = f"[ProcessMunzenOrder({self.order_id})] Cannot send order: {e}"
                 logger.error(err)
-                await notification_bot.onramp_order_failed(
-                    order_id=self.order_id, balance_wei=balance, error=err
-                )
+                if self.app:
+                    self.app.send_task(
+                        "app.tasks.telegram_notify_failed_transaction",
+                        (self.order_id, balance, err),
+                        countdown=1,
+                    )
                 return CommandResult(success=False, need_retry=True, retry_after=60)
+            else:
+                if self.app:
+                    self.app.send_task(
+                        "app.tasks.telegram_notify_completed_transaction",
+                        (self.order_id, balance_after_txn),
+                        countdown=1,
+                    )
+                return CommandResult(success=True)
         finally:
-            await lock.release(f"munzen-order:{self.order_id}")
-            await lock.release(f"munzen-order:{self.order_id}")
+            await lock.release(order_lock_key)
+            await lock.release(global_lock_key)
 
 
 class MonitorSenderBalance(Command):
@@ -93,7 +102,9 @@ class MonitorSenderBalance(Command):
             balance_wei, balance_in_cache, blast_price = await asyncio.gather(
                 web3.eth.get_balance(web3.to_checksum_address(settings.onramp_sender_addr)),
                 redis.get("onramp_bridge_balance"),
-                get_tokens_price(chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]),
+                get_tokens_price_for_chain(
+                    chain_id=chain_id, token_addresses=[NATIVE_TOKEN_ADDRESS]
+                ),
             )
         except Exception as e:
             logger.error(
@@ -118,7 +129,7 @@ class MonitorSenderBalance(Command):
         if (usd_balance := balance * blast_usd_price) < settings.onramp_usd_balance_threshold:
             if settings.app_env == "dev":
                 msg = f"Onramp bridge balance is low: {balance:.6f} ETH ({usd_balance:.2f} USD)"
-                logger.error(msg)
+                logger.warning(msg)
             else:
                 await notification_bot.send_low_onramp_bridge_balance(
                     blast_balance=balance,

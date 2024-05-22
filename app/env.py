@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     launchpad_contract_address: str | None = None  # todo: not None
 
     coingecko_api_key: str | None = None
+    coingecko_errors_in_cache_minutes: int = 3
+
+    price_errors_count_to_switch_to_long_cache: int = 10
+    price_long_cache_minutes: int = 10
 
     eth_price_feed_addr: str
 
@@ -34,20 +38,18 @@ class Settings(BaseSettings):
     onramp_sender_seed_phrase: str
     onramp_usd_balance_threshold: int = 1000
 
-    usdt_contract_addr_eth: str
-    usdt_contract_addr_bsc: str
-    usdt_contract_addr_polygon: str
-    usdt_contract_addr_blast: str
-
     crypto_environment: str = "testnet"  # todo: use enum
     crypto_api_key_eth: str = ""
     crypto_api_key_polygon: str = ""
     crypto_api_key_bsc: str = ""
     crypto_api_key_blast: str = ""
+    crypto_api_key_base: str = ""
     fallback_api_url_eth: str = ""
     fallback_api_url_bsc: str = ""
     fallback_api_url_polygon: str = ""
     fallback_api_url_blast: str = ""
+    fallback_api_url_base: str = ""
+    fallback_api_key_base: str = ""
     fallback_api_key_eth: str = ""
     fallback_api_key_bsc: str = ""
     fallback_api_key_polygon: str = ""
@@ -57,6 +59,7 @@ class Settings(BaseSettings):
     contract_addr_polygon: str
     contract_addr_bsc: str
     contract_addr_blast: str
+    contract_addr_base: str | None = None  # todo: not None
 
     yield_staking_contract_addr: str | None = None  # todo: not None
 

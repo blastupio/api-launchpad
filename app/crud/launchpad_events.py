@@ -1,4 +1,4 @@
-from sqlalchemy import select, Row, Sequence, text
+from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncConnection
 

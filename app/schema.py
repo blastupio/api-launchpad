@@ -83,12 +83,23 @@ class Badge(BaseModel):
     type: BadgeType  # noqa
 
 
+class KybInfo(BaseModel):
+    proof_of_identity: Any | None = None
+    company_name: Any | None = None
+    legal_form: Any | None = None
+
+    jurisdiction: Any | None = None
+    business_proof_file: Any | None = None
+    register_entry_file: Any | None = None
+
+
 class LaunchpadProjectList(BaseModel):
     id: str  # noqa
     slug: str
     name: str
     is_active: bool
     status: ProjectStatusEnum
+    project_type: ProjectTypeEnum
     short_description: str
     logo_url: str | None
     links: List[LinkModel]
@@ -167,7 +178,6 @@ class TokenDetailsData(BaseModel):
 class LaunchpadProject(LaunchpadProjectList):
     ticker: str
     description: str | None
-    project_type: ProjectTypeEnum
 
     created_at: datetime
     updated_at: datetime | None
@@ -176,6 +186,11 @@ class LaunchpadProject(LaunchpadProjectList):
     token_details: TokenDetailsData | None
     token_address: str | None
     approve_for_registration_is_required: bool | None
+
+    seo_title: str | None
+    seo_description: str | None
+
+    kyb_info: KybInfo | None
 
     class Config:
         from_attributes = True
@@ -207,6 +222,7 @@ class AddressBalanceResponseData(BaseModel):
     eth: int
     bsc: int
     blast: int
+    base: int | None
     total: int
 
 

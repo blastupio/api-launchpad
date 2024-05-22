@@ -90,6 +90,11 @@ class LaunchpadProject(Base):
     project_type = Column(Enum(ProjectType))
     status = Column(Enum(StatusProject))
 
+    seo_title = Column(Text(), nullable=True)
+    seo_description = Column(Text(), nullable=True)
+
+    kyb_info = Column(JSON(), nullable=True)
+
     registration_start_at = Column(DateTime(), nullable=False)
     registration_end_at = Column(DateTime(), nullable=False)
     start_at = Column(DateTime(), nullable=False)
@@ -154,6 +159,7 @@ class OnRampOrder(Base):
     received_amount = Column(Text(), nullable=True)
     currency = Column(Text(), nullable=True)
     munzen_txn_hash = Column(Text(), nullable=True)
+    munzen_order_id = Column(Text(), nullable=True)
     status = Column(Text(), default=ONRAMP_STATUS_NEW, server_default=ONRAMP_STATUS_NEW)
     extra = Column(JSON(), default=lambda: {}, server_default=text("'{}'::jsonb"))
 
@@ -253,4 +259,17 @@ class LaunchpadContractEvents(Base):
             unique=True,
             postgresql_where=(event_type == "USER_REGISTERED"),
         ),
+    )
+
+
+class SupportedTokens(Base):
+    __tablename__ = "supported_tokens"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    token_address = Column(String, nullable=False)
+    chain_id = Column(BigIntegerType, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("token_address", "chain_id", name="uc_token_address_chain_id"),
     )

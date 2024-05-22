@@ -1,8 +1,8 @@
-import asyncio
 import json
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Body, HTTPException, Path
+from web3 import Web3
 
 from app.base import logger
 from app.crud import OnRampCrud
@@ -10,7 +10,6 @@ from app.dependencies import get_onramp_crud, get_munzen, get_amount_converter
 from app.env import settings
 from app.models import OnRampOrder, ONRAMP_STATUS_NEW, ONRAMP_STATUS_COMPLETE, ONRAMP_STATUS_ERROR
 from app.tasks import process_munzen_order
-from app.tg import notification_bot
 from app.types import MunzenWebhookEvent, MunzenOrderType
 from app.utils import validation_error
 from onramp.services import Munzen, AmountConverter
@@ -90,7 +89,7 @@ async def get_payment_link(
     )
 
     amount_str = f"{amount:.8f}" if currency == "ETH" else f"{amount:.2f}"
-    payment_link = await munzen.generate_link(order.id, amount_str, order.currency)
+    payment_link = munzen.generate_link(order.id, amount_str, order.currency)
     return OnRampResponse(
         ok=True, data=OnRampResponseData(internal_uuid=str(order.id), link=payment_link)
     )
@@ -105,13 +104,15 @@ async def webhook_handler(
 ):
     payload: MunzenWebhookEvent
 
-    if not await munzen.validate_webhook(payload, signature):
+    if not munzen.validate_webhook(payload, signature):
+        logger.info(f"[onramp webhook] Invalid signature: {signature}")
         raise HTTPException(detail="Invalid signature", status_code=400)
 
     if not (order := await crud.get_by_id(UUID(payload.get("merchantOrderId")))):
+        logger.info(f"[onramp webhook] Order not found: {payload.get('merchantOrderId')}")
         raise HTTPException(detail="Order not found", status_code=404)
-    order.munzen_txn_hash = payload.get("blockchainNetworkTxId")
 
+    order.munzen_order_id = payload.get("orderId")
     logger.info(f"[onramp webhook] Received webhook: {json.dumps(payload)}")
     if payload.get("eventType") == MunzenOrderType.ORDER_FAILED.value and order.status not in [
         ONRAMP_STATUS_COMPLETE,
@@ -125,7 +126,7 @@ async def webhook_handler(
         payload.get("eventType") == MunzenOrderType.ORDER_COMPLETE.value
         and order.status != ONRAMP_STATUS_COMPLETE
     ):
-        order.received_amount = f"{int(float(payload.get('toAmount')) * 1e18)}"
+        order.received_amount = str(Web3.to_wei(payload.get("toAmount"), "ether"))
         await crud.persist(order)
 
         logger.info(f"[onramp webhook] Scheduled job for id {order.id}")

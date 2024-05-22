@@ -9,6 +9,7 @@ from app.crud import OnRampCrud, LaunchpadProjectCrud
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
+from app.crud.supported_tokens import SupportedTokensCrud
 
 from app.env import settings
 
@@ -25,12 +26,7 @@ def get_launchpad_crypto() -> CryptoLaunchpad:
             "eth": settings.contract_addr_eth,
             "bsc": settings.contract_addr_bsc,
             "blast": settings.contract_addr_blast,
-        },
-        usdt_contracts={
-            "polygon": settings.usdt_contract_addr_polygon,
-            "eth": settings.usdt_contract_addr_eth,
-            "bsc": settings.usdt_contract_addr_bsc,
-            "blast": settings.usdt_contract_addr_blast,
+            "base": settings.contract_addr_base,
         },
         private_key_seed=settings.controller_seed_phrase,
         onramp_private_key_seed=settings.onramp_seed_phrase,
@@ -81,18 +77,26 @@ async def get_project_whitelist_crud(
     return ProjectWhitelistCrud(session)
 
 
+async def get_supported_tokens_crud(
+    session: AsyncSession = Depends(get_session),
+) -> SupportedTokensCrud:
+    return SupportedTokensCrud(session)
+
+
 HistoryStakingCrudDep = Annotated[HistoryStakingCrud, Depends(get_staking_history_crud)]
 
 ProjectWhitelistCrudDep = Annotated[ProjectWhitelistCrud, Depends(get_project_whitelist_crud)]
 
 LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_projects_crud)]
 
+SupportedTokensCrudDep = Annotated[SupportedTokensCrud, Depends(get_supported_tokens_crud)]
+
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)
 
 
-async def get_munzen() -> Munzen:
+def get_munzen() -> Munzen:
     return Munzen(
         settings.munzen_api_key,
         settings.munzen_api_secret,

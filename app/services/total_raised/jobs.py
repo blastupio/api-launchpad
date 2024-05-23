@@ -27,13 +27,17 @@ class RecalculateProjectsTotalRaised(Command):
             try:
                 json = await fetch_data(url, timeout=5)
             except Exception as e:
-                logger.error(f"Can't get total raised for project {project_id} and {url=}:\n{e}")
+                logger.error(f"Can't get total raised for {project_id=} and {url=}:\n{e}")
                 continue
             if not json["ok"]:
                 await asyncio.sleep(i * 0.5)
                 continue
-            return float(json["data"]["usd"])
-        logger.error(f"Can't get total raised for project {project_id} and {url=}")
+            total_raised_usd = json.get("data", {}).get("usd")
+            if total_raised_usd is None:
+                logger.error(f"Can't get total raised for {project_id=} and {url=}:{json}")
+                continue
+            return float(total_raised_usd)
+        logger.error(f"Can't get total raised for {project_id=} and {url=}")
         return None
 
     async def _get_for_default_projects(

@@ -94,6 +94,7 @@ class LaunchpadProject(Base):
     seo_description = Column(Text(), nullable=True)
 
     kyb_info = Column(JSON(), nullable=True)
+    urls = Column(JSON(), nullable=True)
 
     registration_start_at = Column(DateTime(), nullable=False)
     registration_end_at = Column(DateTime(), nullable=False)

@@ -26,12 +26,12 @@ from app.utils import get_data_with_cache
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 
 
-async def fetch_data(api_url: str) -> dict:
-    return (await fetch(api_url)).json()
+async def fetch_data(api_url: str, timeout: float = 30.0) -> dict:
+    return (await fetch(api_url, timeout)).json()
 
 
-async def fetch(api_url: str) -> Response:
-    async with httpx.AsyncClient(timeout=30.0) as client:
+async def fetch(api_url: str, timeout: float = 30.0) -> Response:
+    async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.get(api_url)
         return response
 

@@ -11,6 +11,7 @@ from app.models import (
     ProjectType,
     LaunchpadContractEvents,
     LaunchpadContractEventType,
+    ProxyLink,
 )
 from app.types import ProjectIdWithRaised
 
@@ -57,7 +58,9 @@ class LaunchpadProjectCrud(BaseCrud):
             LaunchpadProject.id,
             LaunchpadProject.contract_project_id,
             LaunchpadProject.raise_goal_on_launchpad,
-        ).where(LaunchpadProject.project_type == ProjectType.DEFAULT)
+            LaunchpadProject.project_type,
+            ProxyLink.base_url,
+        ).join(LaunchpadProject.proxy_link, isouter=True)
         result = await self.session.execute(st)
         return result.fetchall()
 

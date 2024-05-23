@@ -119,6 +119,7 @@ class LaunchpadProjectList(BaseModel):
     badges: list[Badge] = Field(default_factory=list)
 
     kys_required: bool
+    kyb_info: KybInfo | None
     whitelist_required: bool
 
     class Config:
@@ -189,8 +190,6 @@ class LaunchpadProject(LaunchpadProjectList):
 
     seo_title: str | None
     seo_description: str | None
-
-    kyb_info: KybInfo | None
 
     class Config:
         from_attributes = True

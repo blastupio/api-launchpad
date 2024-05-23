@@ -76,6 +76,7 @@ class RecalculateProjectsTotalRaised(Command):
     async def _get_for_private_projects(
         self,
         proxy_link_by_project: dict[str, str],
+        launchpad_goal_by_project: dict[str, float],
     ) -> list[ProjectIdWithRaised]:
         tasks = [
             self._get_total_raised_for_private_project(project_id, proxy_link)
@@ -88,7 +89,7 @@ class RecalculateProjectsTotalRaised(Command):
                 res.append(
                     ProjectIdWithRaised(
                         project_id=project_id,
-                        raised=total_raised,
+                        raised=min(total_raised, launchpad_goal_by_project[project_id]),
                     )
                 )
         return res
@@ -107,6 +108,7 @@ class RecalculateProjectsTotalRaised(Command):
         contract_project_id_by_project, launchpad_goal_by_project = {}, {}
         proxy_link_by_project = {}
         for x in recalculating_data:
+            launchpad_goal_by_project[x.id] = float(x.raise_goal_on_launchpad)
             if x.project_type == ProjectType.PRIVATE_PRESALE:
                 if not x.base_url:
                     logger.warning(f"Base url is not set for private project {x.id}")
@@ -117,12 +119,13 @@ class RecalculateProjectsTotalRaised(Command):
                     logger.warning(f"Contract project id is not set for default project {x.id}")
                     continue
                 contract_project_id_by_project[x.id] = x.contract_project_id
-                launchpad_goal_by_project[x.id] = float(x.raise_goal_on_launchpad)
 
         default_projects = await self._get_for_default_projects(
             contract_project_id_by_project, launchpad_goal_by_project
         )
-        private_projects = await self._get_for_private_projects(proxy_link_by_project)
+        private_projects = await self._get_for_private_projects(
+            proxy_link_by_project, launchpad_goal_by_project
+        )
         await crud.update_raised_value(data=default_projects + private_projects)
         logger.info("Recalculating projects total_raised is done")
 

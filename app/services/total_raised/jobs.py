@@ -21,7 +21,7 @@ class RecalculateProjectsTotalRaised(Command):
     async def _get_total_raised_for_private_project(
         self, project_id: str, proxy_url: str
     ) -> float | None:
-        _url = f"{proxy_url}/" if not proxy_url.endswith("/") else proxy_url
+        _url = f"{proxy_url.rstrip('/')}/"
         url = f"{_url}crypto/total-balance"
         for i in range(5):
             try:
@@ -104,15 +104,13 @@ class RecalculateProjectsTotalRaised(Command):
 
         recalculating_data = await crud.get_data_for_total_raised_recalculating()
 
-        contract_project_id_by_project, launchpad_goal_by_project, proxy_link_by_project = (
-            {},
-            {},
-            {},
-        )
+        contract_project_id_by_project, launchpad_goal_by_project = {}, {}
+        proxy_link_by_project = {}
         for x in recalculating_data:
             if x.project_type == ProjectType.PRIVATE_PRESALE:
                 if not x.base_url:
                     logger.warning(f"Base url is not set for private project {x.id}")
+                    continue
                 proxy_link_by_project[x.id] = x.base_url
             elif x.project_type == ProjectType.DEFAULT:
                 if x.contract_project_id is None:

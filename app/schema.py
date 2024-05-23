@@ -191,6 +191,8 @@ class LaunchpadProject(LaunchpadProjectList):
     seo_title: str | None
     seo_description: str | None
 
+    urls: dict[str, Any] | None
+
     class Config:
         from_attributes = True
 

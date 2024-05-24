@@ -227,7 +227,7 @@ class AddressBalanceResponseData(BaseModel):
     eth: int
     bsc: int
     blast: int
-    base: int | None
+    base: int | None = Field(default=None)
     total: int
 
 

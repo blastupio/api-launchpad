@@ -187,6 +187,7 @@ class TokenDetails(Base):
     id = Column(String, primary_key=True, default=lambda: str(shortuuid.uuid()))  # noqa
 
     tge_date = Column(DateTime(), nullable=False)
+    tge_full_date = Column(String, nullable=True)
     tge_percent = Column(Integer, nullable=False)
     cliff = Column(String, nullable=False)
     vesting = Column(String, nullable=False)

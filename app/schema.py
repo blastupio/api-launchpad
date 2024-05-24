@@ -166,6 +166,7 @@ class LaunchpadProjectList(BaseModel):
 class TokenDetailsData(BaseModel):
     icon: str
     tge_date: datetime
+    tge_full_date: str | None
     tge_percent: int
     cliff: str
     vesting: str

@@ -292,7 +292,7 @@ class SaveTransactionDataRequest(BaseModel):
     utm: str | None = Field(default=None)
     language: Language | None = Field(default=None)
     wallet_address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
-    chain: Literal["polygon", "ethereum", "bsc", "blast"] = Field()
+    chain: Literal["polygon", "ethereum", "bsc", "blast", "base"] = Field()
     currency: Literal["USDT", "USDC", "USDB", "BNB", "MATIC", "ETH"] = Field()
     amount: str = Field()
     first_login: str | None = Field(alias="first_login", default=None)

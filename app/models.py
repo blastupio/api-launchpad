@@ -104,6 +104,9 @@ class LaunchpadProject(Base):
     points_reward_start_at = Column(DateTime(), nullable=True)
     points_reward_end_at = Column(DateTime(), nullable=True)
 
+    claim_start_at = Column(DateTime(), nullable=True)
+    claim_end_at = Column(DateTime(), nullable=True)
+
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)
 

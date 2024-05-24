@@ -191,6 +191,9 @@ class LaunchpadProject(LaunchpadProjectList):
     seo_title: str | None
     seo_description: str | None
 
+    claim_start_at: datetime | None
+    claim_end_at: datetime | None
+
     urls: dict[str, Any] | None
 
     class Config:

@@ -90,7 +90,7 @@ async def test_nodes():
 
     async def test_node(web3: AsyncWeb3, node_res_by_chain_id: dict[int, str]):
         try:
-            await web3.eth.get_block("latest")
+            await web3.eth.get_balance(account="0x941E24F4E9C43f43A6BDD1511b20D53b2B375B97")
             node_res_by_chain_id[chain_id] = "ok"
         except InvalidURL:
             err = f"invalid url: {web3.provider.endpoint_uri}"

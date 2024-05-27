@@ -90,6 +90,28 @@ class LaunchpadProjectCrud(BaseCrud):
             for row in result.fetchall()
         }
 
+    async def get_contract_project_ids(self) -> Sequence[int]:
+        # todo: cache
+        st = select(LaunchpadProject.contract_project_id).where(
+            LaunchpadProject.contract_project_id.isnot(None),
+        )
+        result = await self.session.scalars(st)
+        return result.all()
+
+    async def get_projects_by_contract_project_ids(
+        self, contract_project_ids: list[int], page: int, size: int
+    ) -> Sequence[Row]:
+        offset = (page - 1) * size
+        st = (
+            select(LaunchpadProject)
+            .where(LaunchpadProject.contract_project_id.in_(contract_project_ids))
+            .order_by(LaunchpadProject.created_at.desc())
+            .limit(size)
+            .offset(offset)
+        )
+        result = await self.session.scalars(st)
+        return result.all()
+
     async def get_user_projects(
         self, user_address: str, page: int, size: int
     ) -> tuple[Sequence[Row], int]:
@@ -111,6 +133,7 @@ class LaunchpadProjectCrud(BaseCrud):
                 LaunchpadContractEvents.user_address == user_address.lower(),
                 LaunchpadContractEvents.event_type == LaunchpadContractEventType.USER_REGISTERED,
             )
+            .order_by(LaunchpadProject.created_at.desc())
         )
         paginated_st = general_st.limit(size).offset(offset)
         count_st = select(func.count()).select_from(general_st)

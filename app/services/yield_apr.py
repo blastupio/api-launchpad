@@ -23,7 +23,8 @@ async def get_stablecoin_yield() -> float:
     async with httpx.AsyncClient(timeout=10.0) as client:
         response = await client.post(url, json=data)
         if response.status_code != 200:
-            logger.error(f"Request to {url} failed with {response.status_code}\n{response.text}")
+            err = f"Request to {url} failed with {response.status_code}\n{response.text}"
+            logger.warning(err)
             return default_value
         response = response.json()
 

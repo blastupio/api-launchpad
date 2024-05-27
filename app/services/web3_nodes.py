@@ -135,6 +135,24 @@ class Web3Node:
     def get_fallback_api_key(self, chain_id: ChainId) -> str | None:
         return self._fallback_api_key_by_chain_id.get(chain_id)
 
+    def get_main_web3_by_chain_id(self, chain_id: ChainId) -> AsyncWeb3:
+        return self._web3_by_chain_id[chain_id]
+
+    def get_fallback_web3_by_chain_id(self, chain_id: ChainId) -> AsyncWeb3:
+        options = {}
+        if api_key := self.get_fallback_api_key(chain_id):
+            options = {
+                "headers": {
+                    "x-api-key": api_key,
+                    "Content-Type": "application/json",
+                }
+            }
+        return AsyncWeb3(
+            AsyncHTTPProvider(
+                endpoint_uri=self.get_fallback_node_url(chain_id), request_kwargs=options
+            )
+        )
+
     async def get_web3(
         self, network: str | None = None, chain_id: ChainId | None = None
     ) -> AsyncWeb3:
@@ -161,7 +179,7 @@ class Web3Node:
 
             logger.info(f"Using fallback node for {chain_id=}, {url=}")
             return AsyncWeb3(AsyncHTTPProvider(url, request_kwargs=options))
-        return self._web3_by_chain_id[chain_id]
+        return self.get_main_web3_by_chain_id(chain_id)
 
 
 web3_node_redis = Web3NodeRedis()

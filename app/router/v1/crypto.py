@@ -2,8 +2,9 @@ import json
 from datetime import timedelta
 from typing import Literal
 
+from aiohttp.client_exceptions import InvalidURL
 from fastapi import APIRouter, Path, Query
-from web3 import Web3
+from web3 import Web3, AsyncWeb3
 from web3.exceptions import TransactionNotFound
 
 from app.base import logger
@@ -18,6 +19,7 @@ from app.schema import (
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app import chains
+from app.services.web3_nodes import web3_node
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
 
@@ -73,3 +75,36 @@ async def get_transaction_data(
         return {"error": "Invalid chain id"}
     except TransactionNotFound:
         return {"error": "Transaction not found"}
+
+
+@router.get("/test-nodes")
+async def test_nodes():
+    chain_ids = (
+        chains.ethereum.id,
+        chains.bsc.id,
+        chains.polygon.id,
+        chains.blast.id,
+        chains.base.id,
+    )
+    main_node_res_by_chain_id, fallback_node_res_by_chain_id = {}, {}
+
+    async def test_node(web3: AsyncWeb3, node_res_by_chain_id: dict[int, str]):
+        try:
+            await web3.eth.get_block("latest")
+            node_res_by_chain_id[chain_id] = "ok"
+        except InvalidURL:
+            err = f"invalid url: {web3.provider.endpoint_uri}"
+            if not web3.provider.endpoint_uri:
+                err = "no endpoint uri"
+            node_res_by_chain_id[chain_id] = err
+        except Exception as e:
+            node_res_by_chain_id[chain_id] = str(e)
+
+    for chain_id in chain_ids:
+        w3 = web3_node.get_main_web3_by_chain_id(chain_id)
+        fallback_w3 = web3_node.get_fallback_web3_by_chain_id(chain_id)
+
+        await test_node(w3, main_node_res_by_chain_id)
+        await test_node(fallback_w3, fallback_node_res_by_chain_id)
+
+    return {"main": main_node_res_by_chain_id, "fallback": fallback_node_res_by_chain_id}

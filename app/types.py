@@ -62,3 +62,11 @@ class MunzenWebhookEvent(TypedDict):
     networkFeeFiat: float
     createdAt: str  # iso format
     externalData: str  # json
+
+
+class UserInfo(NamedTuple):
+    claimedAmount: int
+    boughtAmount: int
+    boughtPublicSale: int
+    tier: int
+    registered: False

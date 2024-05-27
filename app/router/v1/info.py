@@ -33,6 +33,7 @@ from app.services.tiers.consts import (
     diamond_tier,
 )
 from app.services.tiers.user_tier import get_user_tier
+from app.services.user_projects import get_user_registered_projects
 from app.services.yield_apr import get_native_yield, get_stablecoin_yield
 
 router = APIRouter(prefix="/info", tags=["info"])
@@ -112,7 +113,13 @@ async def get_user_projects(
     page: int = Query(default=1, ge=1),
     size: int = Query(default=30, ge=3, le=30),
 ):
-    projects, total_rows = await projects_crud.get_user_projects(user_address, page, size)
+    try:
+        projects, total_rows = await get_user_registered_projects(
+            projects_crud, user_address, page, size
+        )
+    except Exception as e:
+        logger.error(f"Cannot get user projects for {user_address} via blockchain: {e}")
+        projects, total_rows = await projects_crud.get_user_projects(user_address, page, size)
 
     total_pages = ceil(total_rows / size)
     page = Page(total=total_rows, page=page, size=size, items=projects, pages=total_pages)

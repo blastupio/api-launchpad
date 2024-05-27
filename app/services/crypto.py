@@ -32,7 +32,7 @@ class Crypto:
     @catch_web3_exceptions
     async def get_blastup_token_balance(self, network: str, address: str) -> int:
         if self.contracts.get(network) is None:
-            logger.error(f"get_blastup_token_balance: no contract for {network}")
+            logger.warning(f"get_blastup_token_balance: no contract for {network}")
             return 0
 
         contract = await self._contract(network)

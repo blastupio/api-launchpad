@@ -1841,6 +1841,23 @@ LAUNCHPAD_PLACE_TOKENS_ABI = {
     "stateMutability": "view",
     "type": "function",
 }
+LAUNCHPAD_USERS_ABI = {
+    "inputs": [
+        {"internalType": "uint256", "name": "id", "type": "uint256"},
+        {"internalType": "address", "name": "user", "type": "address"},
+    ],
+    "name": "users",
+    "outputs": [
+        {"internalType": "uint256", "name": "claimedAmount", "type": "uint256"},
+        {"internalType": "uint256", "name": "boughtAmount", "type": "uint256"},
+        {"internalType": "uint256", "name": "boughtPublicSale", "type": "uint256"},
+        {"internalType": "enum LaunchpadDataTypes.UserTiers", "name": "tier", "type": "uint8"},
+        {"internalType": "bool", "name": "registered", "type": "bool"},
+    ],
+    "stateMutability": "view",
+    "type": "function",
+}
+
 TRY_AGGREGATE_ABI = {
     "inputs": [
         {"name": "requireSuccess", "type": "bool"},

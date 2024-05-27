@@ -93,7 +93,7 @@ class MonitorSenderBalance(Command):
         redis = get_redis()
 
         if not settings.onramp_sender_addr:
-            logger.error("Onramp sender address is not set")
+            logger.warning("Onramp sender address is not set")
             return CommandResult(success=False, need_retry=False)
 
         try:

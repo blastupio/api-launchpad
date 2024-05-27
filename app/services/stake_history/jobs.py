@@ -1,4 +1,5 @@
 import time
+import traceback
 
 from fastapi import Depends
 from web3 import AsyncWeb3, AsyncHTTPProvider
@@ -122,7 +123,7 @@ class ProcessHistoryStakingEvent(Command):
                 logger.info(f"Staking events: saving {n_stakes=}, {n_claim_rewards=}, {n_unstake=}")
                 await crud.session.commit()
         except Exception as e:
-            logger.error(f"Staking events: error with processing:\n{e}")
+            logger.error(f"Staking events: error with processing:\n{e} {traceback.format_exc()}")
             return CommandResult(success=False, need_retry=True)
 
         return CommandResult(success=True, need_retry=False)

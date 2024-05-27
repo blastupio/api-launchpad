@@ -59,7 +59,8 @@ class CoingeckoClient:
                     await asyncio.sleep(time_sleep)
                     resp.raise_for_status()
             except httpx.HTTPError as exc:
-                logger.error(f"Coingecko: error for {url} with {params=} and {headers=}: {exc}")
+                err = f"Coingecko: error for {url} with {params=} and {headers=}: {exc}"
+                logger.warning(err)
                 return None
 
     async def get_coingecko_list_of_coins(self) -> list[ListCoin] | None:
@@ -202,7 +203,7 @@ class CoingeckoClient:
             token_ids
         )
         if coingecko_prices is None:
-            logger.error(f"Coingecko: no prices for {chain_id=}, {token_addresses=}")
+            logger.warning(f"Coingecko: no prices for {chain_id=}, {token_addresses=}")
             return {}
 
         res: dict[Address, float] = {}

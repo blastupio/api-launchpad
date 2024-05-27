@@ -4,7 +4,7 @@ from typing import Literal
 
 from aiohttp.client_exceptions import InvalidURL
 from fastapi import APIRouter, Path, Query
-from web3 import Web3
+from web3 import Web3, AsyncWeb3
 from web3.exceptions import TransactionNotFound
 
 from app.base import logger
@@ -80,36 +80,31 @@ async def get_transaction_data(
 @router.get("/test-nodes")
 async def test_nodes():
     chain_ids = (
-        chains.ethereum.id, chains.bsc.id, chains.polygon.id, chains.blast.id, chains.base.id
+        chains.ethereum.id,
+        chains.bsc.id,
+        chains.polygon.id,
+        chains.blast.id,
+        chains.base.id,
     )
     main_node_res_by_chain_id, fallback_node_res_by_chain_id = {}, {}
+
+    async def test_node(web3: AsyncWeb3, node_res_by_chain_id: dict[int, str]):
+        try:
+            await web3.eth.get_block("latest")
+            node_res_by_chain_id[chain_id] = "ok"
+        except InvalidURL:
+            err = f"invalid url: {web3.provider.endpoint_uri}"
+            if not web3.provider.endpoint_uri:
+                err = "no endpoint uri"
+            node_res_by_chain_id[chain_id] = err
+        except Exception as e:
+            node_res_by_chain_id[chain_id] = str(e)
+
     for chain_id in chain_ids:
         w3 = web3_node.get_main_web3_by_chain_id(chain_id)
         fallback_w3 = web3_node.get_fallback_web3_by_chain_id(chain_id)
 
-
-        try:
-            print("main", await w3.eth.chain_id)
-            await w3.eth.get_block("latest")
-            main_node_res_by_chain_id[chain_id] = "ok"
-        except InvalidURL:
-            err = f"invalid url: {w3.provider.endpoint_uri}"
-            if not w3.provider.endpoint_uri:
-                err = "no endpoint uri"
-            main_node_res_by_chain_id[chain_id] = err
-        except Exception as e:
-            main_node_res_by_chain_id[chain_id] = str(e)
-
-        try:
-            await fallback_w3.eth.get_block("latest")
-            fallback_node_res_by_chain_id[chain_id] = "ok"
-            print("fallback", await fallback_w3.eth.chain_id)
-        except InvalidURL:
-            err = f"invalid url: {w3.provider.endpoint_uri}"
-            if not w3.provider.endpoint_uri:
-                err = "no endpoint uri"
-            fallback_node_res_by_chain_id[chain_id] = err
-        except Exception as e:
-            fallback_node_res_by_chain_id[chain_id] = str(e)
+        await test_node(w3, main_node_res_by_chain_id)
+        await test_node(fallback_w3, fallback_node_res_by_chain_id)
 
     return {"main": main_node_res_by_chain_id, "fallback": fallback_node_res_by_chain_id}

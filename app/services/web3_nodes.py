@@ -147,8 +147,11 @@ class Web3Node:
                     "Content-Type": "application/json",
                 }
             }
-        print(f"{chain_id=}, {options=}")
-        return AsyncWeb3(AsyncHTTPProvider(endpoint_uri=self.get_fallback_node_url(chain_id), request_kwargs=options))
+        return AsyncWeb3(
+            AsyncHTTPProvider(
+                endpoint_uri=self.get_fallback_node_url(chain_id), request_kwargs=options
+            )
+        )
 
     async def get_web3(
         self, network: str | None = None, chain_id: ChainId | None = None

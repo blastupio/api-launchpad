@@ -51,11 +51,13 @@ async def get_user_registered_projects(
     )
 
     # get default projects ids of user
+    contract_project_id_by_project_id = {
+        x.id: x.contract_project_id
+        for x in info
+        if x.project_type == ProjectType.DEFAULT and x.contract_project_id is not None
+    }
     try:
         # try to get via blockchain method users
-        contract_project_id_by_project_id = {
-            x.id: x.contract_project_id for x in info if x.project_type == ProjectType.DEFAULT
-        }
         default_projects_ids_of_user = await get_projects_ids_of_user(
             user_address, contract_project_id_by_project_id
         )

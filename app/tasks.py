@@ -8,7 +8,7 @@ from app.common import run_command_and_get_result
 from app.env import settings
 from app.services.stake_history.jobs import ProcessHistoryStakingEvent
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
-from app.tg_notifications.jobs import (
+from app.services.tg_notifications.jobs import (
     TelegramNotifyCompletedOnrampTransaction,
     TelegramNotifyErrorOnrampTransaction,
 )

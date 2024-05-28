@@ -438,6 +438,7 @@ class UserProject(BaseModel):
     logo_url: str | None
     contract_project_id: int | None
     status: StatusProject
+    project_type: str
 
     class Config:
         from_attributes = True

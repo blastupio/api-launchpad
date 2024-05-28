@@ -90,41 +90,44 @@ class LaunchpadProjectCrud(BaseCrud):
             for row in result.fetchall()
         }
 
-    async def get_contract_project_ids(self) -> Sequence[int]:
+    async def get_info_for_user_projects(self) -> Sequence[Row]:
         # todo: cache
-        st = select(LaunchpadProject.contract_project_id).where(
-            LaunchpadProject.contract_project_id.isnot(None),
-        )
-        result = await self.session.scalars(st)
-        return result.all()
+        st = select(
+            LaunchpadProject.id,
+            LaunchpadProject.contract_project_id,
+            LaunchpadProject.project_type,
+            ProxyLink.base_url,
+        ).join(LaunchpadProject.proxy_link, isouter=True)
+        result = await self.session.execute(st)
+        return result.fetchall()
 
-    async def get_projects_by_contract_project_ids(
-        self, contract_project_ids: list[int], page: int, size: int
+    async def get_projects_by_ids(
+        self, project_ids: list[int], page: int, size: int
     ) -> Sequence[Row]:
         offset = (page - 1) * size
         st = (
-            select(LaunchpadProject)
-            .where(LaunchpadProject.contract_project_id.in_(contract_project_ids))
-            .order_by(LaunchpadProject.created_at.desc())
-            .limit(size)
-            .offset(offset)
-        )
-        result = await self.session.scalars(st)
-        return result.all()
-
-    async def get_user_projects(
-        self, user_address: str, page: int, size: int
-    ) -> tuple[Sequence[Row], int]:
-        offset = (page - 1) * size
-        general_st = (
             select(
                 LaunchpadProject.id,
                 LaunchpadProject.name,
                 LaunchpadProject.logo_url,
                 LaunchpadProject.contract_project_id,
                 LaunchpadProject.slug,
+                LaunchpadProject.project_type,
                 LaunchpadProject.status,
             )
+            .where(LaunchpadProject.id.in_(project_ids))
+            .order_by(LaunchpadProject.created_at.desc())
+            .limit(size)
+            .offset(offset)
+        )
+        return (await self.session.execute(st)).all()
+
+    async def get_user_project_ids_from_events(
+        self, user_address: str, page: int, size: int
+    ) -> tuple[Sequence[Row], int]:
+        offset = (page - 1) * size
+        general_st = (
+            select(LaunchpadProject.id)
             .join(
                 LaunchpadContractEvents,
                 LaunchpadProject.contract_project_id == LaunchpadContractEvents.contract_project_id,
@@ -138,5 +141,5 @@ class LaunchpadProjectCrud(BaseCrud):
         paginated_st = general_st.limit(size).offset(offset)
         count_st = select(func.count()).select_from(general_st)
         count: int = await self.session.scalar(count_st)
-        projects = (await self.session.execute(paginated_st)).all()
-        return projects, count
+        project_ids = (await self.session.scalars(paginated_st)).all()
+        return project_ids, count

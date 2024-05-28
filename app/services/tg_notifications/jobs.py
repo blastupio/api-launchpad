@@ -6,7 +6,7 @@ from app.base import logger
 from app.common import Command, CommandResult
 from app.crud import OnRampCrud
 from app.dependencies import get_onramp_crud
-from app.tg_notifications.cli import notification_bot
+from app.services.tg_notifications.cli import notification_bot
 
 
 class TelegramNotifyCompletedOnrampTransaction(Command):

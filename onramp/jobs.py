@@ -17,7 +17,7 @@ from app.models import ONRAMP_STATUS_COMPLETE, OnRampOrder
 from app.services import Lock
 from app.services.prices import get_tokens_price_for_chain
 from app.services.web3_nodes import web3_node
-from app.tg_notifications.cli import notification_bot
+from app.services.tg_notifications.cli import notification_bot
 from onramp.services import Crypto
 
 

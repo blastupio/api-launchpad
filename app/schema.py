@@ -438,6 +438,10 @@ class UserProject(BaseModel):
     logo_url: str | None
     contract_project_id: int | None
     status: StatusProject
+    tge_date: datetime | None
+    tge_percent: int | None
+    user_token_balance: int | None = None
+    ticker: str | None
     project_type: str
 
     class Config:

@@ -12,6 +12,7 @@ from app.models import (
     LaunchpadContractEvents,
     LaunchpadContractEventType,
     ProxyLink,
+    TokenDetails,
 )
 from app.types import ProjectIdWithRaised
 
@@ -114,7 +115,11 @@ class LaunchpadProjectCrud(BaseCrud):
                 LaunchpadProject.slug,
                 LaunchpadProject.project_type,
                 LaunchpadProject.status,
+                TokenDetails.tge_date,
+                TokenDetails.tge_percent,
+                TokenDetails.ticker,
             )
+            .join(LaunchpadProject.token_details, isouter=True)
             .where(LaunchpadProject.id.in_(project_ids))
             .order_by(LaunchpadProject.created_at.desc())
             .limit(size)

@@ -70,3 +70,10 @@ class UserInfo(NamedTuple):
     boughtPublicSale: int
     tier: int
     registered: False
+
+
+class StakingUserInfo(NamedTuple):
+    balance_scaled: int
+    locked_balance: int
+    remainders: int
+    timestampToWithdraw: int

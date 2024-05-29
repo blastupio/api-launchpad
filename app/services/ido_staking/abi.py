@@ -316,3 +316,25 @@ staking_abi = [
         "inputs": [{"name": "token", "type": "address", "internalType": "address"}],
     },
 ]
+STAKING_USER_INFO_ABI = {
+    "inputs": [
+        {"internalType": "address", "name": "targetToken", "type": "address"},
+        {"internalType": "address", "name": "user", "type": "address"},
+    ],
+    "name": "userInfo",
+    "outputs": [
+        {
+            "components": [
+                {"internalType": "uint256", "name": "balanceScaled", "type": "uint256"},
+                {"internalType": "uint256", "name": "lockedBalance", "type": "uint256"},
+                {"internalType": "uint256", "name": "remainders", "type": "uint256"},
+                {"internalType": "uint256", "name": "timestampToWithdraw", "type": "uint256"},
+            ],
+            "internalType": "struct YieldStaking.StakingUser",
+            "name": "",
+            "type": "tuple",
+        }
+    ],
+    "stateMutability": "view",
+    "type": "function",
+}

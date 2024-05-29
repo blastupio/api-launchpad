@@ -8,7 +8,7 @@ import sentry_sdk
 from app.env import settings
 from app.services.analytics.jobs import ProcessLaunchpadContractEvents
 from app.services.prices.jobs import UpdateSupportedTokensCache
-from app.services.stake_history.jobs import ProcessHistoryStakingEvent
+from app.services.ido_staking.jobs import ProcessHistoryStakingEvent, AddIdoStakingPoints
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from onramp.jobs import MonitorSenderBalance
 
@@ -28,6 +28,7 @@ async def main():
         "update-project-total-raised",
         "process-launchpad-contract-events",
         "update-supported-tokens-cache",
+        "add-ido-staking-points",
     ]:
         subparsers.add_parser(command)
 
@@ -43,6 +44,8 @@ async def main():
             command = ProcessLaunchpadContractEvents()
         case "update-supported-tokens-cache":
             command = UpdateSupportedTokensCache()
+        case "add-ido-staking-points":
+            command = AddIdoStakingPoints()
         case _:
             command = None
 

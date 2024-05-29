@@ -6,7 +6,7 @@ from celery.exceptions import Retry
 from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
-from app.services.stake_history.jobs import ProcessHistoryStakingEvent
+from app.services.ido_staking.jobs import ProcessHistoryStakingEvent
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.tg_notifications.jobs import (
     TelegramNotifyCompletedOnrampTransaction,

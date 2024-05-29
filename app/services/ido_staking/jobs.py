@@ -1,3 +1,4 @@
+import asyncio
 import math
 import time
 import traceback
@@ -12,10 +13,16 @@ from app.common import Command, CommandResult
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.points import PointsHistoryCrud
 from app.crud.profiles import ProfilesCrud
-from app.dependencies import get_staking_history_crud, get_profile_crud, get_points_history_crud
+from app.dependencies import (
+    get_staking_history_crud,
+    get_profile_crud,
+    get_points_history_crud,
+    get_lock,
+)
 from app.env import settings
 from app.models import HistoryStakeType, PointsHistory, OperationType
 from app.schema import CreateHistoryStake
+from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
 from app.services.ido_staking.multicall import get_locked_balance
 from app.services.ido_staking.redis_cli import stake_history_redis
@@ -142,6 +149,7 @@ class AddIdoStakingPoints(Command):
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
         profile_crud: ProfilesCrud = Depends(get_profile_crud),
         points_history_crud: PointsHistoryCrud = Depends(get_points_history_crud),
+        lock: Lock = Depends(get_lock),
     ) -> CommandResult:
         # get all users that staked some tokens
         user_addresses_by_token_address = await crud.get_user_addresses_by_token_address()
@@ -171,24 +179,28 @@ class AddIdoStakingPoints(Command):
                 usd_balance_by_user_address[user_address] += usd_balance
 
         # add points to profile if it has more than 100 USD staked
-        for user_address, balance in usd_balance_by_user_address.items():
-            if balance < 100:  # 100 usd
-                continue
-            points_amount = math.ceil(balance / 100)
-            logger.info(f"IDO points: adding {points_amount}BP to {user_address=}")
+        try:
+            while not await lock.acquire("add-ido-points"):
+                await asyncio.sleep(0.001)
+            for user_address, balance in usd_balance_by_user_address.items():
+                if balance < 100:  # 100 usd
+                    continue
+                points_amount = math.ceil(balance / 100)
+                logger.info(f"IDO points: adding {points_amount}BP to {user_address=}")
 
-            profile = await profile_crud.get_or_create_profile(user_address)
-            points_before = profile.points
-            profile.points = profile.points + points_amount
-            await profile_crud.persist(profile)
+                profile = await profile_crud.get_or_create_profile(user_address)
+                points_before = profile.points
+                profile.points = profile.points + points_amount
+                await profile_crud.persist(profile)
 
-            history = PointsHistory(
-                profile_id=profile.id,
-                points_before=points_before,
-                amount=points_amount,
-                points_after=profile.points,
-                operation_type=OperationType.ADD_IDO_POINTS,
-            )
-            await points_history_crud.persist(history)
-
+                history = PointsHistory(
+                    profile_id=profile.id,
+                    points_before=points_before,
+                    amount=points_amount,
+                    points_after=profile.points,
+                    operation_type=OperationType.ADD_IDO_POINTS,
+                )
+                await points_history_crud.persist(history)
+        finally:
+            await lock.release("add-ido-points")
         return CommandResult(success=True, need_retry=False)

@@ -8,6 +8,8 @@ from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
+from app.crud.points import PointsHistoryCrud
+from app.crud.profiles import ProfilesCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
 from app.crud.supported_tokens import SupportedTokensCrud
 
@@ -61,6 +63,18 @@ async def get_staking_history_crud(
     session: AsyncSession = Depends(get_session),
 ) -> HistoryStakingCrud:
     return HistoryStakingCrud(session)
+
+
+async def get_profile_crud(
+    session: AsyncSession = Depends(get_session),
+) -> ProfilesCrud:
+    return ProfilesCrud(session)
+
+
+async def get_points_history_crud(
+    session: AsyncSession = Depends(get_session),
+) -> PointsHistoryCrud:
+    return PointsHistoryCrud(session)
 
 
 async def get_launchpad_contract_events_crud(

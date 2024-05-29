@@ -17,11 +17,14 @@ async def get_native_yield() -> float:
 
 
 async def get_stablecoin_yield() -> float:
+    """
+    get from https://summer.fi/earn?deposit-token=DAI&protocol=maker
+    """
     default_value = 10.0
-    url = "https://summer.fi/api/product-hub"
-    data = {"protocols": ["maker"], "testnet": False}
+    url = "https://summer.fi/api/prerequisites"
+    params = {"protocols": "maker,sparkv3"}
     async with httpx.AsyncClient(timeout=10.0) as client:
-        response = await client.post(url, json=data)
+        response = await client.get(url, params=params)
         if response.status_code != 200:
             err = f"Request to {url} failed with {response.status_code}\n{response.text}"
             logger.warning(err)
@@ -29,9 +32,8 @@ async def get_stablecoin_yield() -> float:
         response = response.json()
 
     try:
-        str_value = [
-            x for x in response["table"] if x["earnStrategyDescription"] == "DAI Savings Rate"
-        ][0]
+        dict_description = [x for x in response["productHub"]["table"] if x["label"] == "DSR"][0]
+        str_value = dict_description["weeklyNetApy"]
         return float(str_value) * 100
     except (IndexError, KeyError, TypeError):
         return default_value

@@ -122,7 +122,7 @@ cron:
       - /bin/sh
     args:
       - "-c"
-      - "python -c 'from app.tasks import add_ido_staking_points; add_ido_staking_points.apply_async()'"
+      - "python3 -c 'from app.tasks import add_ido_staking_points; add_ido_staking_points.apply_async()'"
 
 
 env:

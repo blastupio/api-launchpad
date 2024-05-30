@@ -217,7 +217,9 @@ def add_ido_staking_points_for_profile(profile_id: int, points_amount: int):
                 else settings.celery_retry_after
             )
             logger.info(f"add_ido_staking_points[{profile_id}] retrying after {retry_after}")
-            add_ido_staking_points_for_profile.apply_async(countdown=retry_after)
+            add_ido_staking_points_for_profile.apply_async(
+                args=[profile_id, points_amount], countdown=retry_after
+            )
             return
     except Exception as e:
         if isinstance(e, Retry):

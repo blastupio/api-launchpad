@@ -103,6 +103,8 @@ LaunchpadProjectCrudDep = Annotated[LaunchpadProjectCrud, Depends(get_launchpad_
 
 SupportedTokensCrudDep = Annotated[SupportedTokensCrud, Depends(get_supported_tokens_crud)]
 
+ProfileCrudDep = Annotated[ProfilesCrud, Depends(get_profile_crud)]
+
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)

@@ -5,10 +5,11 @@ import traceback
 from collections import defaultdict
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
 
 from app import chains
-from app.base import logger
+from app.base import logger, engine
 from app.common import Command, CommandResult
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.points import PointsHistoryCrud
@@ -224,24 +225,29 @@ class AddIdoStakingPointsForProfile(Command):
         try:
             while not await lock.acquire(lock_key):
                 await asyncio.sleep(0.001)
-            profile = await profile_crud.get_by_id(self.profile_id)
-            if not profile:
-                logger.info(f"IDO points: profile with id={self.profile_id} not found")
-                return CommandResult(success=False, need_retry=False)
 
-            logger.info(f"IDO points: adding {self.points_amount}BP to {profile.address}")
-            points_before = profile.points
-            profile.points = profile.points + self.points_amount
-            await profile_crud.persist(profile)
+            async with AsyncSession(engine) as session:
+                async with session.begin():
+                    profile = await profile_crud.get_by_id(self.profile_id, session)
+                    if not profile:
+                        logger.info(f"IDO points: profile with id={self.profile_id} not found")
+                        return CommandResult(success=False, need_retry=False)
 
-            history = PointsHistory(
-                profile_id=profile.id,
-                points_before=points_before,
-                amount=self.points_amount,
-                points_after=profile.points,
-                operation_type=OperationType.ADD_IDO_POINTS,
-            )
-            await points_history_crud.persist(history)
+                    logger.info(f"IDO points: adding {self.points_amount}BP to {profile.id}")
+                    points_before = profile.points
+                    profile.points = profile.points + self.points_amount
+                    session.add(profile)
+                    await session.flush()
+
+                    history = PointsHistory(
+                        profile_id=profile.id,
+                        points_before=points_before,
+                        amount=self.points_amount,
+                        points_after=profile.points,
+                        operation_type=OperationType.ADD_IDO_POINTS,
+                    )
+                    session.add(history)
+                    await session.flush()
         except Exception as e:
             logger.error(
                 f"IDO points: error with adding to {self.profile_id}:\n{e} {traceback.format_exc()}"

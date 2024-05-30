@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
 from app.models import Profile
@@ -29,6 +30,7 @@ class ProfilesCrud(BaseCrud):
             profile = await self.persist(Profile(**kwargs))
         return profile
 
-    async def get_by_id(self, id_: int) -> Profile | None:
-        query = await self.session.execute(select(Profile).where(Profile.id == id_))
+    async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:
+        session = session or self.session
+        query = await session.execute(select(Profile).where(Profile.id == id_))
         return query.scalars().one_or_none()

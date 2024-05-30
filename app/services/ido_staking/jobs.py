@@ -156,7 +156,7 @@ class AddIdoStakingPoints(Command):
             user_addresses_by_token_address = await crud.get_user_addresses_by_token_address()
 
             # get locked balance from contract
-            balance_by_token_address_and_user_address = {}
+            balance_by_token_address_and_user_address: dict[str, dict[str, float]] = {}
             for token_address, user_addresses in user_addresses_by_token_address.items():
                 res = await get_locked_balance(token_address, user_addresses)
                 balance_by_token_address_and_user_address.update(res)
@@ -197,7 +197,7 @@ class AddIdoStakingPoints(Command):
                 if balance < 100:  # 100 usd
                     continue
                 points_amount = math.ceil(balance / 100)
-                logger.info(f"IDO points: adding {points_amount}BP to {user_address=}")
+                logger.info(f"IDO points: adding {points_amount}BP to {user_address}")
 
                 profile = await profile_crud.get_or_create_profile(user_address)
                 points_before = profile.points

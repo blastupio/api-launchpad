@@ -7,7 +7,9 @@ from web3 import Web3
 
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
-from app.dependencies import LaunchpadProjectCrudDep, SupportedTokensCrudDep
+from app.dependencies import LaunchpadProjectCrudDep, SupportedTokensCrudDep, ProfileCrudDep
+from app.env import settings
+from app.router.v1.proxy import fetch_data
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -75,6 +77,7 @@ async def get_any2any_price_rate(
 
 @router.get("/user/{address}", response_model=UserInfoResponse | ErrorResponse)
 async def get_user_info(
+    profile_crud: ProfileCrudDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
@@ -84,9 +87,30 @@ async def get_user_info(
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
         return InternalServerError("Failed to get user info")
-    else:
-        user_tier = get_user_tier(balances_by_chain_id)
-        return UserInfoResponse(tier=user_tier, blastup_balance=balances_by_chain_id)
+    user_tier = get_user_tier(balances_by_chain_id)
+
+    # todo: get from db after migration of presale
+    url = f"{settings.presale_api_url}/users/profile/{address}"
+    try:
+        for _ in range(5):
+            presale_json = await fetch_data(url, timeout=5)
+            if presale_json["ok"]:
+                break
+            elif "not found" in presale_json["error"]:
+                presale_json = {
+                    "data": {"points": 0},
+                    "ok": True,
+                }
+                break
+    except Exception as e:
+        logger.error(f"Can't get presale profile for {address}, {url=}: {e}")
+        return InternalServerError(err="Can't get profile")
+
+    presale_data = presale_json["data"]
+    if profile := await profile_crud.first_by_address(address):
+        presale_data["points"] += profile.points
+
+    return UserInfoResponse(tier=user_tier, blastup_balance=balances_by_chain_id, **presale_data)
 
 
 @router.get("/tiers", response_model=TierInfoResponse)

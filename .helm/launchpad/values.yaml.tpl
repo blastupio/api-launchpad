@@ -112,7 +112,17 @@ cron:
     args:
       - "-c"
       - "python3 console.py update-supported-tokens-cache"
-
+  schedule-change-projects-status:
+    enabled: true
+    schedule: "* * * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 console.py change-projects-status"
 
 env:
   APP_ENV: dev

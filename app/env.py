@@ -63,6 +63,7 @@ class Settings(BaseSettings):
     log_level: str = "DEBUG"  # todo: use enum
 
     proxy_base_url: str
+    presale_api_url: str = "https://presale-api.blastup.io"
 
     tg_bot_notification_token: str
     tg_notification_chat_id: str

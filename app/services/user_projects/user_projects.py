@@ -56,6 +56,9 @@ async def get_multichain_project_ids_of_user(
             for _ in range(5):
                 try:
                     response = await client.get(url)
+                    if response.status_code != 200:
+                        err = response.text
+                        continue
                     json_response = response.json()
                     return json_response["count"] > 0
                 except Exception as e:

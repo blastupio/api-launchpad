@@ -374,6 +374,14 @@ class TierInfoResponse(BaseModel):
 class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
     blastup_balance: dict[ChainId, int] | None = None
+    balance: int = 0
+    balance_usd: str = ""
+    balance_change: str = ""
+    referrer: str | None = None
+    points: int = 0
+    ref_points: int = 0
+    terms_accepted: Optional[bool] = None
+    ref_bonus_used: bool = False
 
 
 class TokenPriceResponse(BaseModel):

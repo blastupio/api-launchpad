@@ -53,6 +53,17 @@ class LaunchpadContractEventType(enum.Enum):
     USER_REGISTERED = "user_registered"
 
 
+class OperationType(enum.Enum):
+    ADD = "add"
+    ADD_REF = "add_ref"
+    ADD_REF_BONUS = "add_ref_bonus"
+    ADD_SYNC = "add_sync"
+    ADD_REF_SYNC = "add_ref_sync"
+    ADD_EXTRA = "add_extra"
+    ADD_MANUAL = "add_manual"
+    ADD_IDO_POINTS = "add_ido_points"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -278,3 +289,37 @@ class SupportedTokens(Base):
     __table_args__ = (
         UniqueConstraint("token_address", "chain_id", name="uc_token_address_chain_id"),
     )
+
+
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+    address = Column(Text(), nullable=False, index=True, unique=True)
+
+    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
+
+
+class PointsHistory(Base):
+    __tablename__ = "points_history"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    operation_type = Column(
+        Enum(OperationType),
+        default=OperationType.ADD,
+        nullable=False,
+    )
+
+    points_before = Column(
+        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+    )
+    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    points_after = Column(
+        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+    )
+
+    created_at = Column(DateTime(), nullable=False, default=func.now())
+
+    profile_id = Column(BigIntegerType, ForeignKey("profiles.id"), nullable=False)
+    profile = relationship("Profile", uselist=False, foreign_keys=[profile_id])

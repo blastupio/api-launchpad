@@ -112,6 +112,17 @@ cron:
     args:
       - "-c"
       - "python3 console.py update-supported-tokens-cache"
+  schedule-add-ido-points:
+    enabled: true
+    schedule: "1 0 * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 -c 'from app.tasks import add_ido_staking_points; add_ido_staking_points.apply_async()'"
   schedule-change-projects-status:
     enabled: true
     schedule: "* * * * *"

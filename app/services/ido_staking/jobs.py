@@ -162,7 +162,7 @@ class AddIdoStakingPoints(Command):
                 balance_by_token_address_and_user_address.update(res)
 
             # get price for staked tokens
-            chain_id = chains.blast.id if settings.app_env == "dev" else chains.blast_sepolia.id
+            chain_id = chains.blast_sepolia.id if settings.app_env == "dev" else chains.blast.id
             token_addresses = list(balance_by_token_address_and_user_address.keys())
             price_for_tokens = await get_tokens_price_for_chain(
                 chain_id, token_addresses=token_addresses

@@ -151,32 +151,43 @@ class AddIdoStakingPoints(Command):
         points_history_crud: PointsHistoryCrud = Depends(get_points_history_crud),
         lock: Lock = Depends(get_lock),
     ) -> CommandResult:
-        # get all users that staked some tokens
-        user_addresses_by_token_address = await crud.get_user_addresses_by_token_address()
+        try:
+            # get all users that staked some tokens
+            user_addresses_by_token_address = await crud.get_user_addresses_by_token_address()
 
-        # get locked balance from contract
-        balance_by_token_address_and_user_address = {}
-        for token_address, user_addresses in user_addresses_by_token_address.items():
-            res = await get_locked_balance(token_address, user_addresses)
-            balance_by_token_address_and_user_address.update(res)
+            # get locked balance from contract
+            balance_by_token_address_and_user_address = {}
+            for token_address, user_addresses in user_addresses_by_token_address.items():
+                res = await get_locked_balance(token_address, user_addresses)
+                balance_by_token_address_and_user_address.update(res)
 
-        # get price for staked tokens
-        chain_id = chains.blast.id if settings.app_env == "dev" else chains.blast_sepolia.id
-        price_for_tokens = await get_tokens_price_for_chain(
-            chain_id, token_addresses=list(balance_by_token_address_and_user_address.keys())
-        )
+            # get price for staked tokens
+            chain_id = chains.blast.id if settings.app_env == "dev" else chains.blast_sepolia.id
+            token_addresses = list(balance_by_token_address_and_user_address.keys())
+            price_for_tokens = await get_tokens_price_for_chain(
+                chain_id, token_addresses=token_addresses
+            )
+            if not price_for_tokens:
+                logger.error(f"IDO points: no price for staked tokens: {token_addresses=}")
+                return CommandResult(success=False, need_retry=True)
+            elif len(price_for_tokens) < len(token_addresses):
+                logger.error(f"IDO points: no price for some of staked tokens: {price_for_tokens=}")
+                return CommandResult(success=False, need_retry=True)
 
-        # calculate total usd balance for users locked balance
-        usd_balance_by_user_address = defaultdict(float)
-        for (
-            token_address,
-            token_balance_by_user_address,
-        ) in balance_by_token_address_and_user_address.items():
-            for user_address, balance in token_balance_by_user_address.items():
-                usd_balance = round(
-                    price_for_tokens[token_address] * float(Web3.from_wei(balance, "ether")), 2
-                )
-                usd_balance_by_user_address[user_address] += usd_balance
+            # calculate total usd balance for users locked balance
+            usd_balance_by_user_address = defaultdict(float)
+            for (
+                token_address,
+                token_balance_by_user_address,
+            ) in balance_by_token_address_and_user_address.items():
+                for user_address, balance in token_balance_by_user_address.items():
+                    usd_balance = round(
+                        price_for_tokens[token_address] * float(Web3.from_wei(balance, "ether")), 2
+                    )
+                    usd_balance_by_user_address[user_address] += usd_balance
+        except Exception as e:
+            logger.error(f"IDO points: error with processing:\n{e} {traceback.format_exc()}")
+            return CommandResult(success=False, need_retry=True)
 
         # add points to profile if it has more than 100 USD staked
         try:

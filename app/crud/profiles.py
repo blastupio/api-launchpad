@@ -28,3 +28,7 @@ class ProfilesCrud(BaseCrud):
 
             profile = await self.persist(Profile(**kwargs))
         return profile
+
+    async def get_by_id(self, id_: int) -> Profile | None:
+        query = await self.session.execute(select(Profile).where(Profile.id == id_))
+        return query.scalars().one_or_none()

@@ -6,7 +6,11 @@ from celery.exceptions import Retry
 from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
-from app.services.ido_staking.jobs import ProcessHistoryStakingEvent, AddIdoStakingPoints
+from app.services.ido_staking.jobs import (
+    ProcessHistoryStakingEvent,
+    AddIdoStakingPoints,
+    AddIdoStakingPointsForProfile,
+)
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.tg_notifications.jobs import (
     TelegramNotifyCompletedOnrampTransaction,
@@ -196,4 +200,30 @@ def add_ido_staking_points():
             raise e
 
         logger.error(f"add_ido_staking_points Unhandled exception: {e}, {traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def add_ido_staking_points_for_profile(profile_id: int, points_amount: int):
+    try:
+        result = run_command_and_get_result(
+            AddIdoStakingPointsForProfile(profile_id, points_amount)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            logger.info(f"add_ido_staking_points[{profile_id}] retrying after {retry_after}")
+            add_ido_staking_points.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(
+            f"add_ido_staking_points[{profile_id}], exception:{e}\n{traceback.format_exc()}"
+        )
         raise Retry("", exc=e)

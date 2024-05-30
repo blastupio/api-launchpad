@@ -5,6 +5,8 @@ from fastapi_pagination import Page
 
 from app.dependencies import HistoryStakingCrudDep
 from app.schema import GetHistoryStake
+from app.tasks import add_ido_staking_points
+
 
 router = APIRouter(prefix="/staking", tags=["staking"])
 
@@ -23,3 +25,9 @@ async def get_staking_history(
 
     total_pages = ceil(total_rows / size)
     return Page(total=total_rows, page=page, size=size, items=history, pages=total_pages)
+
+
+@router.get("/test-ido-bp-points")
+async def test_ido_bp_points():
+    # todo: remove for prod
+    add_ido_staking_points.apply_async()

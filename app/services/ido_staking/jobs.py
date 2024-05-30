@@ -148,7 +148,6 @@ class AddIdoStakingPoints(Command):
         self,
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
         profile_crud: ProfilesCrud = Depends(get_profile_crud),
-        points_history_crud: PointsHistoryCrud = Depends(get_points_history_crud),
         lock: Lock = Depends(get_lock),
     ) -> CommandResult:
         try:
@@ -197,21 +196,57 @@ class AddIdoStakingPoints(Command):
                 if balance < 100:  # 100 usd
                     continue
                 points_amount = math.ceil(balance / 100)
-                logger.info(f"IDO points: adding {points_amount}BP to {user_address}")
-
                 profile = await profile_crud.get_or_create_profile(user_address)
-                points_before = profile.points
-                profile.points = profile.points + points_amount
-                await profile_crud.persist(profile)
 
-                history = PointsHistory(
-                    profile_id=profile.id,
-                    points_before=points_before,
-                    amount=points_amount,
-                    points_after=profile.points,
-                    operation_type=OperationType.ADD_IDO_POINTS,
+                from app.tasks import add_ido_staking_points_for_profile
+
+                add_ido_staking_points_for_profile.apply_async(
+                    args=[profile.id, points_amount], countdown=1
                 )
-                await points_history_crud.persist(history)
         finally:
             await lock.release("add-ido-points")
+        return CommandResult(success=True, need_retry=False)
+
+
+class AddIdoStakingPointsForProfile(Command):
+    def __init__(self, profile_id: int, points_amount: int) -> None:
+        self.profile_id = profile_id
+        self.points_amount = points_amount
+
+    async def command(
+        self,
+        crud: HistoryStakingCrud = Depends(get_staking_history_crud),
+        profile_crud: ProfilesCrud = Depends(get_profile_crud),
+        points_history_crud: PointsHistoryCrud = Depends(get_points_history_crud),
+        lock: Lock = Depends(get_lock),
+    ) -> CommandResult:
+        lock_key = f"add-profile-ido-points-{self.profile_id}"
+        try:
+            while not await lock.acquire(lock_key):
+                await asyncio.sleep(0.001)
+            profile = await profile_crud.get_by_id(self.profile_id)
+            if not profile:
+                logger.info(f"IDO points: profile with id={self.profile_id} not found")
+                return CommandResult(success=False, need_retry=False)
+
+            logger.info(f"IDO points: adding {self.points_amount}BP to {profile.address}")
+            points_before = profile.points
+            profile.points = profile.points + self.points_amount
+            await profile_crud.persist(profile)
+
+            history = PointsHistory(
+                profile_id=profile.id,
+                points_before=points_before,
+                amount=self.points_amount,
+                points_after=profile.points,
+                operation_type=OperationType.ADD_IDO_POINTS,
+            )
+            await points_history_crud.persist(history)
+        except Exception as e:
+            logger.error(
+                f"IDO points: error with adding to {self.profile_id}:\n{e} {traceback.format_exc()}"
+            )
+            return CommandResult(success=False, need_retry=True)
+        finally:
+            await lock.release(lock_key)
         return CommandResult(success=True, need_retry=False)

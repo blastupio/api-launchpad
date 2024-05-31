@@ -13,21 +13,33 @@ class ProfilesCrud(BaseCrud):
         await self.session.flush()
         return profile
 
+    async def persist_with_id(self, profile: Profile) -> Profile:
+        self.session.add(profile)
+        await self.session.flush()
+        return profile
+
     async def first_by_address(self, address: str) -> Profile | None:
         query = await self.session.scalars(
             select(Profile).where(Profile.address == address.lower()).limit(1)
         )
         return query.first()
 
-    async def get_or_create_profile(self, address: str, points: int | None = None) -> Profile:
+    async def get_or_create_profile(
+        self, address: str, profile_id: int | None = None, points: int | None = None
+    ) -> Profile:
         if (profile := await self.first_by_address(address)) is None:
             kwargs = {
                 "address": address.lower(),
             }
             if points is not None:
                 kwargs["points"] = points
+            if profile_id is not None:
+                kwargs["id"] = profile_id
 
-            profile = await self.persist(Profile(**kwargs))
+            if profile_id is not None:
+                profile = await self.persist_with_id(Profile(**kwargs))
+            else:
+                profile = await self.persist(Profile(**kwargs))
         return profile
 
     async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:

@@ -4,7 +4,6 @@ import time
 import traceback
 from collections import defaultdict
 
-import httpx
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
@@ -22,7 +21,7 @@ from app.dependencies import (
     get_lock,
 )
 from app.env import settings
-from app.models import HistoryStakeType, PointsHistory, OperationType
+from app.models import HistoryStakeType, TmpPointsHistory, OperationType
 from app.schema import CreateHistoryStake
 from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
@@ -146,24 +145,6 @@ class ProcessHistoryStakingEvent(Command):
 
 
 class AddIdoStakingPoints(Command):
-    async def _get_presale_profile_id(self, user_address: str) -> int | None:
-        profile_id = None
-        url = f"{settings.presale_api_url}/users/profile/{user_address}/id"
-        async with httpx.AsyncClient(timeout=5) as client:
-            for i in range(3):
-                try:
-                    response = await client.get(url)
-                    if response.status_code == 404:
-                        return None
-                    elif response.status_code != 200:
-                        await asyncio.sleep(0.1 * i)
-                    response_json = response.json()
-                    profile_id = response_json.get("data", {}).get("id")
-                    break
-                except Exception as e:
-                    logger.error(f"Can't get presale profile id for {user_address=}:\n{e}")
-        return profile_id
-
     async def command(
         self,
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
@@ -218,17 +199,7 @@ class AddIdoStakingPoints(Command):
                 if usd_balance < 100:
                     continue
                 points_amount = math.ceil(usd_balance / 100)
-
-                # todo: remove getting presale profile id after the greatest migration
-                if (
-                    presale_profile_id := await self._get_presale_profile_id(user_address)
-                ) is not None:
-                    profile = await profile_crud.get_or_create_profile(
-                        user_address, profile_id=presale_profile_id
-                    )
-                else:
-                    logger.warning(f"IDO points: profile with {user_address=} not found in presale")
-                    continue
+                profile = await profile_crud.get_or_create_profile(user_address)
 
                 from app.tasks import add_ido_staking_points_for_profile
 
@@ -270,7 +241,7 @@ class AddIdoStakingPointsForProfile(Command):
                     session.add(profile)
                     await session.flush()
 
-                    history = PointsHistory(
+                    history = TmpPointsHistory(
                         profile_id=profile.id,
                         points_before=points_before,
                         amount=self.points_amount,

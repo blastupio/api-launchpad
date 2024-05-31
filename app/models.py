@@ -291,8 +291,8 @@ class SupportedTokens(Base):
     )
 
 
-class Profile(Base):
-    __tablename__ = "profiles"
+class TmpProfile(Base):
+    __tablename__ = "tmp_profiles"
 
     id = Column(BigIntegerType, primary_key=True)  # noqa
     address = Column(Text(), nullable=False, index=True, unique=True)
@@ -300,8 +300,8 @@ class Profile(Base):
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
 
 
-class PointsHistory(Base):
-    __tablename__ = "points_history"
+class TmpPointsHistory(Base):
+    __tablename__ = "tmp_points_history"
 
     id = Column(BigIntegerType, primary_key=True)  # noqa
 
@@ -321,5 +321,5 @@ class PointsHistory(Base):
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
 
-    profile_id = Column(BigIntegerType, ForeignKey("profiles.id"), nullable=False)
-    profile = relationship("Profile", uselist=False, foreign_keys=[profile_id])
+    profile_id = Column(BigIntegerType, ForeignKey("tmp_profiles.id"), nullable=False)
+    profile = relationship("TmpProfile", uselist=False, foreign_keys=[profile_id])

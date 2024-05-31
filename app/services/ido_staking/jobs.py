@@ -21,7 +21,7 @@ from app.dependencies import (
     get_lock,
 )
 from app.env import settings
-from app.models import HistoryStakeType, PointsHistory, OperationType
+from app.models import HistoryStakeType, TmpPointsHistory, OperationType
 from app.schema import CreateHistoryStake
 from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
@@ -180,9 +180,11 @@ class AddIdoStakingPoints(Command):
                 token_address,
                 token_balance_by_user_address,
             ) in balance_by_token_address_and_user_address.items():
-                for user_address, balance in token_balance_by_user_address.items():
+                for user_address, usd_balance in token_balance_by_user_address.items():
                     usd_balance = round(
-                        price_for_tokens[token_address] * float(Web3.from_wei(balance, "ether")), 2
+                        price_for_tokens[token_address]
+                        * float(Web3.from_wei(usd_balance, "ether")),
+                        2,
                     )
                     usd_balance_by_user_address[user_address] += usd_balance
         except Exception as e:
@@ -193,10 +195,10 @@ class AddIdoStakingPoints(Command):
         try:
             while not await lock.acquire("add-ido-points"):
                 await asyncio.sleep(0.001)
-            for user_address, balance in usd_balance_by_user_address.items():
-                if balance < 100:  # 100 usd
+            for user_address, usd_balance in usd_balance_by_user_address.items():
+                if usd_balance < 100:
                     continue
-                points_amount = math.ceil(balance / 100)
+                points_amount = math.ceil(usd_balance / 100)
                 profile = await profile_crud.get_or_create_profile(user_address)
 
                 from app.tasks import add_ido_staking_points_for_profile
@@ -231,7 +233,7 @@ class AddIdoStakingPointsForProfile(Command):
                     profile = await profile_crud.get_by_id(self.profile_id, session)
                     if not profile:
                         logger.info(f"IDO points: profile with id={self.profile_id} not found")
-                        return CommandResult(success=False, need_retry=False)
+                        return CommandResult(success=False, need_retry=True)
 
                     logger.info(f"IDO points: adding {self.points_amount}BP to {profile.id}")
                     points_before = profile.points
@@ -239,7 +241,7 @@ class AddIdoStakingPointsForProfile(Command):
                     session.add(profile)
                     await session.flush()
 
-                    history = PointsHistory(
+                    history = TmpPointsHistory(
                         profile_id=profile.id,
                         points_before=points_before,
                         amount=self.points_amount,

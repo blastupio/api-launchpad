@@ -46,4 +46,5 @@ def downgrade() -> None:
     op.drop_table('points_history')
     op.drop_index(op.f('ix_profiles_address'), table_name='profiles')
     op.drop_table('profiles')
+    op.execute("DROP TYPE operationtype")
     # ### end Alembic commands ###

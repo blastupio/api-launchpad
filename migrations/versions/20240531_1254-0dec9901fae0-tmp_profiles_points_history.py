@@ -24,7 +24,6 @@ def upgrade() -> None:
     op.drop_constraint("points_history_profile_id_fkey", table_name='points_history')
     op.drop_table('profiles')
     op.drop_table('points_history')
-    op.execute("DROP TYPE operationtype")
     op.create_table('tmp_profiles',
     sa.Column('id', sa.BigInteger().with_variant(sa.BIGINT(), 'postgresql').with_variant(sa.INTEGER(), 'sqlite'), nullable=False),
     sa.Column('address', sa.Text(), nullable=False),

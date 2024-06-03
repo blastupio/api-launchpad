@@ -5,19 +5,21 @@ from app.base import BaseCrud
 from app.models import TmpProfile
 
 
-class ProfilesCrud(BaseCrud):
-    async def persist(self, profile: TmpProfile) -> TmpProfile:
-        if profile.id is None:
-            self.session.add(profile)
-
-        await self.session.flush()
-        return profile
+class ProfilesCrud(BaseCrud[TmpProfile]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, TmpProfile)
 
     async def first_by_address(self, address: str) -> TmpProfile | None:
         query = await self.session.scalars(
             select(TmpProfile).where(TmpProfile.address == address.lower()).limit(1)
         )
         return query.first()
+
+    async def first_by_address_or_fail_with_lock(self, address: str) -> TmpProfile | None:
+        query = await self.session.scalars(
+            select(TmpProfile).where(TmpProfile.address == address.lower()).with_for_update()
+        )
+        return query.one()
 
     async def get_or_create_profile(self, address: str, points: int | None = None) -> TmpProfile:
         if (profile := await self.first_by_address(address)) is None:

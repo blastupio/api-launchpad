@@ -1,13 +1,16 @@
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 
 from app.base import BaseCrud
 from app.models import LaunchpadContractEvents
 from app.schema import CreateLaunchpadEvent
 
 
-class LaunchpadContractEventsCrud(BaseCrud):
+class LaunchpadContractEventsCrud(BaseCrud[LaunchpadContractEvents]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, LaunchpadContractEvents)
+
     async def get_all_events(self, conn: AsyncConnection):
         st = select(LaunchpadContractEvents).order_by(LaunchpadContractEvents.created_at.desc())
         result = (await conn.execute(st)).all()

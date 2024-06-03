@@ -42,7 +42,7 @@ async def get_order_data(
         order_data.get("status") == "complete"
         and order_data.get("toWallet", "").lower() == settings.onramp_recipient_addr.lower()
     ):
-        order = await crud.get_by_id(UUID(order_data.get("merchantOrderId")))
+        order = await crud.find_by_id(UUID(order_data.get("merchantOrderId")))
         if order:
             order.received_amount = f"{int(float(order_data.get('toAmount')) * 1e18)}"
             await crud.persist(order)
@@ -108,7 +108,7 @@ async def webhook_handler(
         logger.info(f"[onramp webhook] Invalid signature: {signature}")
         raise HTTPException(detail="Invalid signature", status_code=400)
 
-    if not (order := await crud.get_by_id(UUID(payload.get("merchantOrderId")))):
+    if not (order := await crud.find_by_id(UUID(payload.get("merchantOrderId")))):
         logger.info(f"[onramp webhook] Order not found: {payload.get('merchantOrderId')}")
         raise HTTPException(detail="Order not found", status_code=404)
 

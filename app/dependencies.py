@@ -8,15 +8,14 @@ from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
-from app.crud.points import PointsHistoryCrud
+from app.crud.points import PointsHistoryCrud, ExtraPointsCrud
 from app.crud.profiles import ProfilesCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
 from app.crud.supported_tokens import SupportedTokensCrud
-
 from app.env import settings
-
 from app.redis import redis_cli
 from app.services import Lock, Crypto as CryptoLaunchpad
+from app.services.points.add_points import AddPoints
 from onramp.services import Munzen, Crypto, AmountConverter
 
 
@@ -55,7 +54,6 @@ async def get_session() -> AsyncSession:
 async def get_launchpad_projects_crud(
     session: AsyncSession = Depends(get_session),
 ) -> LaunchpadProjectCrud:
-
     return LaunchpadProjectCrud(session)
 
 
@@ -75,6 +73,12 @@ async def get_points_history_crud(
     session: AsyncSession = Depends(get_session),
 ) -> PointsHistoryCrud:
     return PointsHistoryCrud(session)
+
+
+async def get_extra_points_crud(
+    session: AsyncSession = Depends(get_session),
+) -> ExtraPointsCrud:
+    return ExtraPointsCrud(session)
 
 
 async def get_launchpad_contract_events_crud(
@@ -105,6 +109,10 @@ SupportedTokensCrudDep = Annotated[SupportedTokensCrud, Depends(get_supported_to
 
 ProfileCrudDep = Annotated[ProfilesCrud, Depends(get_profile_crud)]
 
+PointsHistoryCrudDep = Annotated[PointsHistoryCrud, Depends(get_points_history_crud)]
+
+ExtraPointsCrudDep = Annotated[ExtraPointsCrud, Depends(get_extra_points_crud)]
+
 
 async def get_onramp_crud(session: AsyncSession = Depends(get_session)) -> OnRampCrud:
     return OnRampCrud(session)
@@ -131,3 +139,14 @@ async def get_amount_converter(
     redis: Redis = Depends(get_redis), crypto: Crypto = Depends(get_crypto)
 ) -> AmountConverter:
     return AmountConverter(redis, crypto)
+
+
+async def get_add_points(
+    profile_crud: ProfileCrudDep,
+    points_history_crud: PointsHistoryCrudDep,
+    extra_points_crud: ExtraPointsCrudDep,
+) -> AddPoints:
+    return AddPoints(profile_crud, points_history_crud, extra_points_crud)
+
+
+AddPointsDep = Annotated[AddPoints, Depends(get_add_points)]

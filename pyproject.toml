@@ -26,6 +26,7 @@ redis = {version = "^5.0.4", extras = ["hiredis"]}
 python-telegram-bot = "^21.1.1"
 pygsheets = "2.0.6"
 pandas = "^2.2.2"
+bcrypt = "^4.1.3"
 
 [tool.poetry.dev-dependencies]
 

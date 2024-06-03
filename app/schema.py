@@ -8,7 +8,13 @@ from fastapi_pagination import Page
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
-from app.models import HistoryStakeType, LaunchpadContractEventType, StatusProject
+from app.models import (
+    HistoryStakeType,
+    LaunchpadContractEventType,
+    StatusProject,
+    OperationType,
+    OperationReason,
+)
 from app.types import BadgeType
 
 Address = NewType("Address", str)
@@ -460,3 +466,27 @@ class GetUserProjectsResponse(BaseModel):
     data: Page[UserProject]
     ok: bool = True
     error: str | None = None
+
+
+class AddPointsOperation(BaseModel):
+    address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    amount: int
+    operation_type: OperationType | None = OperationType.ADD
+    project_slug: str | None = None
+    operation_reason: OperationReason | None = None
+
+
+class AddPointsRequest(BaseModel):
+    operations: list[AddPointsOperation]
+
+
+class AddPointsOperationData(BaseModel):
+    address: str
+    ok: bool = True
+    error: str | None = None
+
+
+class AddPointsResponse(BaseModel):
+    ok: bool = True
+    error: str | None = None
+    data: list[AddPointsOperationData] | None = None

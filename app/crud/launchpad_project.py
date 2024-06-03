@@ -148,3 +148,10 @@ class LaunchpadProjectCrud(BaseCrud):
         count: int = await self.session.scalar(count_st)
         project_ids = (await self.session.scalars(paginated_st)).all()
         return project_ids, count
+
+    async def persist(self, entity: LaunchpadProject) -> LaunchpadProject:
+        if not entity.id:
+            self.session.add(entity)
+
+        await self.session.flush()
+        return entity

@@ -11,6 +11,7 @@ from app.crud.launchpad_events import LaunchpadContractEventsCrud
 from app.crud.points import PointsHistoryCrud
 from app.crud.profiles import ProfilesCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
+from app.crud.refcodes import RefcodesCrud
 from app.crud.supported_tokens import SupportedTokensCrud
 
 from app.env import settings
@@ -94,6 +95,12 @@ async def get_supported_tokens_crud(
 ) -> SupportedTokensCrud:
     return SupportedTokensCrud(session)
 
+
+async def get_refcodes_crud(session: AsyncSession = Depends(get_session)) -> RefcodesCrud:
+    return RefcodesCrud(session)
+
+
+RefcodesCrudDep = Annotated[RefcodesCrud, Depends(get_refcodes_crud)]
 
 HistoryStakingCrudDep = Annotated[HistoryStakingCrud, Depends(get_staking_history_crud)]
 

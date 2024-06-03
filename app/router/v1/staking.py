@@ -32,5 +32,5 @@ async def get_tvl_ido_farming(
 ) -> UserTvlIdoFarmingResponse:
     user_usd_tvl = await get_user_usd_tvl(user_address=user_address)
     if user_usd_tvl is None:
-        return UserTvlIdoFarmingResponse(error="Internal Error")
+        return UserTvlIdoFarmingResponse(ok=False, error="Internal Error")
     return UserTvlIdoFarmingResponse(data=user_usd_tvl)

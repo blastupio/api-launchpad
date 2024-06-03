@@ -490,3 +490,14 @@ class AddPointsResponse(BaseModel):
     ok: bool = True
     error: str | None = None
     data: list[AddPointsOperationData] | None = None
+
+
+class UserTvlIdoFarming(BaseModel):
+    native: float = 0
+    stablecoin: float = 0
+    total: float = 0
+
+
+class UserTvlIdoFarmingResponse(BaseModel):
+    data: UserTvlIdoFarming | None = None
+    error: str | None = None

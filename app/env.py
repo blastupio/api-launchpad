@@ -68,6 +68,9 @@ class Settings(BaseSettings):
     tg_bot_notification_token: str
     tg_notification_chat_id: str
 
+    blast_weth_address: str = "0x4300000000000000000000000000000000000004"
+    blast_usdb_address: str = "0x4300000000000000000000000000000000000003"
+
     google_service_account_json: str | None = None
     google_launchpad_events_report_filename: str = "LaunchpadEvents"
 

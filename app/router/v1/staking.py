@@ -4,8 +4,8 @@ from fastapi import APIRouter, Path, Query
 from fastapi_pagination import Page
 
 from app.dependencies import HistoryStakingCrudDep
-from app.schema import GetHistoryStake
-
+from app.schema import GetHistoryStake, UserTvlIdoFarming
+from app.services.ido_staking.tvl import get_user_usd_tvl
 
 router = APIRouter(prefix="/staking", tags=["staking"])
 
@@ -24,3 +24,11 @@ async def get_staking_history(
 
     total_pages = ceil(total_rows / size)
     return Page(total=total_rows, page=page, size=size, items=history, pages=total_pages)
+
+
+@router.get("/tvl/{user_address}", response_model=UserTvlIdoFarming)
+async def get_tvl_ido_farming(
+    user_address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+) -> UserTvlIdoFarming:
+    user_usd_tvl = await get_user_usd_tvl(user_address=user_address)
+    return UserTvlIdoFarming(tvl=user_usd_tvl)

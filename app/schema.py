@@ -460,3 +460,7 @@ class GetUserProjectsResponse(BaseModel):
     data: Page[UserProject]
     ok: bool = True
     error: str | None = None
+
+
+class UserTvlIdoFarming(BaseModel):
+    tvl: float | None = None

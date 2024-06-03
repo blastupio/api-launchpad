@@ -463,4 +463,11 @@ class GetUserProjectsResponse(BaseModel):
 
 
 class UserTvlIdoFarming(BaseModel):
-    tvl: float | None = None
+    native: float = 0
+    stablecoin: float = 0
+    total: float = 0
+
+
+class UserTvlIdoFarmingResponse(BaseModel):
+    data: UserTvlIdoFarming | None = None
+    error: str | None = None

@@ -4,21 +4,15 @@ from app import chains
 from app.base import logger
 from app.env import settings
 from app.schema import UserTvlIdoFarming
-from app.services.ido_staking.consts import (
-    WETH_TESTNET_ADDRESS,
-    USDB_TESTNET_ADDRESS,
-    WETH_ADDRESS,
-    USDB_ADDRESS,
-)
+
 from app.services.ido_staking.multicall import get_locked_amount_for_user
 from app.services.prices import get_tokens_price_for_chain
 
 
 async def get_user_usd_tvl(user_address: str) -> UserTvlIdoFarming | None:
-    native_token_address = WETH_TESTNET_ADDRESS if settings.app_env == "dev" else WETH_ADDRESS
-    stablecoin_token_address = USDB_TESTNET_ADDRESS if settings.app_env == "dev" else USDB_ADDRESS
-
     chain_id = chains.blast_sepolia.id if settings.app_env == "dev" else chains.blast.id
+    native_token_address = settings.blast_weth_address
+    stablecoin_token_address = settings.blast_usdb_address
     token_addresses = [native_token_address, stablecoin_token_address]
     locked_amount, price_for_tokens = await asyncio.gather(
         get_locked_amount_for_user(user_address, native_token_address, stablecoin_token_address),

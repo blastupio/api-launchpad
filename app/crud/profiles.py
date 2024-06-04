@@ -1,4 +1,4 @@
-from sqlalchemy import select
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
@@ -39,3 +39,10 @@ class ProfilesCrud(BaseCrud[TmpProfile]):
         session = session or self.session
         query = await session.execute(select(TmpProfile).where(TmpProfile.id == id_))
         return query.scalars().one_or_none()
+
+    async def count_referrals(self, referrer: str) -> int:
+        """Get the number of referrals for a given referrer"""
+        query = await self.session.execute(
+            select(func.count(TmpProfile.id)).where(TmpProfile.referrer == referrer.lower())
+        )
+        return int(query.scalars().one_or_none())

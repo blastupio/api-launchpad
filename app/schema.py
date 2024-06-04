@@ -383,10 +383,13 @@ class UserInfoResponse(BaseModel):
     balance: int = 0
     balance_usd: str = ""
     balance_change: str = ""
-    referrer: str | None = None
     points: int = 0
-    ref_points: int = 0
     terms_accepted: Optional[bool] = None
+
+    refcode: str | None = None
+    ref_points: int = 0
+    n_referrals: int = 0
+    referrer: str | None = None
     ref_bonus_used: bool = False
 
 
@@ -499,5 +502,23 @@ class UserTvlIdoFarming(BaseModel):
 
 
 class UserTvlIdoFarmingResponse(BaseModel):
+    ok: bool = True
     data: UserTvlIdoFarming | None = None
     error: str | None = None
+
+
+class TotalTvlIdoFarming(BaseModel):
+    native: float = 0
+    stablecoin: float = 0
+    total: float = 0
+
+
+class TotalTvlIdoFarmingResponse(BaseModel):
+    ok: bool = True
+    data: TotalTvlIdoFarming | None = None
+    error: str | None = None
+
+
+class RefcodeResponse(BaseModel):
+    ok: bool
+    data: str | None

@@ -338,3 +338,10 @@ STAKING_USER_INFO_ABI = {
     "stateMutability": "view",
     "type": "function",
 }
+STAKING_TOTAL_SUPPLY_ABI = {
+    "type": "function",
+    "name": "totalSupply",
+    "inputs": [{"name": "targetToken", "type": "address", "internalType": "address"}],
+    "outputs": [{"name": "", "type": "uint256", "internalType": "uint256"}],
+    "stateMutability": "view",
+}

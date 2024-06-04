@@ -1,13 +1,18 @@
 import asyncio
 from math import ceil
 
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Body
 from fastapi_pagination import Page
 from web3 import Web3
 
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
-from app.dependencies import LaunchpadProjectCrudDep, SupportedTokensCrudDep, ProfileCrudDep
+from app.dependencies import (
+    LaunchpadProjectCrudDep,
+    SupportedTokensCrudDep,
+    ProfileCrudDep,
+    RefcodesCrudDep,
+)
 from app.env import settings
 from app.router.v1.proxy import fetch_data
 from app.schema import (
@@ -22,10 +27,12 @@ from app.schema import (
     ErrorResponse,
     YieldPercentageResponse,
     GetUserProjectsResponse,
+    RefcodeResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
 from app.services.prices.cache import token_price_cache
+from app.services.referral_system.referrals import get_n_referrals
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -78,6 +85,7 @@ async def get_any2any_price_rate(
 @router.get("/user/{address}", response_model=UserInfoResponse | ErrorResponse)
 async def get_user_info(
     profile_crud: ProfileCrudDep,
+    refcodes_crud: RefcodesCrudDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
@@ -110,7 +118,26 @@ async def get_user_info(
     if profile := await profile_crud.first_by_address(address):
         presale_data["points"] += profile.points
 
-    return UserInfoResponse(tier=user_tier, blastup_balance=balances_by_chain_id, **presale_data)
+    refcode, n_referrals = await asyncio.gather(
+        refcodes_crud.generate_refcode_if_not_exists(address),
+        get_n_referrals(address, profile_crud),
+    )
+    return UserInfoResponse(
+        tier=user_tier,
+        blastup_balance=balances_by_chain_id,
+        refcode=refcode.refcode,
+        n_referrals=n_referrals,
+        **presale_data,
+    )
+
+
+@router.post("/user/refcode", response_model=RefcodeResponse)
+async def create_refcode(
+    refcodes_crud: RefcodesCrudDep,
+    address: str = Body(embed=True, pattern="^(0x)[0-9a-fA-F]{40}$"),
+):
+    refcode = await refcodes_crud.generate_refcode_if_not_exists(address)
+    return RefcodeResponse(ok=True, data=refcode.refcode)
 
 
 @router.get("/tiers", response_model=TierInfoResponse)

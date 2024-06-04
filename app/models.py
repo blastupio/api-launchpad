@@ -317,6 +317,11 @@ class TmpProfile(Base):
     id = Column(BigIntegerType, primary_key=True)  # noqa
     address = Column(Text(), nullable=False, index=True, unique=True)
 
+    referrer = Column(Text(), index=True, nullable=True)
+    ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
+    ref_percent = Column(Integer, default=20, server_default=text("20::int"))
+    ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
+
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
 
 
@@ -362,3 +367,11 @@ class TmpExtraPoints(Base):
     __table_args__ = tuple(  # noqa
         [Index("idx_extra_points_profile_id_project_id", "profile_id", "project_id", unique=True)]
     )
+
+
+class Refcode(Base):
+    __tablename__ = "refcodes"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+    address = Column(Text(), nullable=False, index=True)
+    refcode = Column(Text(), nullable=False, index=True)

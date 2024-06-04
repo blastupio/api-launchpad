@@ -1,4 +1,5 @@
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
 from app.models import Refcode
@@ -6,6 +7,9 @@ from app.services.referral_system.refcodes import generate_code
 
 
 class RefcodesCrud(BaseCrud[Refcode]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, Refcode)
+
     async def get_by_address(self, address: str) -> Refcode | None:
         query = await self.session.scalars(
             select(Refcode).where(Refcode.address == address.lower()).limit(1)

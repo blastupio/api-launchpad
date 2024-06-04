@@ -475,6 +475,18 @@ class UserTvlIdoFarmingResponse(BaseModel):
     error: str | None = None
 
 
+class TotalTvlIdoFarming(BaseModel):
+    native: float = 0
+    stablecoin: float = 0
+    total: float = 0
+
+
+class TotalTvlIdoFarmingResponse(BaseModel):
+    ok: bool = True
+    data: TotalTvlIdoFarming | None = None
+    error: str | None = None
+
+
 class RefcodeResponse(BaseModel):
     ok: bool
     data: str | None

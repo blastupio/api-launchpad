@@ -4,8 +4,8 @@ from fastapi import APIRouter, Path, Query
 from fastapi_pagination import Page
 
 from app.dependencies import HistoryStakingCrudDep
-from app.schema import GetHistoryStake, UserTvlIdoFarmingResponse
-from app.services.ido_staking.tvl import get_user_usd_tvl
+from app.schema import GetHistoryStake, UserTvlIdoFarmingResponse, TotalTvlIdoFarmingResponse
+from app.services.ido_staking.tvl import get_user_usd_tvl, get_total_usd_tvl
 
 router = APIRouter(prefix="/staking", tags=["staking"])
 
@@ -30,7 +30,13 @@ async def get_staking_history(
 async def get_tvl_ido_farming(
     user_address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
 ) -> UserTvlIdoFarmingResponse:
-    user_usd_tvl = await get_user_usd_tvl(user_address=user_address)
-    if user_usd_tvl is None:
+    if (user_usd_tvl := await get_user_usd_tvl(user_address=user_address)) is None:
         return UserTvlIdoFarmingResponse(ok=False, error="Internal Error")
     return UserTvlIdoFarmingResponse(data=user_usd_tvl)
+
+
+@router.get("/tvl-overview", response_model=TotalTvlIdoFarmingResponse)
+async def get_total_tvl() -> TotalTvlIdoFarmingResponse:
+    if (tvl := await get_total_usd_tvl()) is None:
+        return TotalTvlIdoFarmingResponse(ok=False, error="Internal Error")
+    return TotalTvlIdoFarmingResponse(data=tvl)

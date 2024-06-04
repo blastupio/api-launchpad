@@ -41,7 +41,7 @@ class BaseCrud(Generic[Model]):
         self.session = session
         self.entity_type = entity_type
 
-    async def persist(self, model: Model, session: AsyncSession | None) -> Model:
+    async def persist(self, model: Model, session: AsyncSession | None = None) -> Model:
         session = session or self.session
 
         if model.id is None:

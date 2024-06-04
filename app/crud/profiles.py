@@ -2,31 +2,31 @@ from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
-from app.models import TmpProfile
+from app.models import Profile
 
 
-class ProfilesCrud(BaseCrud[TmpProfile]):
+class ProfilesCrud(BaseCrud[Profile]):
     def __init__(self, session: AsyncSession):
-        super().__init__(session, TmpProfile)
+        super().__init__(session, Profile)
 
-    async def first_by_address(self, address: str) -> TmpProfile | None:
+    async def first_by_address(self, address: str) -> Profile | None:
         query = await self.session.scalars(
-            select(TmpProfile).where(TmpProfile.address == address.lower()).limit(1)
+            select(Profile).where(Profile.address == address.lower()).limit(1)
         )
         return query.first()
 
     async def first_by_address_or_fail_with_lock(
         self, address: str, session: AsyncSession | None
-    ) -> TmpProfile | None:
+    ) -> Profile | None:
         session = session or self.session
         query = await session.scalars(
-            select(TmpProfile).where(TmpProfile.address == address.lower()).with_for_update()
+            select(Profile).where(Profile.address == address.lower()).with_for_update()
         )
         return query.one()
 
     async def get_or_create_profile(
         self, address: str, points: int | None = None, referrer: str | None = None
-    ) -> TmpProfile:
+    ) -> Profile:
         if (profile := await self.first_by_address(address)) is None:
             kwargs = {
                 "address": address.lower(),
@@ -36,30 +36,30 @@ class ProfilesCrud(BaseCrud[TmpProfile]):
             if referrer is not None:
                 kwargs["referrer"] = referrer.lower()
 
-            profile = await self.persist(TmpProfile(**kwargs))
+            profile = await self.persist(Profile(**kwargs))
         return profile
 
-    async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> TmpProfile | None:
+    async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:
         session = session or self.session
-        query = await session.execute(select(TmpProfile).where(TmpProfile.id == id_))
+        query = await session.execute(select(Profile).where(Profile.id == id_))
         return query.scalars().one_or_none()
 
     async def count_referrals(self, referrer: str) -> int:
         """Get the number of referrals for a given referrer"""
         query = await self.session.execute(
-            select(func.count(TmpProfile.id)).where(TmpProfile.referrer == referrer.lower())
+            select(func.count(Profile.id)).where(Profile.referrer == referrer.lower())
         )
         return int(query.scalars().one_or_none())
 
     async def update_referrer(self, address: str, referrer: str) -> None:
         await self.session.execute(
-            update(TmpProfile)
-            .where(TmpProfile.address == address.lower())
+            update(Profile)
+            .where(Profile.address == address.lower())
             .values(referrer=referrer.lower())
         )
 
     async def get_leaderboard_rank(self, profile_points: int) -> int:
         query = await self.session.execute(
-            select(func.count(TmpProfile.id)).where(TmpProfile.points > profile_points)
+            select(func.count(Profile.id)).where(Profile.points > profile_points)
         )
         return int(query.scalars().one_or_none()) + 1

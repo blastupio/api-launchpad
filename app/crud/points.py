@@ -2,12 +2,12 @@ from sqlalchemy import and_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
-from app.models import TmpPointsHistory, ExtraPoints
+from app.models import PointsHistory, ExtraPoints
 
 
-class PointsHistoryCrud(BaseCrud[TmpPointsHistory]):
+class PointsHistoryCrud(BaseCrud[PointsHistory]):
     def __init__(self, session: AsyncSession):
-        super().__init__(session, TmpPointsHistory)
+        super().__init__(session, PointsHistory)
 
 
 class ExtraPointsCrud(BaseCrud[ExtraPoints]):

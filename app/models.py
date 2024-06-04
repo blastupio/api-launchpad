@@ -311,20 +311,6 @@ class ProjectAccessToken(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
 
-class TmpProfile(Base):
-    __tablename__ = "tmp_profiles"
-
-    id = Column(BigIntegerType, primary_key=True)  # noqa
-    address = Column(Text(), nullable=False, index=True, unique=True)
-
-    referrer = Column(Text(), index=True, nullable=True)
-    ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
-    ref_percent = Column(Integer, default=20, server_default=text("20::int"))
-    ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
-
-    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
-
-
 class Profile(Base):
     __tablename__ = "profiles"
 
@@ -339,33 +325,6 @@ class Profile(Base):
     ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
 
     terms_accepted = Column(Boolean, default=False, server_default="false", nullable=False)
-
-
-class TmpPointsHistory(Base):
-    __tablename__ = "tmp_points_history"
-
-    id = Column(BigIntegerType, primary_key=True)  # noqa
-
-    operation_type = Column(
-        Enum(OperationType),
-        default=OperationType.ADD,
-        nullable=False,
-    )
-    # use for add_manual operation
-    operation_reason = Column(Enum(OperationReason), nullable=True)
-
-    points_before = Column(
-        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
-    )
-    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
-    points_after = Column(
-        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
-    )
-
-    created_at = Column(DateTime(), nullable=False, default=func.now())
-
-    profile_id = Column(ForeignKey("tmp_profiles.id"), nullable=False)
-    project_id = Column(ForeignKey("launchpad_project.id"), nullable=True)
 
 
 class PointsHistory(Base):

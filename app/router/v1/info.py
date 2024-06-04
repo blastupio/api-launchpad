@@ -92,6 +92,9 @@ async def get_user_info(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
 ):
+    if (profile := await profile_crud.first_by_address(address)) is None:
+        return JSONResponse(content={"ok": False, "error": "Profile not found"}, status_code=404)
+
     try:
         balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
     except Exception as e:
@@ -101,6 +104,7 @@ async def get_user_info(
 
     # todo: get from db after migration of presale
     url = f"{settings.presale_api_url}/users/profile/{address}"
+    presale_json = {}
     try:
         for _ in range(5):
             presale_json = await fetch_data(url, timeout=5)
@@ -116,20 +120,26 @@ async def get_user_info(
         logger.error(f"Can't get presale profile for {address}, {url=}: {e}")
         return InternalServerError(err="Can't get profile")
 
-    presale_data = presale_json["data"]
-    if profile := await profile_crud.first_by_address(address):
-        presale_data["points"] += profile.points
+    presale_data = presale_json.get("data", {})
 
     refcode, n_referrals = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
         get_n_referrals(address, profile_crud),
     )
+
     return UserInfoResponse(
         tier=user_tier,
         blastup_balance=balances_by_chain_id,
+        balance=presale_data.get("balance", 0),
+        balance_usd=str(presale_data.get("balance_usd", 0)),
+        balance_change=str(presale_data.get("balance_change", 0)),
+        points=profile.points,
+        terms_accepted=profile.terms_accepted,
         refcode=refcode.refcode,
+        ref_points=profile.ref_points,
         n_referrals=n_referrals,
-        **presale_data,
+        referrer=profile.referrer,
+        ref_bonus_used=profile.ref_bonus_used,
     )
 
 

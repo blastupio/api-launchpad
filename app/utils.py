@@ -2,6 +2,7 @@ import json
 from datetime import timedelta
 from typing import Callable, Any, Awaitable
 
+import bcrypt
 from fastapi.exceptions import RequestValidationError
 from redis.asyncio import Redis
 
@@ -40,3 +41,7 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
         cached_data = json.loads(cached_data) if cached_data is not None else None
 
     return cached_data
+
+
+def check_password(password: str, hashed: str) -> bool:
+    return bcrypt.checkpw(password.encode("utf-8"), hashed.encode("utf-8"))

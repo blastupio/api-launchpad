@@ -19,7 +19,7 @@ class TelegramNotifyCompletedOnrampTransaction(Command):
         crud: OnRampCrud = Depends(get_onramp_crud),
     ) -> CommandResult:
         try:
-            order = await crud.get_by_id(UUID(self.order_id))
+            order = await crud.find_by_id(UUID(self.order_id))
             await notification_bot.completed_onramp_order(
                 order=order, wei_balance_after_txn=self.wei_balance_after_txn
             )
@@ -40,7 +40,7 @@ class TelegramNotifyErrorOnrampTransaction(Command):
         crud: OnRampCrud = Depends(get_onramp_crud),
     ) -> CommandResult:
         try:
-            order = await crud.get_by_id(UUID(self.order_id))
+            order = await crud.find_by_id(UUID(self.order_id))
             await notification_bot.onramp_order_failed(
                 order=order, balance_wei=self.wei_balance, error=self.error
             )

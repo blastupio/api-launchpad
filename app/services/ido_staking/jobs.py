@@ -12,21 +12,21 @@ from app import chains
 from app.base import logger, engine
 from app.common import Command, CommandResult
 from app.crud.history_staking import HistoryStakingCrud
-from app.crud.points import PointsHistoryCrud
 from app.crud.profiles import ProfilesCrud
 from app.dependencies import (
     get_staking_history_crud,
     get_profile_crud,
-    get_points_history_crud,
     get_lock,
+    get_add_points,
 )
 from app.env import settings
-from app.models import HistoryStakeType, TmpPointsHistory, OperationType
+from app.models import HistoryStakeType, OperationType
 from app.schema import CreateHistoryStake
 from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
 from app.services.ido_staking.multicall import get_locked_balance
 from app.services.ido_staking.redis_cli import stake_history_redis
+from app.services.points.add_points import AddPoints
 from app.services.prices import get_tokens_price_for_chain
 
 
@@ -199,12 +199,12 @@ class AddIdoStakingPoints(Command):
                 if usd_balance < 100:
                     continue
                 points_amount = math.ceil(usd_balance / 100)
-                profile = await profile_crud.get_or_create_profile(user_address)
+                await profile_crud.get_or_create_profile(user_address)
 
                 from app.tasks import add_ido_staking_points_for_profile
 
                 add_ido_staking_points_for_profile.apply_async(
-                    args=[profile.id, points_amount], countdown=1
+                    args=[user_address, points_amount], countdown=1
                 )
         finally:
             await lock.release("add-ido-points")
@@ -212,49 +212,30 @@ class AddIdoStakingPoints(Command):
 
 
 class AddIdoStakingPointsForProfile(Command):
-    def __init__(self, profile_id: int, points_amount: int) -> None:
-        self.profile_id = profile_id
+    def __init__(self, address: str, points_amount: int) -> None:
+        self.address = address
         self.points_amount = points_amount
 
     async def command(
         self,
-        crud: HistoryStakingCrud = Depends(get_staking_history_crud),
         profile_crud: ProfilesCrud = Depends(get_profile_crud),
-        points_history_crud: PointsHistoryCrud = Depends(get_points_history_crud),
+        add_points: AddPoints = Depends(get_add_points),
         lock: Lock = Depends(get_lock),
     ) -> CommandResult:
-        lock_key = f"add-profile-ido-points-{self.profile_id}"
         try:
-            while not await lock.acquire(lock_key):
-                await asyncio.sleep(0.001)
-
+            logger.info(f"IDO points: adding {self.points_amount}BP to {self.address}")
             async with AsyncSession(engine) as session:
                 async with session.begin():
-                    profile = await profile_crud.get_by_id(self.profile_id, session)
-                    if not profile:
-                        logger.info(f"IDO points: profile with id={self.profile_id} not found")
-                        return CommandResult(success=False, need_retry=True)
-
-                    logger.info(f"IDO points: adding {self.points_amount}BP to {profile.id}")
-                    points_before = profile.points
-                    profile.points = profile.points + self.points_amount
-                    session.add(profile)
-                    await session.flush()
-
-                    history = TmpPointsHistory(
-                        profile_id=profile.id,
-                        points_before=points_before,
+                    await add_points.add_points(
+                        address=self.address,
                         amount=self.points_amount,
-                        points_after=profile.points,
                         operation_type=OperationType.ADD_IDO_POINTS,
+                        session=session,
                     )
-                    session.add(history)
-                    await session.flush()
         except Exception as e:
             logger.error(
-                f"IDO points: error with adding to {self.profile_id}:\n{e} {traceback.format_exc()}"
+                f"IDO points: error with adding to {self.address}:\n{e} {traceback.format_exc()}"
             )
             return CommandResult(success=False, need_retry=True)
-        finally:
-            await lock.release(lock_key)
+
         return CommandResult(success=True, need_retry=False)

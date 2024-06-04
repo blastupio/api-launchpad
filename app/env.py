@@ -74,6 +74,8 @@ class Settings(BaseSettings):
     google_service_account_json: str | None = None
     google_launchpad_events_report_filename: str = "LaunchpadEvents"
 
+    admin_project_name: str = ""
+
 
 settings = Settings(_env_file=".env")
 

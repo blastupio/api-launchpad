@@ -1,4 +1,4 @@
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
@@ -19,13 +19,17 @@ class ProfilesCrud(BaseCrud):
         )
         return query.first()
 
-    async def get_or_create_profile(self, address: str, points: int | None = None) -> TmpProfile:
+    async def get_or_create_profile(
+        self, address: str, points: int | None = None, referrer: str | None = None
+    ) -> TmpProfile:
         if (profile := await self.first_by_address(address)) is None:
             kwargs = {
                 "address": address.lower(),
             }
             if points is not None:
                 kwargs["points"] = points
+            if referrer is not None:
+                kwargs["referrer"] = referrer.lower()
 
             profile = await self.persist(TmpProfile(**kwargs))
         return profile
@@ -41,3 +45,10 @@ class ProfilesCrud(BaseCrud):
             select(func.count(TmpProfile.id)).where(TmpProfile.referrer == referrer.lower())
         )
         return int(query.scalars().one_or_none())
+
+    async def update_referrer(self, address: str, referrer: str) -> None:
+        await self.session.execute(
+            update(TmpProfile)
+            .where(TmpProfile.address == address.lower())
+            .values(referrer=referrer.lower())
+        )

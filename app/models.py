@@ -325,6 +325,22 @@ class TmpProfile(Base):
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
 
 
+class Profile(Base):
+    __tablename__ = "profiles"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+    address = Column(Text(), nullable=False, index=True, unique=True)
+    # todo: add foreign key to profiles.address
+    referrer = Column(Text(), index=True, nullable=True)
+
+    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
+    ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
+    ref_percent = Column(Integer, default=20, server_default=text("20::int"))
+    ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
+
+    terms_accepted = Column(Boolean, default=False, server_default="false", nullable=False)
+
+
 class TmpPointsHistory(Base):
     __tablename__ = "tmp_points_history"
 
@@ -352,11 +368,38 @@ class TmpPointsHistory(Base):
     project_id = Column(ForeignKey("launchpad_project.id"), nullable=True)
 
 
-class TmpExtraPoints(Base):
+class PointsHistory(Base):
+    __tablename__ = "points_history"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    operation_type = Column(
+        Enum(OperationType),
+        default=OperationType.ADD,
+        nullable=False,
+    )
+    # use for add_manual operation
+    operation_reason = Column(Enum(OperationReason), nullable=True)
+
+    points_before = Column(
+        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+    )
+    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    points_after = Column(
+        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+    )
+
+    created_at = Column(DateTime(), nullable=False, default=func.now())
+
+    profile_id = Column(ForeignKey("profiles.id"), nullable=False)
+    project_id = Column(ForeignKey("launchpad_project.id"), nullable=True)
+
+
+class ExtraPoints(Base):
     __tablename__ = "extra_points"
 
     id = Column(BigIntegerType, primary_key=True)  # noqa
-    profile_id = Column(BigIntegerType, ForeignKey("tmp_profiles.id"), nullable=False)
+    profile_id = Column(BigIntegerType, ForeignKey("profiles.id"), nullable=False)
     project_id = Column(String(), ForeignKey("launchpad_project.id"), nullable=False)
 
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)

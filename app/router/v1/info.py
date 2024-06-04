@@ -125,7 +125,7 @@ async def get_user_info(
     refcode, n_referrals, leaderboard_rank = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
         get_n_referrals(address, profile_crud),
-        profile_crud.get_leaderboard_rank(profile_points=profile.points if profile else 0),
+        profile_crud.get_leaderboard_rank(profile_points=profile.points),
     )
 
     return UserInfoResponse(

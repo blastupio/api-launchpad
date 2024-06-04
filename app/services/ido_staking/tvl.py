@@ -4,6 +4,7 @@ from app import chains
 from app.base import logger
 from app.env import settings
 from app.schema import UserTvlIdoFarming, TotalTvlIdoFarming
+from app.services.ido_staking.cache import tvl_cache
 
 from app.services.ido_staking.multicall import get_locked_amount_for_user, get_locked_amount
 from app.services.prices import get_tokens_price_for_chain
@@ -53,15 +54,17 @@ async def get_total_usd_tvl() -> TotalTvlIdoFarming | None:
     native_token_address = settings.blast_weth_address
     stablecoin_token_address = settings.blast_usdb_address
     token_addresses = [native_token_address, stablecoin_token_address]
-    locked_amount, price_for_tokens = await asyncio.gather(
-        get_locked_amount(native_token_address, stablecoin_token_address),
-        get_tokens_price_for_chain(chain_id, token_addresses),
-        return_exceptions=True,
-    )
-    if isinstance(locked_amount, Exception):
-        logger.error(f"total tvl: can't get locked amount: {locked_amount=}")
-        return None
-    if not price_for_tokens:
+
+    locked_amount = await tvl_cache.get_locked_amount()
+    if locked_amount is None:
+        try:
+            locked_amount = await get_locked_amount(native_token_address, stablecoin_token_address)
+            await tvl_cache.set_locked_amount(locked_amount)
+        except Exception as e:
+            logger.error(f"total tvl: can't get locked amount: {e}")
+            return None
+
+    if not (price_for_tokens := await get_tokens_price_for_chain(chain_id, token_addresses)):
         logger.error(f"total tvl: no price for staked tokens: {token_addresses=}")
         return None
     elif len(price_for_tokens) < 2:

@@ -2,7 +2,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.points import PointsHistoryCrud, ExtraPointsCrud
 from app.crud.profiles import ProfilesCrud
-from app.models import TmpProfile, TmpPointsHistory, OperationType, OperationReason
+from app.models import Profile, PointsHistory, OperationType, OperationReason
 
 
 class AddPoints:
@@ -24,7 +24,7 @@ class AddPoints:
         project_id: str | None = None,
         operation_reason: OperationReason | None = None,
         session: AsyncSession | None = None,
-    ) -> TmpProfile:
+    ) -> Profile:
         profile = await self.profile_crud.first_by_address_or_fail_with_lock(address, session)
 
         extra_amount = 0
@@ -35,7 +35,7 @@ class AddPoints:
         profile.points += amount
         await self.profile_crud.persist(profile, session)
 
-        history = TmpPointsHistory(
+        history = PointsHistory(
             profile_id=profile.id,
             points_before=points_before,
             amount=amount,
@@ -50,7 +50,7 @@ class AddPoints:
             profile.points += extra_amount
             await self.profile_crud.persist(profile, session)
 
-            history = TmpPointsHistory(
+            history = PointsHistory(
                 profile_id=profile.id,
                 points_before=points_before,
                 amount=extra_amount,

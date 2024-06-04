@@ -387,6 +387,8 @@ class UserInfoResponse(BaseModel):
     points: int = 0
     terms_accepted: Optional[bool] = None
 
+    leaderboard_rank: int = 0
+
     refcode: str | None = None
     ref_points: int = 0
     n_referrals: int = 0

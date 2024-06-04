@@ -57,3 +57,9 @@ class ProfilesCrud(BaseCrud[TmpProfile]):
             .where(TmpProfile.address == address.lower())
             .values(referrer=referrer.lower())
         )
+
+    async def get_leaderboard_rank(self, profile_points: int) -> int:
+        query = await self.session.execute(
+            select(func.count(TmpProfile.id)).where(TmpProfile.points > profile_points)
+        )
+        return int(query.scalars().one_or_none()) + 1

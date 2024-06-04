@@ -2,7 +2,7 @@ from sqlalchemy import select
 
 from app.base import BaseCrud
 from app.models import Refcode
-from app.services.refcodes import generate_code
+from app.services.referral_system.refcodes import generate_code
 
 
 class RefcodesCrud(BaseCrud[Refcode]):

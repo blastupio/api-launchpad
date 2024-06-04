@@ -32,6 +32,7 @@ from app.schema import (
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
 from app.services.prices.cache import token_price_cache
+from app.services.referral_system.referrals import get_n_referrals
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -119,7 +120,7 @@ async def get_user_info(
 
     refcode, n_referrals = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
-        profile_crud.count_referrals(referrer=address),
+        get_n_referrals(address, profile_crud),
     )
     return UserInfoResponse(
         tier=user_tier,

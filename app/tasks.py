@@ -204,11 +204,9 @@ def add_ido_staking_points():
 
 
 @app.task(max_retries=3, default_retry_delay=10)
-def add_ido_staking_points_for_profile(profile_id: int, points_amount: int):
+def add_ido_staking_points_for_profile(address: str, points_amount: int):
     try:
-        result = run_command_and_get_result(
-            AddIdoStakingPointsForProfile(profile_id, points_amount)
-        )
+        result = run_command_and_get_result(AddIdoStakingPointsForProfile(address, points_amount))
 
         if result.need_retry:
             retry_after = (
@@ -216,16 +214,14 @@ def add_ido_staking_points_for_profile(profile_id: int, points_amount: int):
                 if result.retry_after is not None
                 else settings.celery_retry_after
             )
-            logger.info(f"add_ido_staking_points[{profile_id}] retrying after {retry_after}")
+            logger.info(f"add_ido_staking_points[{address}] retrying after {retry_after}")
             add_ido_staking_points_for_profile.apply_async(
-                args=[profile_id, points_amount], countdown=retry_after
+                args=[address, points_amount], countdown=retry_after
             )
             return
     except Exception as e:
         if isinstance(e, Retry):
             raise e
 
-        logger.error(
-            f"add_ido_staking_points[{profile_id}], exception:{e}\n{traceback.format_exc()}"
-        )
+        logger.error(f"add_ido_staking_points[{address}], exception:{e}\n{traceback.format_exc()}")
         raise Retry("", exc=e)

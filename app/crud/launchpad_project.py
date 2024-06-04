@@ -1,7 +1,7 @@
 from typing import Sequence, Any
 
 from sqlalchemy import select, or_, Row, update, func
-from sqlalchemy.ext.asyncio import AsyncConnection
+from sqlalchemy.ext.asyncio import AsyncConnection, AsyncSession
 from sqlalchemy.orm import selectinload, contains_eager
 
 from app.base import BaseCrud
@@ -17,7 +17,9 @@ from app.models import (
 from app.types import ProjectIdWithRaised
 
 
-class LaunchpadProjectCrud(BaseCrud):
+class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
+    def __init__(self, session: AsyncSession):
+        super().__init__(session, LaunchpadProject)
 
     async def all(  # noqa
         self, limit: int = 100, offset: int = 0, status: StatusProject = None
@@ -47,6 +49,7 @@ class LaunchpadProjectCrud(BaseCrud):
             .options(selectinload(LaunchpadProject.links))
             .options(selectinload(LaunchpadProject.token_details))
             .options(contains_eager(LaunchpadProject.proxy_link))
+            .options(selectinload(LaunchpadProject.access_token))
             .join(LaunchpadProject.proxy_link, isouter=True)
             .where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         )
@@ -148,10 +151,3 @@ class LaunchpadProjectCrud(BaseCrud):
         count: int = await self.session.scalar(count_st)
         project_ids = (await self.session.scalars(paginated_st)).all()
         return project_ids, count
-
-    async def persist(self, entity: LaunchpadProject) -> LaunchpadProject:
-        if not entity.id:
-            self.session.add(entity)
-
-        await self.session.flush()
-        return entity

@@ -44,7 +44,7 @@ class ProcessMunzenOrder(Command):
             return CommandResult(success=False, need_retry=True, retry_after=60)
 
         try:
-            order: OnRampOrder = await crud.get_by_id(UUID(self.order_id))
+            order: OnRampOrder = await crud.find_by_id(UUID(self.order_id))
             if order.status == ONRAMP_STATUS_COMPLETE:
                 logger.info(f"[ProcessMunzenOrder({self.order_id})] Order already completed")
                 return CommandResult(success=False, need_retry=False)

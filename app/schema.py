@@ -8,8 +8,15 @@ from fastapi_pagination import Page
 from pydantic import BaseModel, Field, field_validator
 from starlette.responses import JSONResponse
 
-from app.models import HistoryStakeType, LaunchpadContractEventType, StatusProject
+from app.models import (
+    HistoryStakeType,
+    LaunchpadContractEventType,
+    StatusProject,
+    OperationType,
+    OperationReason,
+)
 from app.types import BadgeType
+from app.utils import validation_error
 
 Address = NewType("Address", str)
 
@@ -463,6 +470,50 @@ class GetUserProjectsResponse(BaseModel):
     data: Page[UserProject]
     ok: bool = True
     error: str | None = None
+
+
+class AddPointsOperation(BaseModel):
+    address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    amount: int
+    operation_type: OperationType | None = OperationType.ADD
+    project_slug: str | None = None
+    operation_reason: OperationReason | None = None
+
+
+class AddPointsRequest(BaseModel):
+    operations: list[AddPointsOperation]
+
+    @field_validator("operations")
+    @classmethod
+    def operations_must_not_contain_duplicates(
+        cls, v: list[AddPointsOperation]
+    ) -> list[AddPointsOperation]:
+        seen = set()
+        duplicates = []
+        for operation in v:
+            address = operation.address
+            if address in seen:
+                duplicates.append(address)
+            else:
+                seen.add(address)
+
+        if duplicates:
+            raise validation_error(
+                f"Contains duplicates: {', '.join(duplicates)}", ("body", "operations")
+            )
+        return v
+
+
+class AddPointsOperationData(BaseModel):
+    address: str
+    ok: bool = True
+    error: str | None = None
+
+
+class AddPointsResponse(BaseModel):
+    ok: bool = True
+    error: str | None = None
+    data: list[AddPointsOperationData] | None = None
 
 
 class UserTvlIdoFarming(BaseModel):

@@ -64,6 +64,12 @@ class OperationType(enum.Enum):
     ADD_IDO_POINTS = "add_ido_points"
 
 
+class OperationReason(str, enum.Enum):
+    ERR_COMPENSATION = "err_compensation"
+    BLASTBOX = "blastbox"
+    OTHER_GIVEAWAY = "other_giveaway"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -130,6 +136,7 @@ class LaunchpadProject(Base):
     proxy_link = relationship("ProxyLink", back_populates="project", uselist=False)
     token_details = relationship("TokenDetails", back_populates="project", uselist=False)
     whitelist_addresses = relationship("ProjectWhitelist", back_populates="project")
+    access_token = relationship("ProjectAccessToken", back_populates="project", uselist=False)
 
     @property
     def total_raise(self):
@@ -291,6 +298,19 @@ class SupportedTokens(Base):
     )
 
 
+class ProjectAccessToken(Base):
+    __tablename__ = "project_access_token"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    token = Column(Text, nullable=False)
+
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=False)
+    project = relationship("LaunchpadProject", back_populates="access_token")
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
 class TmpProfile(Base):
     __tablename__ = "tmp_profiles"
 
@@ -315,6 +335,8 @@ class TmpPointsHistory(Base):
         default=OperationType.ADD,
         nullable=False,
     )
+    # use for add_manual operation
+    operation_reason = Column(Enum(OperationReason), nullable=True)
 
     points_before = Column(
         BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
@@ -326,8 +348,25 @@ class TmpPointsHistory(Base):
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
 
+    profile_id = Column(ForeignKey("tmp_profiles.id"), nullable=False)
+    project_id = Column(ForeignKey("launchpad_project.id"), nullable=True)
+
+
+class TmpExtraPoints(Base):
+    __tablename__ = "extra_points"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
     profile_id = Column(BigIntegerType, ForeignKey("tmp_profiles.id"), nullable=False)
-    profile = relationship("TmpProfile", uselist=False, foreign_keys=[profile_id])
+    project_id = Column(String(), ForeignKey("launchpad_project.id"), nullable=False)
+
+    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+
+    created_at = Column(DateTime(), nullable=False, default=func.now())
+    updated_at = Column(DateTime(), default=func.now(), onupdate=func.now())
+
+    __table_args__ = tuple(  # noqa
+        [Index("idx_extra_points_profile_id_project_id", "profile_id", "project_id", unique=True)]
+    )
 
 
 class Refcode(Base):

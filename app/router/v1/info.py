@@ -14,7 +14,6 @@ from app.dependencies import (
     RefcodesCrudDep,
 )
 from app.env import settings
-from app.models import Refcode
 from app.router.v1.proxy import fetch_data
 from app.schema import (
     TierInfoResponse,
@@ -33,7 +32,6 @@ from app.schema import (
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
 from app.services.prices.cache import token_price_cache
-from app.services.refcodes import generate_code
 from app.services.tiers.consts import (
     bronze_tier,
     silver_tier,
@@ -119,11 +117,11 @@ async def get_user_info(
     if profile := await profile_crud.first_by_address(address):
         presale_data["points"] += profile.points
 
-    refcode = await refcodes_crud.get_by_address(address)
+    refcode = await refcodes_crud.generate_refcode_if_not_exists(address)
     return UserInfoResponse(
         tier=user_tier,
         blastup_balance=balances_by_chain_id,
-        refcode=refcode.refcode if refcode else None,
+        refcode=refcode.refcode,
         **presale_data,
     )
 
@@ -133,13 +131,7 @@ async def create_refcode(
     refcodes_crud: RefcodesCrudDep,
     address: str = Body(embed=True, pattern="^(0x)[0-9a-fA-F]{40}$"),
 ):
-    if (refcode := await refcodes_crud.get_by_address(address)) is None:
-        while True:
-            code = generate_code()
-            if not await refcodes_crud.get_by_refcode(code):
-                break
-        refcode = await refcodes_crud.persist(Refcode(address=address.lower(), refcode=code))
-
+    refcode = await refcodes_crud.generate_refcode_if_not_exists(address)
     return RefcodeResponse(ok=True, data=refcode.refcode)
 
 

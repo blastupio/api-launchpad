@@ -176,7 +176,11 @@ class TokenDetailsData(BaseModel):
     tge_full_date: str | None
     tge_percent: int
     cliff: str
+
     vesting: str
+    vesting_start: datetime | None
+    vesting_end: datetime | None
+
     ticker: str
     token_description: str
     total_supply: int

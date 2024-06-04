@@ -208,7 +208,11 @@ class TokenDetails(Base):
     tge_full_date = Column(String, nullable=True)
     tge_percent = Column(Integer, nullable=False)
     cliff = Column(String, nullable=False)
+
     vesting = Column(String, nullable=False)
+    vesting_start = Column(DateTime(), nullable=True)
+    vesting_end = Column(DateTime(), nullable=True)
+
     icon = Column(String, nullable=True)
 
     ticker = Column(String, nullable=False)

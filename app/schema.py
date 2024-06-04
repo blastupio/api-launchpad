@@ -377,11 +377,13 @@ class UserInfoResponse(BaseModel):
     balance: int = 0
     balance_usd: str = ""
     balance_change: str = ""
-    referrer: str | None = None
     points: int = 0
-    ref_points: int = 0
-    refcode: str | None = None
     terms_accepted: Optional[bool] = None
+
+    refcode: str | None = None
+    ref_points: int = 0
+    n_referrals: int = 0
+    referrer: str | None = None
     ref_bonus_used: bool = False
 
 

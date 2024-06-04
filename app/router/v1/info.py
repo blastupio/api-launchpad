@@ -117,11 +117,15 @@ async def get_user_info(
     if profile := await profile_crud.first_by_address(address):
         presale_data["points"] += profile.points
 
-    refcode = await refcodes_crud.generate_refcode_if_not_exists(address)
+    refcode, n_referrals = await asyncio.gather(
+        refcodes_crud.generate_refcode_if_not_exists(address),
+        profile_crud.count_referrals(referrer=address),
+    )
     return UserInfoResponse(
         tier=user_tier,
         blastup_balance=balances_by_chain_id,
         refcode=refcode.refcode,
+        n_referrals=n_referrals,
         **presale_data,
     )
 

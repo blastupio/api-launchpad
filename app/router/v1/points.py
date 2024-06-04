@@ -28,20 +28,6 @@ async def add_points(
     ):
         return AddPointsResponse(ok=False, error="Not authorized")
 
-    seen = set()
-    duplicates = []
-    for operation in request.operations:
-        address = operation.address
-        if address in seen:
-            duplicates.append(address)
-        else:
-            seen.add(address)
-
-    if duplicates:
-        return AddPointsResponse(
-            ok=False, error=f"Request has duplicate addresses: {', '.join(duplicates)}"
-        )
-
     operations_results = []
     for operation in request.operations:
         try:

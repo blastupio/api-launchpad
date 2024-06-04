@@ -380,6 +380,7 @@ class UserInfoResponse(BaseModel):
     referrer: str | None = None
     points: int = 0
     ref_points: int = 0
+    refcode: str | None = None
     terms_accepted: Optional[bool] = None
     ref_bonus_used: bool = False
 
@@ -484,3 +485,8 @@ class TotalTvlIdoFarmingResponse(BaseModel):
     ok: bool = True
     data: TotalTvlIdoFarming | None = None
     error: str | None = None
+
+
+class RefcodeResponse(BaseModel):
+    ok: bool
+    data: str | None

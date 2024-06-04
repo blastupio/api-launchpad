@@ -1,5 +1,6 @@
 import logging
 from asyncio import current_task
+from typing import TypeVar, Generic
 
 from logtail import LogtailHandler
 from sqlalchemy import BigInteger
@@ -31,6 +32,16 @@ BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), "postgresql")
 BigIntegerType = BigIntegerType.with_variant(sqlite.INTEGER(), "sqlite")
 
 
-class BaseCrud:
+Model = TypeVar("Model")
+
+
+class BaseCrud(Generic[Model]):
     def __init__(self, session: AsyncSession):
         self.session = session
+
+    async def persist(self, model: Model) -> Model:
+        if model.id is None:
+            self.session.add(model)
+
+        await self.session.flush()
+        return model

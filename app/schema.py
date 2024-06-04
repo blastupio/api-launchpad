@@ -543,3 +543,8 @@ class TotalTvlIdoFarmingResponse(BaseModel):
 class RefcodeResponse(BaseModel):
     ok: bool
     data: str | None
+
+
+class SaveReferrerResponse(BaseModel):
+    ok: bool = True
+    error: str | None = None

@@ -3,6 +3,7 @@ from math import ceil
 
 from fastapi import APIRouter, Path, Query, Body
 from fastapi_pagination import Page
+from starlette.responses import JSONResponse
 from web3 import Web3
 
 from app.base import logger
@@ -28,6 +29,7 @@ from app.schema import (
     YieldPercentageResponse,
     GetUserProjectsResponse,
     RefcodeResponse,
+    SaveReferrerResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
@@ -138,6 +140,36 @@ async def create_refcode(
 ):
     refcode = await refcodes_crud.generate_refcode_if_not_exists(address)
     return RefcodeResponse(ok=True, data=refcode.refcode)
+
+
+@router.post("/user/{address}/referrer", response_model=SaveReferrerResponse)
+async def save_referrer_for_user(
+    refcodes_crud: RefcodesCrudDep,
+    profile_crud: ProfileCrudDep,
+    address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+    refcode: str = Body(embed=True, min_length=4, max_length=4),
+):
+    if not (referrer := await refcodes_crud.get_by_refcode(refcode)):
+        return JSONResponse(content={"ok": False, "error": "Referrer not found"}, status_code=404)
+
+    if referrer.address.lower() == address.lower():
+        return JSONResponse(
+            content={"ok": False, "error": "Referrer cannot be the same as the user"},
+            status_code=400,
+        )
+
+    if not (profile := await profile_crud.first_by_address(address)):
+        # create new profile with referrer
+        await profile_crud.get_or_create_profile(address=address, referrer=referrer.address)
+        return SaveReferrerResponse(ok=True)
+
+    if profile.referrer:
+        return JSONResponse(
+            content={"ok": False, "error": "User already has a referrer"}, status_code=400
+        )
+
+    await profile_crud.update_referrer(address=address, referrer=referrer.address)
+    return SaveReferrerResponse(ok=True)
 
 
 @router.get("/tiers", response_model=TierInfoResponse)

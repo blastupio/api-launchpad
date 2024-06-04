@@ -33,27 +33,29 @@ BigIntegerType = BigIntegerType.with_variant(postgresql.BIGINT(), "postgresql")
 BigIntegerType = BigIntegerType.with_variant(sqlite.INTEGER(), "sqlite")
 
 
-T = TypeVar("T")
+Model = TypeVar("Model")
 
 
-class BaseCrud(Generic[T]):
-    def __init__(self, session: AsyncSession, entity_type: Type[T]) -> None:
+class BaseCrud(Generic[Model]):
+    def __init__(self, session: AsyncSession, entity_type: Type[Model]) -> None:
         self.session = session
         self.entity_type = entity_type
 
-    async def persist(self, model: T) -> T:
-        if model.id is None:
-            self.session.add(model)
+    async def persist(self, model: Model, session: AsyncSession | None) -> Model:
+        session = session or self.session
 
-        await self.session.flush()
+        if model.id is None:
+            session.add(model)
+
+        await session.flush()
         return model
 
-    async def delete(self, model: T) -> T:
+    async def delete(self, model: Model) -> Model:
         await self.session.delete(model)
         await self.session.flush()
         return model
 
-    async def find_by_id(self, id_: int | UUID) -> T | None:
+    async def find_by_id(self, id_: int | UUID) -> Model | None:
         query = await self.session.scalars(
             select(self.entity_type).where(self.entity_type.id == id_)
         )

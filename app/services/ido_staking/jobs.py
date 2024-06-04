@@ -5,10 +5,11 @@ import traceback
 from collections import defaultdict
 
 from fastapi import Depends
+from sqlalchemy.ext.asyncio import AsyncSession
 from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
 
 from app import chains
-from app.base import logger
+from app.base import logger, engine
 from app.common import Command, CommandResult
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.profiles import ProfilesCrud
@@ -223,11 +224,14 @@ class AddIdoStakingPointsForProfile(Command):
     ) -> CommandResult:
         try:
             logger.info(f"IDO points: adding {self.points_amount}BP to {self.address}")
-            await add_points.add_points(
-                address=self.address,
-                amount=self.points_amount,
-                operation_type=OperationType.ADD_IDO_POINTS,
-            )
+            async with AsyncSession(engine) as session:
+                async with session.begin():
+                    await add_points.add_points(
+                        address=self.address,
+                        amount=self.points_amount,
+                        operation_type=OperationType.ADD_IDO_POINTS,
+                        session=session,
+                    )
         except Exception as e:
             logger.error(
                 f"IDO points: error with adding to {self.address}:\n{e} {traceback.format_exc()}"

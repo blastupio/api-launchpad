@@ -15,8 +15,11 @@ class ProfilesCrud(BaseCrud[TmpProfile]):
         )
         return query.first()
 
-    async def first_by_address_or_fail_with_lock(self, address: str) -> TmpProfile | None:
-        query = await self.session.scalars(
+    async def first_by_address_or_fail_with_lock(
+        self, address: str, session: AsyncSession | None
+    ) -> TmpProfile | None:
+        session = session or self.session
+        query = await session.scalars(
             select(TmpProfile).where(TmpProfile.address == address.lower()).with_for_update()
         )
         return query.one()

@@ -31,7 +31,9 @@ from app.services.prices import get_tokens_price_for_chain
 
 
 class ProcessHistoryStakingEvent(Command):
-    async def _save_stake_events(self, crud: HistoryStakingCrud, chain_id: int, events) -> None:
+    async def _save_stake_events(
+        self, crud: HistoryStakingCrud, profile_crud: ProfilesCrud, chain_id: int, events
+    ) -> None:
         for event in events:
             await crud.add_history(
                 params=CreateHistoryStake(
@@ -44,6 +46,8 @@ class ProcessHistoryStakingEvent(Command):
                     user_address=event.args["user"],
                 )
             )
+            # save new profile if not exists
+            await profile_crud.get_or_create_profile(address=event.args["user"])
 
     async def _save_claim_rewards_events(
         self, crud: HistoryStakingCrud, chain_id: int, events
@@ -78,6 +82,7 @@ class ProcessHistoryStakingEvent(Command):
     async def command(
         self,
         crud: HistoryStakingCrud = Depends(get_staking_history_crud),
+        profile_crud: ProfilesCrud = Depends(get_profile_crud),
     ) -> CommandResult:
         if not settings.yield_staking_contract_addr:
             logger.error("Staking events: yield staking contract address is not set")
@@ -114,7 +119,7 @@ class ProcessHistoryStakingEvent(Command):
                     fromBlock=from_block, toBlock=to_block
                 )
                 n_stakes += len(stake_events)
-                await self._save_stake_events(crud, chain_id, stake_events)
+                await self._save_stake_events(crud, profile_crud, chain_id, stake_events)
 
                 claim_reward_events = await staking_contract.events.RewardClaimed().get_logs(
                     fromBlock=from_block, toBlock=to_block

@@ -76,6 +76,8 @@ class Settings(BaseSettings):
 
     admin_project_name: str = ""
 
+    ido_farming_participation_usd_threshold: float = 10
+
 
 settings = Settings(_env_file=".env")
 

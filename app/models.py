@@ -208,7 +208,11 @@ class TokenDetails(Base):
     tge_full_date = Column(String, nullable=True)
     tge_percent = Column(Integer, nullable=False)
     cliff = Column(String, nullable=False)
+
     vesting = Column(String, nullable=False)
+    vesting_start = Column(DateTime(), nullable=True)
+    vesting_end = Column(DateTime(), nullable=True)
+
     icon = Column(String, nullable=True)
 
     ticker = Column(String, nullable=False)
@@ -315,16 +319,20 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     id = Column(BigIntegerType, primary_key=True)  # noqa
-    address = Column(Text(), nullable=False, index=True, unique=True)
     # todo: add foreign key to profiles.address
+    address = Column(Text(), nullable=False, index=True, unique=True)
     referrer = Column(Text(), index=True, nullable=True)
+
+    utm = Column(Text(), nullable=True)
+    language = Column(Text(), nullable=True)
+    first_login = Column(DateTime, nullable=True)
+    browser = Column(Text(), nullable=True)
+    terms_accepted = Column(Boolean, default=False, nullable=False)
 
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
     ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
     ref_percent = Column(Integer, default=20, server_default=text("20::int"))
     ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
-
-    terms_accepted = Column(Boolean, default=False, server_default="false", nullable=False)
 
 
 class PointsHistory(Base):

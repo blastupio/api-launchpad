@@ -1,3 +1,7 @@
+import json
+from datetime import datetime
+import dateutil.parser as dt
+
 from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -24,20 +28,34 @@ class ProfilesCrud(BaseCrud[Profile]):
         )
         return query.one()
 
-    async def get_or_create_profile(
-        self, address: str, points: int | None = None, referrer: str | None = None
-    ) -> Profile:
+    async def get_or_create_profile(self, address: str, **kwargs) -> tuple[Profile, bool]:
+        is_new = False
         if (profile := await self.first_by_address(address)) is None:
-            kwargs = {
-                "address": address.lower(),
-            }
-            if points is not None:
-                kwargs["points"] = points
-            if referrer is not None:
-                kwargs["referrer"] = referrer.lower()
+            is_new = True
+            data = {"address": address.lower()}
+            if first_login := kwargs.get("first_login"):
+                data["first_login"] = dt.parse(first_login.split("(")[0]).replace(tzinfo=None)
+            else:
+                data["first_login"] = datetime.utcnow()
 
-            profile = await self.persist(Profile(**kwargs))
-        return profile
+            if utm := kwargs.get("utm"):
+                data["utm"] = utm
+            if browser := kwargs.get("browser"):
+                data["browser"] = browser
+            if points := kwargs.get("points"):
+                data["points"] = points
+            if referrer := kwargs.get("referrer"):
+                data["referrer"] = referrer.lower()
+            if language := kwargs.get("language"):
+                data["language"] = json.dumps(
+                    {
+                        "current": language.current,
+                        "all": language.all,
+                    }
+                )
+
+            profile = await self.persist(Profile(**data))
+        return profile, is_new
 
     async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:
         session = session or self.session

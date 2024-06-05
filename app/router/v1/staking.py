@@ -3,8 +3,16 @@ from math import ceil
 from fastapi import APIRouter, Path, Query
 from fastapi_pagination import Page
 
-from app.dependencies import HistoryStakingCrudDep
-from app.schema import GetHistoryStake, UserTvlIdoFarmingResponse, TotalTvlIdoFarmingResponse
+from app.dependencies import HistoryStakingCrudDep, ProfileCrudDep
+from app.env import settings
+from app.schema import (
+    GetHistoryStake,
+    UserTvlIdoFarmingResponse,
+    TotalTvlIdoFarmingResponse,
+    CheckIdoStakingParticipatedResponse,
+    InternalServerError,
+    CheckIdoStakingParticipantData,
+)
 from app.services.ido_staking.tvl import get_user_usd_tvl, get_total_usd_tvl
 
 router = APIRouter(prefix="/staking", tags=["staking"])
@@ -40,3 +48,27 @@ async def get_total_tvl() -> TotalTvlIdoFarmingResponse:
     if (tvl := await get_total_usd_tvl()) is None:
         return TotalTvlIdoFarmingResponse(ok=False, error="Internal Error")
     return TotalTvlIdoFarmingResponse(data=tvl)
+
+
+@router.get("/check-participant/{user_address}", response_model=CheckIdoStakingParticipatedResponse)
+async def check_if_user_is_participant_of_ido_farming(
+    profile_crud: ProfileCrudDep,
+    user_address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+):
+    participated = False
+    if await profile_crud.first_by_address(user_address) is None:
+        return CheckIdoStakingParticipatedResponse(
+            data=CheckIdoStakingParticipantData(participant=participated)
+        )
+
+    if not (user_usd_tvl := await get_user_usd_tvl(user_address)):
+        return InternalServerError(err="Internal Error")
+
+    if user_usd_tvl.total > settings.ido_farming_participation_usd_threshold:
+        participated = True
+    return CheckIdoStakingParticipatedResponse(
+        data=CheckIdoStakingParticipantData(
+            participant=participated,
+            user_tvl=user_usd_tvl,
+        )
+    )

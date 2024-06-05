@@ -554,9 +554,14 @@ class SaveReferrerResponse(BaseModel):
     error: str | None = None
 
 
+class CheckIdoStakingParticipantData(BaseModel):
+    participant: bool
+    user_tvl: UserTvlIdoFarming | None = None
+
+
 class CheckIdoStakingParticipatedResponse(BaseModel):
     ok: bool = True
-    participant: bool | None = None
+    data: CheckIdoStakingParticipantData | None = None
     error: str | None = None
 
 

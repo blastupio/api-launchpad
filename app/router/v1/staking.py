@@ -3,7 +3,6 @@ from math import ceil
 from fastapi import APIRouter, Path, Query
 from fastapi_pagination import Page
 
-from app.base import logger
 from app.dependencies import HistoryStakingCrudDep, ProfileCrudDep
 from app.env import settings
 from app.schema import (
@@ -12,8 +11,8 @@ from app.schema import (
     TotalTvlIdoFarmingResponse,
     CheckIdoStakingParticipatedResponse,
     InternalServerError,
+    CheckIdoStakingParticipantData,
 )
-from app.services.ido_staking.multicall import get_locked_amount_for_user
 from app.services.ido_staking.tvl import get_user_usd_tvl, get_total_usd_tvl
 
 router = APIRouter(prefix="/staking", tags=["staking"])
@@ -54,26 +53,22 @@ async def get_total_tvl() -> TotalTvlIdoFarmingResponse:
 @router.get("/check-participant/{user_address}", response_model=CheckIdoStakingParticipatedResponse)
 async def check_if_user_is_participant_of_ido_farming(
     profile_crud: ProfileCrudDep,
-    staking_crud: HistoryStakingCrudDep,
     user_address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
 ):
     participated = False
     if await profile_crud.first_by_address(user_address) is None:
-        return CheckIdoStakingParticipatedResponse(participant=participated)
-
-    # firstly, check in staking history from db
-    if await staking_crud.is_user_staked(user_address):
-        return CheckIdoStakingParticipatedResponse(participant=True)
-
-    # if there is no history due to some lag of job, check in blockchain
-    try:
-        locked_amount = await get_locked_amount_for_user(
-            user_address, settings.blast_weth_address, settings.blast_usdb_address
+        return CheckIdoStakingParticipatedResponse(
+            data=CheckIdoStakingParticipantData(participant=participated)
         )
-    except Exception as e:
-        logger.error(f"Failed to get locked amount for user {user_address}: {e}")
-        return InternalServerError(err=str(e))
 
-    if locked_amount.native or locked_amount.stablecoin:
+    if not (user_usd_tvl := await get_user_usd_tvl(user_address)):
+        return InternalServerError(err="Internal Error")
+
+    if user_usd_tvl.total > settings.ido_farming_participation_usd_threshold:
         participated = True
-    return CheckIdoStakingParticipatedResponse(participant=participated)
+    return CheckIdoStakingParticipatedResponse(
+        data=CheckIdoStakingParticipantData(
+            participant=participated,
+            user_tvl=user_usd_tvl,
+        )
+    )

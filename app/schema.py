@@ -558,3 +558,21 @@ class CheckIdoStakingParticipatedResponse(BaseModel):
     ok: bool = True
     participant: bool | None = None
     error: str | None = None
+
+
+class CreateProfilePayload(BaseModel):
+    address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    utm: str | None = Field(default=None)
+    language: Language | None = Field(default=None)
+    first_login: str | None = Field(alias="first_login", default=None)
+    browser: str | None = Field(alias="browser", default=None)
+
+
+class CreateProfileResponseData(BaseModel):
+    is_new: bool
+
+
+class CreateProfileResponse(BaseModel):
+    ok: bool = True
+    data: CreateProfileResponseData
+    error: str | None = None

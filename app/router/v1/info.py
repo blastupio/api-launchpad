@@ -30,6 +30,9 @@ from app.schema import (
     GetUserProjectsResponse,
     RefcodeResponse,
     SaveReferrerResponse,
+    CreateProfilePayload,
+    CreateProfileResponse,
+    CreateProfileResponseData,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
@@ -141,6 +144,21 @@ async def get_user_info(
         referrer=profile.referrer,
         ref_bonus_used=profile.ref_bonus_used,
     )
+
+
+@router.post("/user-profile", response_model=CreateProfileResponse)
+async def create_profile(
+    profile_crud: ProfileCrudDep,
+    payload: CreateProfilePayload,
+):
+    profile, is_new = await profile_crud.get_or_create_profile(
+        address=payload.address,
+        utm=payload.utm,
+        language=payload.language,
+        first_login=payload.first_login,
+        browser=payload.browser,
+    )
+    return CreateProfileResponse(data=CreateProfileResponseData(is_new=is_new))
 
 
 @router.post("/user/refcode", response_model=RefcodeResponse)

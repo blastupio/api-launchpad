@@ -146,7 +146,7 @@ async def get_user_info(
     )
 
 
-@router.post("/user-profile", response_model=CreateProfileResponse)
+@router.post("/user", response_model=CreateProfileResponse)
 async def create_profile(
     profile_crud: ProfileCrudDep,
     payload: CreateProfilePayload,

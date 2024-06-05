@@ -319,16 +319,24 @@ class Profile(Base):
     __tablename__ = "profiles"
 
     id = Column(BigIntegerType, primary_key=True)  # noqa
-    address = Column(Text(), nullable=False, index=True, unique=True)
     # todo: add foreign key to profiles.address
-    referrer = Column(Text(), index=True, nullable=True)
+    address = Column(Text(), nullable=False, index=True, unique=True)
+    referrer = Column(Text(), nullable=True)
+
+    utm = Column(Text(), nullable=True)
+    language = Column(Text(), nullable=True)
+    first_login = Column(DateTime, nullable=True)
+    ip = Column(Text(), nullable=True)
+    browser = Column(Text(), nullable=True)
+    device_resolution = Column(Text(), nullable=True)
+    device_type = Column(Text(), nullable=True)
+    browser_referrer = Column(Text(), nullable=True, default="", server_default="")
+    terms_accepted = Column(Boolean, default=False, nullable=False)
 
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
     ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
     ref_percent = Column(Integer, default=20, server_default=text("20::int"))
     ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
-
-    terms_accepted = Column(Boolean, default=False, server_default="false", nullable=False)
 
 
 class PointsHistory(Base):

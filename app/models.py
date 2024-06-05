@@ -326,11 +326,7 @@ class Profile(Base):
     utm = Column(Text(), nullable=True)
     language = Column(Text(), nullable=True)
     first_login = Column(DateTime, nullable=True)
-    ip = Column(Text(), nullable=True)
     browser = Column(Text(), nullable=True)
-    device_resolution = Column(Text(), nullable=True)
-    device_type = Column(Text(), nullable=True)
-    browser_referrer = Column(Text(), nullable=True, default="", server_default="")
     terms_accepted = Column(Boolean, default=False, nullable=False)
 
     points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))

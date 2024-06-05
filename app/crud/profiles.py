@@ -75,3 +75,9 @@ class ProfilesCrud(BaseCrud[Profile]):
             .where(Profile.address == address.lower())
             .values(referrer=referrer.lower())
         )
+
+    async def get_leaderboard_rank(self, profile_points: int) -> int:
+        query = await self.session.execute(
+            select(func.count(Profile.id)).where(Profile.points > profile_points)
+        )
+        return int(query.scalars().one_or_none()) + 1

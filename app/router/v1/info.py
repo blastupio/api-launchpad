@@ -125,9 +125,10 @@ async def get_user_info(
 
     presale_data = presale_json.get("data", {})
 
-    refcode, n_referrals = await asyncio.gather(
+    refcode, n_referrals, leaderboard_rank = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
         get_n_referrals(address, profile_crud),
+        profile_crud.get_leaderboard_rank(profile_points=profile.points),
     )
 
     return UserInfoResponse(
@@ -143,6 +144,7 @@ async def get_user_info(
         n_referrals=n_referrals,
         referrer=profile.referrer,
         ref_bonus_used=profile.ref_bonus_used,
+        leaderboard_rank=leaderboard_rank,
     )
 
 

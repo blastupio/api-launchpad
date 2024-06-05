@@ -552,3 +552,9 @@ class RefcodeResponse(BaseModel):
 class SaveReferrerResponse(BaseModel):
     ok: bool = True
     error: str | None = None
+
+
+class CheckIdoStakingParticipatedResponse(BaseModel):
+    ok: bool = True
+    participant: bool | None = None
+    error: str | None = None

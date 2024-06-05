@@ -53,3 +53,14 @@ class HistoryStakingCrud(BaseCrud[HistoryStake]):
 
         results = (await self.session.execute(stmt)).all()
         return dict(results)
+
+    async def is_user_staked(self, user_address: str) -> bool:
+        query = await self.session.execute(
+            select(HistoryStake.user_address)
+            .where(
+                HistoryStake.type == HistoryStakeType.STAKE.value,
+                HistoryStake.user_address == user_address.lower(),
+            )
+            .limit(1)
+        )
+        return bool(query.scalars().one_or_none())

@@ -321,7 +321,7 @@ class Profile(Base):
     id = Column(BigIntegerType, primary_key=True)  # noqa
     # todo: add foreign key to profiles.address
     address = Column(Text(), nullable=False, index=True, unique=True)
-    referrer = Column(Text(), nullable=True)
+    referrer = Column(Text(), index=True, nullable=True)
 
     utm = Column(Text(), nullable=True)
     language = Column(Text(), nullable=True)

@@ -204,22 +204,36 @@ class AddIdoStakingPoints(Command):
                 if usd_balance < 100:
                     continue
                 points_amount = math.ceil(usd_balance / 100)
-                await profile_crud.get_or_create_profile(user_address)
+                profile, _ = await profile_crud.get_or_create_profile(user_address)
 
                 from app.tasks import add_ido_staking_points_for_profile
 
                 add_ido_staking_points_for_profile.apply_async(
-                    args=[user_address, points_amount], countdown=1
+                    args=[user_address, points_amount, OperationType.ADD_IDO_POINTS.name],
+                    countdown=1,
                 )
+                if referrer_address := profile.referrer:
+                    await profile_crud.get_or_create_profile(referrer_address)
+                    referrer_points_amount = int(points_amount * 0.2)
+                    add_ido_staking_points_for_profile.apply_async(
+                        args=[referrer_address, referrer_points_amount, OperationType.ADD_REF.name],
+                        countdown=1,
+                    )
         finally:
             await lock.release("add-ido-points")
         return CommandResult(success=True, need_retry=False)
 
 
 class AddIdoStakingPointsForProfile(Command):
-    def __init__(self, address: str, points_amount: int) -> None:
+    def __init__(
+        self,
+        address: str,
+        points_amount: int,
+        operation_type: OperationType = OperationType.ADD_IDO_POINTS,
+    ) -> None:
         self.address = address
         self.points_amount = points_amount
+        self.operation_type = operation_type
 
     async def command(
         self,
@@ -228,13 +242,15 @@ class AddIdoStakingPointsForProfile(Command):
         lock: Lock = Depends(get_lock),
     ) -> CommandResult:
         try:
-            logger.info(f"IDO points: adding {self.points_amount}BP to {self.address}")
+            logger.info(
+                f"IDO points: adding {self.operation_type} {self.points_amount}BP to {self.address}"
+            )
             async with AsyncSession(engine) as session:
                 async with session.begin():
                     await add_points.add_points(
                         address=self.address,
                         amount=self.points_amount,
-                        operation_type=OperationType.ADD_IDO_POINTS,
+                        operation_type=self.operation_type,
                         session=session,
                     )
         except Exception as e:

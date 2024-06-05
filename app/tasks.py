@@ -6,6 +6,7 @@ from celery.exceptions import Retry
 from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
+from app.models import OperationType
 from app.services.ido_staking.jobs import (
     ProcessHistoryStakingEvent,
     AddIdoStakingPoints,
@@ -204,9 +205,13 @@ def add_ido_staking_points():
 
 
 @app.task(max_retries=3, default_retry_delay=10)
-def add_ido_staking_points_for_profile(address: str, points_amount: int):
+def add_ido_staking_points_for_profile(
+    address: str, points_amount: int, operation_type: OperationType
+):
     try:
-        result = run_command_and_get_result(AddIdoStakingPointsForProfile(address, points_amount))
+        result = run_command_and_get_result(
+            AddIdoStakingPointsForProfile(address, points_amount, operation_type)
+        )
 
         if result.need_retry:
             retry_after = (
@@ -214,14 +219,18 @@ def add_ido_staking_points_for_profile(address: str, points_amount: int):
                 if result.retry_after is not None
                 else settings.celery_retry_after
             )
-            logger.info(f"add_ido_staking_points[{address}] retrying after {retry_after}")
+            logger.info(
+                f"ido_staking_points[{address}]({operation_type}) retrying after {retry_after}"
+            )
             add_ido_staking_points_for_profile.apply_async(
-                args=[address, points_amount], countdown=retry_after
+                args=[address, points_amount, operation_type], countdown=retry_after
             )
             return
     except Exception as e:
         if isinstance(e, Retry):
             raise e
 
-        logger.error(f"add_ido_staking_points[{address}], exception:{e}\n{traceback.format_exc()}")
+        logger.error(
+            f"ido_staking_points[{address}]({operation_type}) error:{e}\n{traceback.format_exc()}"
+        )
         raise Retry("", exc=e)

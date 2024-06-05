@@ -213,8 +213,8 @@ class AddIdoStakingPoints(Command):
                     countdown=1,
                 )
                 if referrer_address := profile.referrer:
-                    await profile_crud.get_or_create_profile(referrer_address)
-                    referrer_points_amount = int(points_amount * 0.2)
+                    referrer, _ = await profile_crud.get_or_create_profile(referrer_address)
+                    referrer_points_amount = int(points_amount * referrer.ref_percent / 100)
                     add_ido_staking_points_for_profile.apply_async(
                         args=[referrer_address, referrer_points_amount, OperationType.ADD_REF.name],
                         countdown=1,

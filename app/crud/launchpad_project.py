@@ -30,7 +30,7 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
             .options(selectinload(LaunchpadProject.links))
             .options(contains_eager(LaunchpadProject.proxy_link))
             .join(LaunchpadProject.proxy_link, isouter=True)
-            .where(LaunchpadProject.slug != "testpepe")
+            .where(LaunchpadProject.is_visible.is_(True))
             .order_by(LaunchpadProject.created_at.desc())
             .limit(limit)
             .offset(offset)
@@ -58,13 +58,17 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
         return query.first()
 
     async def get_data_for_total_raised_recalculating(self) -> Sequence[Row]:
-        st = select(
-            LaunchpadProject.id,
-            LaunchpadProject.contract_project_id,
-            LaunchpadProject.raise_goal_on_launchpad,
-            LaunchpadProject.project_type,
-            ProxyLink.base_url,
-        ).join(LaunchpadProject.proxy_link, isouter=True)
+        st = (
+            select(
+                LaunchpadProject.id,
+                LaunchpadProject.contract_project_id,
+                LaunchpadProject.raise_goal_on_launchpad,
+                LaunchpadProject.project_type,
+                ProxyLink.base_url,
+            )
+            .join(LaunchpadProject.proxy_link, isouter=True)
+            .where(LaunchpadProject.is_visible.is_(True))
+        )
         result = await self.session.execute(st)
         return result.fetchall()
 
@@ -86,7 +90,8 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
             LaunchpadProject.token_price,
         ).where(
             LaunchpadProject.project_type == ProjectType.DEFAULT,
-            LaunchpadProject.contract_project_id.isnot(None),
+            LaunchpadProject.contract_project_id.is_not(None),
+            LaunchpadProject.is_visible.is_(True),
         )
         result = await conn.execute(st)
         return {
@@ -96,12 +101,16 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
 
     async def get_info_for_user_projects(self) -> Sequence[Row]:
         # todo: cache
-        st = select(
-            LaunchpadProject.id,
-            LaunchpadProject.contract_project_id,
-            LaunchpadProject.project_type,
-            ProxyLink.base_url,
-        ).join(LaunchpadProject.proxy_link, isouter=True)
+        st = (
+            select(
+                LaunchpadProject.id,
+                LaunchpadProject.contract_project_id,
+                LaunchpadProject.project_type,
+                ProxyLink.base_url,
+            )
+            .join(LaunchpadProject.proxy_link, isouter=True)
+            .where(LaunchpadProject.is_visible.is_(True))
+        )
         result = await self.session.execute(st)
         return result.fetchall()
 

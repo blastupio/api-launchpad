@@ -464,6 +464,8 @@ class UserProject(BaseModel):
     status: StatusProject
     tge_date: datetime | None
     tge_percent: int | None
+    vesting_start: datetime | None = None
+    vesting_end: datetime | None = None
     user_token_balance: int | None = None
     ticker: str | None
     project_type: str

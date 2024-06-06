@@ -121,6 +121,8 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
                 TokenDetails.tge_date,
                 TokenDetails.tge_percent,
                 TokenDetails.ticker,
+                TokenDetails.vesting_start,
+                TokenDetails.vesting_end,
             )
             .join(LaunchpadProject.token_details, isouter=True)
             .where(LaunchpadProject.id.in_(project_ids))

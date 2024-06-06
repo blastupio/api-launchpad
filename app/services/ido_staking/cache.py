@@ -47,7 +47,7 @@ class UserTvlCache:
             "stablecoin": locked_amount.stablecoin,
         }
         await self.redis_cli.set(
-            name=self._get_cache_key(address), value=json.dumps(value), ex=timedelta(minutes=2)
+            name=self._get_cache_key(address), value=json.dumps(value), ex=timedelta(seconds=30)
         )
 
     async def get_locked_amount(self, address: str) -> UserLockedAmount | None:

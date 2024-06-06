@@ -6,7 +6,7 @@ from celery.exceptions import Retry
 from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
-from app.models import OperationType
+from app.models import OperationType, OperationReason
 from app.services.ido_staking.jobs import (
     ProcessHistoryStakingEvent,
     AddIdoStakingPoints,
@@ -205,12 +205,12 @@ def add_ido_staking_points():
 
 
 @app.task(max_retries=3, default_retry_delay=10)
-def add_ido_staking_points_for_profile(
-    address: str, points_amount: int, operation_type: OperationType
-):
+def add_ido_staking_points_for_profile(address: str, points_amount: int):
     try:
         result = run_command_and_get_result(
-            AddIdoStakingPointsForProfile(address, points_amount, operation_type)
+            AddIdoStakingPointsForProfile(
+                address, points_amount, operation_type=OperationType.ADD_IDO_POINTS
+            )
         )
 
         if result.need_retry:
@@ -219,18 +219,50 @@ def add_ido_staking_points_for_profile(
                 if result.retry_after is not None
                 else settings.celery_retry_after
             )
-            logger.info(
-                f"ido_staking_points[{address}]({operation_type}) retrying after {retry_after}"
-            )
+            logger.info(f"ido_staking_points[{address}] retrying after {retry_after}")
             add_ido_staking_points_for_profile.apply_async(
-                args=[address, points_amount, operation_type], countdown=retry_after
+                args=[address, points_amount], countdown=retry_after
             )
             return
     except Exception as e:
         if isinstance(e, Retry):
             raise e
 
-        logger.error(
-            f"ido_staking_points[{address}]({operation_type}) error:{e}\n{traceback.format_exc()}"
+        logger.error(f"ido_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def add_referral_ido_staking_points_for_profile(
+    address: str,
+    points_amount: int,
+    referring_profile_id: int | None = None,
+):
+    try:
+        result = run_command_and_get_result(
+            AddIdoStakingPointsForProfile(
+                address,
+                points_amount,
+                referring_profile_id=referring_profile_id,
+                operation_type=OperationType.ADD_REF,
+                operation_reason=OperationReason.IDO_FARMING,
+            )
         )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            logger.info(f"ido_referral_staking_points[{address}] retrying after {retry_after}")
+            add_referral_ido_staking_points_for_profile.apply_async(
+                args=[address, points_amount, referring_profile_id], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(f"ido_referral_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
         raise Retry("", exc=e)

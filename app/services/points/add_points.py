@@ -22,6 +22,7 @@ class AddPoints:
         amount: int,
         operation_type: OperationType,
         project_id: str | None = None,
+        referring_profile_id: int | None = None,
         operation_reason: OperationReason | None = None,
         session: AsyncSession | None = None,
     ) -> Profile:
@@ -33,6 +34,9 @@ class AddPoints:
 
         points_before = profile.points
         profile.points += amount
+        if operation_type == OperationType.ADD_REF:
+            profile.ref_points += amount
+
         await self.profile_crud.persist(profile, session)
 
         history = PointsHistory(
@@ -42,6 +46,7 @@ class AddPoints:
             points_after=profile.points,
             operation_type=operation_type,
             operation_reason=operation_reason,
+            referring_profile_id=referring_profile_id,
         )
         await self.points_history_crud.persist(history, session)
 

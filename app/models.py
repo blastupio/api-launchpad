@@ -68,6 +68,7 @@ class OperationReason(str, enum.Enum):
     ERR_COMPENSATION = "err_compensation"
     BLASTBOX = "blastbox"
     OTHER_GIVEAWAY = "other_giveaway"
+    IDO_FARMING = "ido_farming"
 
 
 ONRAMP_STATUS_NEW = "new"
@@ -357,6 +358,9 @@ class PointsHistory(Base):
     )
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
+
+    # for this profile ref_points are awarded
+    referring_profile_id = Column(ForeignKey("profiles.id"), nullable=True)
 
     profile_id = Column(ForeignKey("profiles.id"), nullable=False)
     project_id = Column(ForeignKey("launchpad_project.id"), nullable=True)

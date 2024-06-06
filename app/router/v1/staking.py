@@ -14,6 +14,7 @@ from app.schema import (
     CheckIdoStakingParticipantData,
 )
 from app.services.ido_staking.tvl import get_user_usd_tvl, get_total_usd_tvl
+from app.tasks import add_ido_staking_points
 
 router = APIRouter(prefix="/staking", tags=["staking"])
 
@@ -72,3 +73,9 @@ async def check_if_user_is_participant_of_ido_farming(
             user_tvl=user_usd_tvl,
         )
     )
+
+
+@router.get("/test-ido-points")
+def test_ido_points():
+    # todo: rm before prod
+    add_ido_staking_points.apply_async()

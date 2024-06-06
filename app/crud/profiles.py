@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 import dateutil.parser as dt
 
-from sqlalchemy import select, func, update
+from sqlalchemy import select, func, update, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
@@ -76,8 +76,13 @@ class ProfilesCrud(BaseCrud[Profile]):
             .values(referrer=referrer.lower())
         )
 
-    async def get_leaderboard_rank(self, profile_points: int) -> int:
-        query = await self.session.execute(
-            select(func.count(Profile.id)).where(Profile.points > profile_points)
-        )
-        return int(query.scalars().one_or_none()) + 1
+    async def get_leaderboard_rank(self, user_address: str) -> int:
+        subquery = select(
+            Profile.address, func.dense_rank().over(order_by=desc(Profile.points)).label("rank")
+        ).subquery()
+
+        rank_query = select(subquery.c.rank).where(subquery.c.address == user_address.lower())
+
+        result = await self.session.execute(rank_query)
+        rank = result.scalars().one_or_none()
+        return rank or 0

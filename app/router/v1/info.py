@@ -129,7 +129,7 @@ async def get_user_info(
     refcode, n_referrals, leaderboard_rank, ido_daily_reward = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
         get_n_referrals(address, profile_crud),
-        profile_crud.get_leaderboard_rank(profile_points=profile.points),
+        profile_crud.get_leaderboard_rank(address),
         get_ido_staking_daily_reward_for_user(address),
     )
 

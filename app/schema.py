@@ -392,6 +392,7 @@ class UserInfoResponse(BaseModel):
     terms_accepted: Optional[bool] = None
 
     leaderboard_rank: int = 0
+    ido_daily_reward: int = 0
 
     refcode: str | None = None
     ref_points: int = 0

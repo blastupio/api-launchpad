@@ -1,5 +1,4 @@
 import asyncio
-import math
 import time
 import traceback
 from collections import defaultdict
@@ -26,6 +25,7 @@ from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
 from app.services.ido_staking.multicall import get_locked_balance
 from app.services.ido_staking.redis_cli import stake_history_redis
+from app.services.ido_staking.tvl import get_ido_staking_daily_reward
 from app.services.points.add_points import AddPoints
 from app.services.prices import get_tokens_price_for_chain
 
@@ -201,9 +201,8 @@ class AddIdoStakingPoints(Command):
             while not await lock.acquire("add-ido-points"):
                 await asyncio.sleep(0.001)
             for user_address, usd_balance in usd_balance_by_user_address.items():
-                if usd_balance < 100:
+                if (points_amount := get_ido_staking_daily_reward(usd_balance)) is None:
                     continue
-                points_amount = math.ceil(usd_balance / 100)
                 profile, _ = await profile_crud.get_or_create_profile(user_address)
 
                 from app.tasks import (

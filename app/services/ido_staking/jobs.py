@@ -20,7 +20,7 @@ from app.dependencies import (
     get_add_points,
 )
 from app.env import settings
-from app.models import HistoryStakeType, OperationType
+from app.models import HistoryStakeType, OperationType, OperationReason
 from app.schema import CreateHistoryStake
 from app.services import Lock
 from app.services.ido_staking.abi import staking_abi
@@ -204,22 +204,47 @@ class AddIdoStakingPoints(Command):
                 if usd_balance < 100:
                     continue
                 points_amount = math.ceil(usd_balance / 100)
-                await profile_crud.get_or_create_profile(user_address)
+                profile, _ = await profile_crud.get_or_create_profile(user_address)
 
-                from app.tasks import add_ido_staking_points_for_profile
+                from app.tasks import (
+                    add_ido_staking_points_for_profile,
+                    add_referral_ido_staking_points_for_profile,
+                )
 
                 add_ido_staking_points_for_profile.apply_async(
-                    args=[user_address, points_amount], countdown=1
+                    args=[user_address, points_amount],
+                    countdown=1,
                 )
+                if referrer_address := profile.referrer:
+                    referrer, _ = await profile_crud.get_or_create_profile(referrer_address)
+                    referrer_points_amount = int(points_amount * referrer.ref_percent / 100)
+                    add_referral_ido_staking_points_for_profile.apply_async(
+                        kwargs={
+                            "address": referrer_address,
+                            "points_amount": referrer_points_amount,
+                            "referring_profile_id": profile.id,
+                        },
+                        countdown=1,
+                    )
         finally:
             await lock.release("add-ido-points")
         return CommandResult(success=True, need_retry=False)
 
 
 class AddIdoStakingPointsForProfile(Command):
-    def __init__(self, address: str, points_amount: int) -> None:
+    def __init__(
+        self,
+        address: str,
+        points_amount: int,
+        operation_type: OperationType = OperationType.ADD_IDO_POINTS,
+        referring_profile_id: int | None = None,
+        operation_reason: OperationReason | None = None,
+    ) -> None:
         self.address = address
         self.points_amount = points_amount
+        self.operation_type = operation_type
+        self.referring_profile_id = referring_profile_id
+        self.operation_reason = operation_reason
 
     async def command(
         self,
@@ -228,13 +253,17 @@ class AddIdoStakingPointsForProfile(Command):
         lock: Lock = Depends(get_lock),
     ) -> CommandResult:
         try:
-            logger.info(f"IDO points: adding {self.points_amount}BP to {self.address}")
+            logger.info(
+                f"IDO points: adding {self.operation_type} {self.points_amount}BP to {self.address}"
+            )
             async with AsyncSession(engine) as session:
                 async with session.begin():
                     await add_points.add_points(
                         address=self.address,
                         amount=self.points_amount,
-                        operation_type=OperationType.ADD_IDO_POINTS,
+                        operation_type=self.operation_type,
+                        operation_reason=self.operation_reason,
+                        referring_profile_id=self.referring_profile_id,
                         session=session,
                     )
         except Exception as e:

@@ -44,11 +44,11 @@ async def add_points(
                 project_id = project.id
 
             await service.add_points(
-                operation.address,
-                operation.amount,
-                operation.operation_type,
-                project_id,
-                operation.operation_reason,
+                address=operation.address,
+                amount=operation.amount,
+                operation_type=operation.operation_type,
+                project_id=project_id,
+                operation_reason=operation.operation_reason,
             )
             operations_results.append(AddPointsOperationData(address=operation.address, ok=True))
         except Exception as e:

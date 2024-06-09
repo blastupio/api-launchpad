@@ -50,18 +50,18 @@ async def get_total_tvl() -> TotalTvlIdoFarmingResponse:
     return TotalTvlIdoFarmingResponse(data=tvl)
 
 
-@router.get("/check-participant/{user_address}", response_model=CheckIdoStakingParticipatedResponse)
+@router.get("/check-participant/{address}", response_model=CheckIdoStakingParticipatedResponse)
 async def check_if_user_is_participant_of_ido_farming(
     profile_crud: ProfileCrudDep,
-    user_address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+    address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
 ):
     participated = False
-    if await profile_crud.first_by_address(user_address) is None:
+    if await profile_crud.first_by_address(address) is None:
         return CheckIdoStakingParticipatedResponse(
-            data=CheckIdoStakingParticipantData(participant=participated)
+            data=CheckIdoStakingParticipantData(participant=participated, result=participated)
         )
 
-    if not (user_usd_tvl := await get_user_usd_tvl(user_address)):
+    if not (user_usd_tvl := await get_user_usd_tvl(address)):
         return InternalServerError(err="Internal Error")
 
     if user_usd_tvl.total > settings.ido_farming_participation_usd_threshold:
@@ -69,6 +69,7 @@ async def check_if_user_is_participant_of_ido_farming(
     return CheckIdoStakingParticipatedResponse(
         data=CheckIdoStakingParticipantData(
             participant=participated,
+            result=participated,
             user_tvl=user_usd_tvl,
         )
     )

@@ -561,6 +561,7 @@ class SaveReferrerResponse(BaseModel):
 
 class CheckIdoStakingParticipantData(BaseModel):
     participant: bool
+    result: bool
     user_tvl: UserTvlIdoFarming | None = None
 
 

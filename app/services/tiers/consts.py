@@ -29,5 +29,5 @@ platinum_tier = TierInfo(
 diamond_tier = TierInfo(
     order=6,
     title="Diamond",
-    blp_amount=150000,
+    blp_amount=100_000,
 )

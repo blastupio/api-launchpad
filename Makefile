@@ -1,7 +1,3 @@
-include .env
-export
-
-
 makemigrations:
 	PYTHONPATH=. alembic revision -m "${m}" --autogenerate
 

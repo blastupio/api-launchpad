@@ -30,6 +30,7 @@ def get_launchpad_crypto() -> CryptoLaunchpad:
             "blast": settings.contract_addr_blast,
             "base": settings.contract_addr_base,
         },
+        staking_oracle_contract=settings.staking_blp_oracle_contract,
     )
 
 

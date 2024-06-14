@@ -101,5 +101,5 @@ def get_ido_staking_daily_reward(total_usd_staked: float) -> int | None:
 
 async def get_ido_staking_daily_reward_for_user(user_address: str) -> int:
     user_tvl = await get_user_usd_tvl(user_address)
-    points = get_ido_staking_daily_reward(user_tvl.total) or 0
+    points = get_ido_staking_daily_reward(user_tvl.total) if user_tvl is not None else 0
     return points

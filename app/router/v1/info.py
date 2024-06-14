@@ -6,6 +6,8 @@ from fastapi_pagination import Page
 from starlette.responses import JSONResponse
 from web3 import Web3
 
+from app.dependencies import get_launchpad_crypto
+
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import (
@@ -99,12 +101,23 @@ async def get_user_info(
     if (profile := await profile_crud.first_by_address(address)) is None:
         return JSONResponse(content={"ok": False, "error": "Profile not found"}, status_code=404)
 
+    crypto = get_launchpad_crypto()
+
+    # Retrieve user's tier based on BLP staking value
+    # We check BLPStaking and LockedBLPStaking contracts
+    try:
+        blp_staked_balance = await crypto.get_blp_staking_value(address)
+    except Exception as e:
+        logger.error(f"Cannot get balance for {address}: {e}")
+        return InternalServerError("Failed to get staked BLP data")
+    user_tier = get_user_tier(blp_staked_balance)
+
+    # Retrieve user's BLP balance via all chains from Presale contracts
     try:
         balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
-        return InternalServerError("Failed to get user info")
-    user_tier = get_user_tier(balances_by_chain_id)
+        return InternalServerError("Failed to get BLP balance")
 
     # todo: get from db after migration of presale
     url = f"{settings.presale_api_url}/users/profile/{address}"

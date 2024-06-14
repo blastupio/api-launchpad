@@ -78,6 +78,8 @@ class Settings(BaseSettings):
 
     ido_farming_participation_usd_threshold: float = 10
 
+    staking_blp_oracle_contract: str
+
 
 settings = Settings(_env_file=".env")
 

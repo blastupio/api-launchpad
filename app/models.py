@@ -69,6 +69,7 @@ class OperationReason(str, enum.Enum):
     BLASTBOX = "blastbox"
     OTHER_GIVEAWAY = "other_giveaway"
     IDO_FARMING = "ido_farming"
+    BLASTBOX_BUY = "blastbox_buy"
 
 
 ONRAMP_STATUS_NEW = "new"

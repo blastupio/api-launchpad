@@ -1,12 +1,24 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Header, HTTPException
+from fastapi import APIRouter, Body, Header, HTTPException, Path
 from sqlalchemy.exc import NoResultFound
 from starlette.status import HTTP_403_FORBIDDEN
 
-from app.dependencies import AddPointsDep, LaunchpadProjectCrudDep
+from app.dependencies import (
+    AddPointsDep,
+    LaunchpadProjectCrudDep,
+    ProfileCrudDep,
+    ExtraPointsCrudDep,
+)
 from app.env import settings
-from app.schema import AddPointsRequest, AddPointsResponse, AddPointsOperationData
+from app.schema import (
+    AddPointsRequest,
+    AddPointsResponse,
+    AddPointsOperationData,
+    GetPointsResponse,
+    ErrorResponse,
+    GetPointsData,
+)
 from app.utils import check_password
 
 router = APIRouter(prefix="/points", tags=["points"])
@@ -61,3 +73,38 @@ async def add_points(
             )
 
     return AddPointsResponse(ok=True, data=operations_results)
+
+
+@router.get("{id_or_slug}/{address}/points", response_model=GetPointsResponse | ErrorResponse)
+async def get_profile_points(
+    projects_crud: LaunchpadProjectCrudDep,
+    profiles_crud: ProfileCrudDep,
+    extra_points_crud: ExtraPointsCrudDep,
+    x_sender_name: Annotated[str, Header()],
+    x_sender_token: Annotated[str, Header()],
+    id_or_slug: str | int = Path(),
+    address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$"),
+):
+    if (sender := await projects_crud.find_by_id_or_slug(x_sender_name)) is None:
+        return ErrorResponse(ok=False, error="Not authorized")
+
+    if sender.slug != settings.admin_project_name:
+        return ErrorResponse(ok=False, error="Not authorized")
+
+    if (access_token := sender.access_token) is None or not check_password(
+        x_sender_token, access_token.token
+    ):
+        return ErrorResponse(ok=False, error="Not authorized")
+
+    profile = await profiles_crud.first_by_address(address)
+    if profile is None:
+        return ErrorResponse(ok=False, error="Profile not found")
+
+    if (project := await projects_crud.find_by_id_or_slug(id_or_slug)) is None:
+        return ErrorResponse(ok=False, error="Project not found")
+
+    extra_points = await extra_points_crud.get(profile_id=profile.id, project_id=project.id)
+    extra_points = None if extra_points is None else extra_points.points
+    points = GetPointsData(points=profile.points, extra_points=extra_points)
+
+    return {"ok": True, "data": points}

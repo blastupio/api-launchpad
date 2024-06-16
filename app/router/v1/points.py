@@ -88,9 +88,6 @@ async def get_profile_points(
     if (sender := await projects_crud.find_by_id_or_slug(x_sender_name)) is None:
         return ErrorResponse(ok=False, error="Not authorized")
 
-    if sender.slug != settings.admin_project_name:
-        return ErrorResponse(ok=False, error="Not authorized")
-
     if (access_token := sender.access_token) is None or not check_password(
         x_sender_token, access_token.token
     ):
@@ -102,6 +99,9 @@ async def get_profile_points(
 
     if (project := await projects_crud.find_by_id_or_slug(id_or_slug)) is None:
         return ErrorResponse(ok=False, error="Project not found")
+
+    if sender.slug not in [project.slug, settings.admin_project_name]:
+        return ErrorResponse(ok=False, error="Not authorized")
 
     extra_points = await extra_points_crud.get(profile_id=profile.id, project_id=project.id)
     extra_points = None if extra_points is None else extra_points.points

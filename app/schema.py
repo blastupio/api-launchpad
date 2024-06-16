@@ -411,7 +411,8 @@ class Any2AnyPriceResponse(BaseModel):
 
 class GetPointsData(BaseModel):
     points: int
-    extra_points: int | None = None
+    ref_points: int = 0
+    extra_points: int = 0
 
 
 class GetPointsResponse(BaseModel):

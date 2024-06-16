@@ -75,7 +75,7 @@ async def add_points(
     return AddPointsResponse(ok=True, data=operations_results)
 
 
-@router.get("{id_or_slug}/{address}/points", response_model=GetPointsResponse | ErrorResponse)
+@router.get("{id_or_slug}/{address}", response_model=GetPointsResponse | ErrorResponse)
 async def get_profile_points(
     projects_crud: LaunchpadProjectCrudDep,
     profiles_crud: ProfileCrudDep,
@@ -105,6 +105,10 @@ async def get_profile_points(
 
     extra_points = await extra_points_crud.get(profile_id=profile.id, project_id=project.id)
     extra_points = None if extra_points is None else extra_points.points
-    points = GetPointsData(points=profile.points, extra_points=extra_points)
 
-    return {"ok": True, "data": points}
+    return GetPointsResponse(
+        ok=True,
+        data=GetPointsData(
+            points=profile.points, ref_points=profile.ref_points, extra_points=extra_points
+        ),
+    )

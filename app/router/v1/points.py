@@ -75,7 +75,7 @@ async def add_points(
     return AddPointsResponse(ok=True, data=operations_results)
 
 
-@router.get("{id_or_slug}/{address}", response_model=GetPointsResponse | ErrorResponse)
+@router.get("/{id_or_slug}/{address}", response_model=GetPointsResponse | ErrorResponse)
 async def get_profile_points(
     projects_crud: LaunchpadProjectCrudDep,
     profiles_crud: ProfileCrudDep,

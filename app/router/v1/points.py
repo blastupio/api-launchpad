@@ -104,7 +104,7 @@ async def get_profile_points(
         return ErrorResponse(ok=False, error="Not authorized")
 
     extra_points = await extra_points_crud.get(profile_id=profile.id, project_id=project.id)
-    extra_points = None if extra_points is None else extra_points.points
+    extra_points = 0 if extra_points is None else extra_points.points
 
     return GetPointsResponse(
         ok=True,

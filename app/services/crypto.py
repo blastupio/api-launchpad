@@ -8,19 +8,17 @@ from app.abi import (
     PRESALE_BSC_ABI,
     PRICE_FEED_ABI,
     PRESALE_BLAST_ABI,
+    BLP_STAKING_ORACLE_ABI,
 )
 from app.base import logger
 from app.services.web3_nodes import web3_node, catch_web3_exceptions
 
 
 class Crypto:
-    def __init__(
-        self,
-        environment: str,
-        contracts: dict[str, str],
-    ):
+    def __init__(self, environment: str, contracts: dict[str, str], staking_oracle_contract: str):
         self.environment = environment
         self.contracts = contracts
+        self.staking_oracle_contract = staking_oracle_contract
 
     @catch_web3_exceptions
     async def get_transaction_data(self, network: str, tx_hash: str):
@@ -69,6 +67,12 @@ class Crypto:
             "decimals": int(await price_feed_contract.functions.decimals().call()),
         }
 
+    @catch_web3_exceptions
+    async def get_blp_staking_value(self, wallet_address):
+        contract = await self._blp_staking_oracle_contract()
+        res = int(await contract.functions.balanceOf(wallet_address).call())
+        return res
+
     async def _contract(self, network) -> AsyncContract:
         abi = {
             "eth": PRESALE_ABI,
@@ -79,6 +83,13 @@ class Crypto:
         }[network]
         web3 = await web3_node.get_web3(network)
         contract_address = web3.to_checksum_address(self.contracts[network])
+        return web3.eth.contract(contract_address, abi=abi)
+
+    async def _blp_staking_oracle_contract(self) -> AsyncContract:
+        abi = BLP_STAKING_ORACLE_ABI
+        network = "blast"  # todo: change to chain_id
+        web3 = await web3_node.get_web3(network)
+        contract_address = web3.to_checksum_address(self.staking_oracle_contract)
         return web3.eth.contract(contract_address, abi=abi)
 
     async def _legacy_contracts(self, network) -> list[AsyncContract]:

@@ -13,6 +13,7 @@ from app.dependencies import (
     SupportedTokensCrudDep,
     ProfileCrudDep,
     RefcodesCrudDep,
+    CryptoDep,
 )
 from app.env import settings
 from app.router.v1.proxy import fetch_data
@@ -92,6 +93,7 @@ async def get_any2any_price_rate(
 async def get_user_info(
     profile_crud: ProfileCrudDep,
     refcodes_crud: RefcodesCrudDep,
+    crypto_launchpad: CryptoDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
@@ -99,12 +101,21 @@ async def get_user_info(
     if (profile := await profile_crud.first_by_address(address)) is None:
         return JSONResponse(content={"ok": False, "error": "Profile not found"}, status_code=404)
 
+    # Retrieve user's tier based on BLP staking value
+    # We check BLPStaking and LockedBLPStaking contracts
+    try:
+        blp_staked_balance = await crypto_launchpad.get_blp_staking_value(address)
+    except Exception as e:
+        logger.error(f"Cannot get balance for {address}: {e}")
+        return InternalServerError("Failed to get staked BLP data")
+    user_tier = get_user_tier(blp_staked_balance)
+
+    # Retrieve user's BLP balance via all chains from Presale contracts
     try:
         balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
-        return InternalServerError("Failed to get user info")
-    user_tier = get_user_tier(balances_by_chain_id)
+        return InternalServerError("Failed to get BLP balance")
 
     # todo: get from db after migration of presale
     url = f"{settings.presale_api_url}/users/profile/{address}"

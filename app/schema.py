@@ -488,6 +488,10 @@ class AddPointsOperation(BaseModel):
     operation_type: OperationType | None = OperationType.ADD
     project_slug: str | None = None
     operation_reason: OperationReason | None = None
+    utm: str | None = None
+    language: Language | None = None
+    first_login: str | None = None
+    browser: str | None = None
 
 
 class AddPointsRequest(BaseModel):

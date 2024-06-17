@@ -25,20 +25,22 @@ class AddPoints:
         project_id: str | None = None,
         referring_profile_id: int | None = None,
         operation_reason: OperationReason | None = None,
+        create_profile_if_not_exists: bool = False,
         utm: str | None = None,
         language: Language | None = None,
         first_login: str | None = None,
         browser: str | None = None,
         session: AsyncSession | None = None,
     ) -> Profile:
-        await self.profile_crud.get_or_create_profile(
-            address=address,
-            session=session,
-            utm=utm,
-            language=language,
-            first_login=first_login,
-            browser=browser,
-        )
+        if create_profile_if_not_exists:
+            await self.profile_crud.get_or_create_profile(
+                address=address,
+                session=session,
+                utm=utm,
+                language=language,
+                first_login=first_login,
+                browser=browser,
+            )
         profile = await self.profile_crud.first_by_address_or_fail_with_lock(address, session)
 
         extra_amount = 0

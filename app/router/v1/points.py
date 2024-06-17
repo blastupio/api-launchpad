@@ -61,6 +61,11 @@ async def add_points(
                 operation_type=operation.operation_type,
                 project_id=project_id,
                 operation_reason=operation.operation_reason,
+                create_profile_if_not_exists=True,
+                utm=operation.utm,
+                language=operation.language,
+                first_login=operation.first_login,
+                browser=operation.browser,
             )
             operations_results.append(AddPointsOperationData(address=operation.address, ok=True))
         except Exception as e:

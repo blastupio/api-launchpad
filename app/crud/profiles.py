@@ -28,7 +28,9 @@ class ProfilesCrud(BaseCrud[Profile]):
         )
         return query.one()
 
-    async def get_or_create_profile(self, address: str, **kwargs) -> tuple[Profile, bool]:
+    async def get_or_create_profile(
+        self, address: str, session: AsyncSession | None = None, **kwargs
+    ) -> tuple[Profile, bool]:
         is_new = False
         if (profile := await self.first_by_address(address)) is None:
             is_new = True
@@ -54,7 +56,7 @@ class ProfilesCrud(BaseCrud[Profile]):
                     }
                 )
 
-            profile = await self.persist(Profile(**data))
+            profile = await self.persist(Profile(**data), session)
         return profile, is_new
 
     async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:

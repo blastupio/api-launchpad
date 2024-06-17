@@ -6,8 +6,6 @@ from fastapi_pagination import Page
 from starlette.responses import JSONResponse
 from web3 import Web3
 
-from app.dependencies import get_launchpad_crypto
-
 from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import (
@@ -15,6 +13,7 @@ from app.dependencies import (
     SupportedTokensCrudDep,
     ProfileCrudDep,
     RefcodesCrudDep,
+    CryptoDep,
 )
 from app.env import settings
 from app.router.v1.proxy import fetch_data
@@ -94,6 +93,7 @@ async def get_any2any_price_rate(
 async def get_user_info(
     profile_crud: ProfileCrudDep,
     refcodes_crud: RefcodesCrudDep,
+    crypto_launchpad: CryptoDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
@@ -101,12 +101,10 @@ async def get_user_info(
     if (profile := await profile_crud.first_by_address(address)) is None:
         return JSONResponse(content={"ok": False, "error": "Profile not found"}, status_code=404)
 
-    crypto = get_launchpad_crypto()
-
     # Retrieve user's tier based on BLP staking value
     # We check BLPStaking and LockedBLPStaking contracts
     try:
-        blp_staked_balance = await crypto.get_blp_staking_value(address)
+        blp_staked_balance = await crypto_launchpad.get_blp_staking_value(address)
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
         return InternalServerError("Failed to get staked BLP data")

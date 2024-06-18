@@ -80,6 +80,9 @@ class Settings(BaseSettings):
 
     staking_blp_oracle_contract: str
 
+    blp_balance_contract: str
+    locked_blp_balance_contract: str
+
 
 settings = Settings(_env_file=".env")
 

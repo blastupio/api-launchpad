@@ -4,9 +4,22 @@ from typing import Callable, Any, Awaitable
 
 import bcrypt
 from fastapi.exceptions import RequestValidationError
+from fastapi import Request
 from redis.asyncio import Redis
 
 from app.base import logger
+
+
+def get_ip_from_request(request: Request) -> str:
+    try:
+        ip = request.headers.get("cf-connecting-ip")
+        if not ip:
+            ip = request.headers.get("x-forwarded-for")
+        if not ip:
+            ip = request.client.host
+    except Exception as e:
+        raise RuntimeError("Cannot get ip from request: {}".format(e))
+    return ip
 
 
 def validation_error(error_message: str, location: tuple[str, str]) -> RequestValidationError:

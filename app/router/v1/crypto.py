@@ -3,12 +3,14 @@ from datetime import timedelta
 from typing import Literal
 
 from aiohttp.client_exceptions import InvalidURL
-from fastapi import APIRouter, Path, Query
+from fastapi import APIRouter, Path, Query, Request
 from web3 import Web3, AsyncWeb3
 from web3.exceptions import TransactionNotFound
 
+from app import chains
 from app.base import logger
 from app.dependencies import RedisDep, CryptoDep
+from app.limiter import limiter
 from app.schema import (
     AddressBalanceResponse,
     ErrorResponse,
@@ -16,9 +18,13 @@ from app.schema import (
     PriceFeedResponse,
     PriceFeedResponseData,
     InternalServerError,
+    BLPBalanceResponse,
+    BLPBalanceData,
 )
-from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
-from app import chains
+from app.services.balances.blastup_balance import (
+    get_blastup_tokens_balance_for_chains,
+    get_blp_balance,
+)
 from app.services.web3_nodes import web3_node
 
 router = APIRouter(prefix="/crypto", tags=["crypto"])
@@ -58,7 +64,24 @@ async def get_address_balance(address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$
         )
     except Exception as e:
         logger.error(f"Cannot get balance for {address}: {e}")
-        return InternalServerError("Failed to get user info")
+        return InternalServerError("Failed to get balance")
+
+
+@router.get("/{address}/blp-balance", response_model=BLPBalanceResponse | ErrorResponse)
+@limiter.limit("100/minute")
+@limiter.limit("5/second")
+async def get_address_blp_balance(
+    request: Request, address: str = Path(pattern="^(0x)[0-9a-fA-F]{40}$")
+):
+    try:
+        balance = await get_blp_balance(address)
+        return BLPBalanceResponse(
+            ok=True,
+            data=BLPBalanceData(balance=balance),
+        )
+    except Exception as e:
+        logger.error(f"Cannot get BLP balance for {address}: {e}")
+        return InternalServerError("Failed to get BLP balance")
 
 
 @router.get("/txn-transaction-data")

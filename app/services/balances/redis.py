@@ -45,3 +45,30 @@ class BlastupBalanceRedis:
 
 
 blastup_balance_redis = BlastupBalanceRedis(redis_cli=get_redis())
+
+
+class BLPBalanceRedis:
+    def __init__(self, redis_cli: Redis):
+        self.__redis_cli = redis_cli
+
+    @property
+    def redis(self):
+        return self.__redis_cli
+
+    @staticmethod
+    def __get_key(address: str) -> str:
+        return f"blp_balance_{address.lower()}"
+
+    async def set(self, address: str, balance: int) -> None:  # noqa: A003
+        await self.redis.set(
+            self.__get_key(address),
+            value=str(balance),
+            ex=BLASTUP_BALANCE_TTL_SECONDS,
+        )
+
+    async def get(self, address: str) -> int:
+        data = await self.redis.get(self.__get_key(address))
+        return int(data) if data is not None else None
+
+
+blp_balance_redis = BLPBalanceRedis(redis_cli=get_redis())

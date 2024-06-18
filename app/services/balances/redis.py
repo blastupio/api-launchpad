@@ -58,7 +58,7 @@ class BLPBalanceRedis:
             ex=BLASTUP_BALANCE_TTL_SECONDS,
         )
 
-    async def get(self, address: str) -> int:
+    async def get(self, address: str) -> int | None:
         data = await self.__redis.get(self.__get_key(address))
         return int(data) if data is not None else None
 

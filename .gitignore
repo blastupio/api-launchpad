@@ -8,3 +8,4 @@ postgres
 __pycache__/
 *.py[cod]
 /client.http
+debug.py

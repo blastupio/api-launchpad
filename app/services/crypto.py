@@ -49,7 +49,7 @@ class Crypto:
             c.functions.balances(address).call() for c in await self._legacy_contracts(network)
         ]
         res = await asyncio.gather(*tasks, return_exceptions=True)
-        balance = sum(int(x) for x in res if x and isinstance(x, int))
+        balance = sum(x for x in res if x and isinstance(x, int))
         return balance
 
     @catch_web3_exceptions
@@ -68,7 +68,7 @@ class Crypto:
             locked_balance_contract.functions.balanceOf(address).call(),
         ]
         res = await asyncio.gather(*tasks, return_exceptions=True)
-        balance = sum(int(x) for x in res if x and isinstance(x, int))
+        balance = sum(x for x in res if x and isinstance(x, int))
         return balance
 
     @catch_web3_exceptions

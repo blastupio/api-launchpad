@@ -14,6 +14,7 @@ from app.models import (
     StatusProject,
     OperationType,
     OperationReason,
+    HistoryBlpStakeType,
 )
 from app.types import BadgeType
 from app.utils import validation_error
@@ -440,6 +441,16 @@ class CreateHistoryStake(BaseModel):
     user_address: str
 
 
+class CreateBlpHistoryStake(BaseModel):
+    type: HistoryBlpStakeType  # noqa
+    amount: str
+    chain_id: str
+    txn_hash: str
+    block_number: int
+    user_address: str
+    pool_id: int
+
+
 class YieldPercentageResponse(BaseModel):
     native: float
     stablecoin: float
@@ -590,6 +601,16 @@ class CreateProfileResponseData(BaseModel):
 class CreateProfileResponse(BaseModel):
     ok: bool = True
     data: CreateProfileResponseData
+    error: str | None = None
+
+
+class ParticipantsCount(BaseModel):
+    total: int = 0
+
+
+class BlpParticipantsCountResponse(BaseModel):
+    ok: bool = True
+    data: ParticipantsCount | None = None
     error: str | None = None
 
 

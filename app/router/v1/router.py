@@ -6,6 +6,7 @@ from .proxy import router as proxy_router
 from .ido import router as ido_router
 from .info import router as info_router
 from .staking import router as staking_router
+from .blp_staking import router as blp_staking_router
 from .points import router as points_router
 from .blastboxes import router as blastboxes_router
 
@@ -17,4 +18,5 @@ router.include_router(ido_router)
 router.include_router(info_router)
 router.include_router(staking_router)
 router.include_router(points_router)
+router.include_router(blp_staking_router)
 router.include_router(blastboxes_router)

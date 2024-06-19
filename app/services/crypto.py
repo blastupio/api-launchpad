@@ -68,7 +68,7 @@ class Crypto:
         }
 
     @catch_web3_exceptions
-    async def get_blp_staking_value(self, wallet_address):
+    async def get_blp_staking_value(self, wallet_address: str) -> int:
         wallet_address = Web3.to_checksum_address(wallet_address)
         contract = await self._blp_staking_oracle_contract()
         res = int(await contract.functions.balanceOf(wallet_address).call())
@@ -87,11 +87,9 @@ class Crypto:
         return web3.eth.contract(contract_address, abi=abi)
 
     async def _blp_staking_oracle_contract(self) -> AsyncContract:
-        abi = BLP_STAKING_ORACLE_ABI
-        network = "blast"  # todo: change to chain_id
-        web3 = await web3_node.get_web3(network)
+        web3 = await web3_node.get_web3(network="blast")  # todo: change to chain_id
         contract_address = web3.to_checksum_address(self.staking_oracle_contract)
-        return web3.eth.contract(contract_address, abi=abi)
+        return web3.eth.contract(contract_address, abi=BLP_STAKING_ORACLE_ABI)
 
     async def _legacy_contracts(self, network) -> list[AsyncContract]:
         if self.environment == "testnet":

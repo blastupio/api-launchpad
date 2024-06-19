@@ -77,3 +77,10 @@ class StakingUserInfo(NamedTuple):
     locked_balance: int
     remainders: int
     timestampToWithdraw: int
+
+
+class BlpStakingUser(NamedTuple):
+    balance: int
+    lastClaimTimestamp: int
+    unlockTimestamp: int
+    yearlyReward: int

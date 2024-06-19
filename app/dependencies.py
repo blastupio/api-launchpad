@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import async_session
 from app.crud import OnRampCrud, LaunchpadProjectCrud
+from app.crud.history_blp_staking import HistoryBlpStakingCrud
 from app.crud.history_staking import HistoryStakingCrud
 from app.crud.launchpad_events import LaunchpadContractEventsCrud
 from app.crud.points import PointsHistoryCrud, ExtraPointsCrud
@@ -65,6 +66,12 @@ async def get_staking_history_crud(
     return HistoryStakingCrud(session)
 
 
+async def get_staking_blp_history_crud(
+    session: AsyncSession = Depends(get_session),
+) -> HistoryBlpStakingCrud:
+    return HistoryBlpStakingCrud(session)
+
+
 async def get_profile_crud(
     session: AsyncSession = Depends(get_session),
 ) -> ProfilesCrud:
@@ -108,6 +115,8 @@ async def get_refcodes_crud(session: AsyncSession = Depends(get_session)) -> Ref
 RefcodesCrudDep = Annotated[RefcodesCrud, Depends(get_refcodes_crud)]
 
 HistoryStakingCrudDep = Annotated[HistoryStakingCrud, Depends(get_staking_history_crud)]
+
+HistoryBlpStakingCrudDep = Annotated[HistoryBlpStakingCrud, Depends(get_staking_blp_history_crud)]
 
 ProjectWhitelistCrudDep = Annotated[ProjectWhitelistCrud, Depends(get_project_whitelist_crud)]
 

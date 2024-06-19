@@ -7,6 +7,7 @@ import sentry_sdk
 
 from app.env import settings
 from app.services.analytics.jobs import ProcessLaunchpadContractEvents
+from app.services.blp_staking.jobs import ProcessBlpHistoryStakingEvent, AddBlpStakingPoints
 from app.services.prices.jobs import UpdateSupportedTokensCache
 from app.services.ido_staking.jobs import ProcessHistoryStakingEvent, AddIdoStakingPoints
 from app.services.projects.jobs import ChangeProjectsStatus
@@ -25,12 +26,14 @@ async def main():
 
     for command in [
         "listen-staking-events",
+        "listen-blp-staking-events",
         "monitor-onramp-balance",
         "update-project-total-raised",
         "process-launchpad-contract-events",
         "update-supported-tokens-cache",
         "change-projects-status",
         "add-ido-staking-points",
+        "add-blp-staking-points",
     ]:
         subparsers.add_parser(command)
 
@@ -38,6 +41,8 @@ async def main():
     match args.command:
         case "listen-staking-events":
             command = ProcessHistoryStakingEvent()
+        case "listen-blp-staking-events":
+            command = ProcessBlpHistoryStakingEvent()
         case "monitor-onramp-balance":
             command = MonitorSenderBalance()
         case "update-project-total-raised":
@@ -48,6 +53,8 @@ async def main():
             command = UpdateSupportedTokensCache()
         case "add-ido-staking-points":
             command = AddIdoStakingPoints()
+        case "add-blp-staking-points":
+            command = AddBlpStakingPoints()
         case "change-projects-status":
             command = ChangeProjectsStatus()
         case _:

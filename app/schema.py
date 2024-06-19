@@ -576,6 +576,7 @@ class SaveReferrerResponse(BaseModel):
 class CheckIdoStakingParticipantData(BaseModel):
     participant: bool
     result: bool
+    is_ok: bool
     user_tvl: UserTvlIdoFarming | None = None
 
 
@@ -611,3 +612,10 @@ class BlpParticipantsCountResponse(BaseModel):
     ok: bool = True
     data: ParticipantsCount | None = None
     error: str | None = None
+
+
+class BlastBoxResponse(BaseModel):
+    description: str
+    external_url: str
+    image: str
+    name: str

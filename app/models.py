@@ -30,6 +30,12 @@ class HistoryStakeType(enum.Enum):
     CLAIM_REWARDS = "CLAIM_REWARDS"
 
 
+class HistoryBlpStakeType(enum.Enum):
+    UNSTAKE = "UNSTAKE"
+    STAKE = "STAKE"
+    CLAIM_REWARDS = "CLAIM_REWARDS"
+
+
 class ProjectType(enum.Enum):
     DEFAULT = "default"
     PRIVATE_PRESALE = "private_presale"
@@ -62,6 +68,7 @@ class OperationType(enum.Enum):
     ADD_EXTRA = "add_extra"
     ADD_MANUAL = "add_manual"
     ADD_IDO_POINTS = "add_ido_points"
+    ADD_BLP_STAKING_POINTS = "add_blp_staking_points"
 
 
 class OperationReason(str, enum.Enum):
@@ -69,6 +76,7 @@ class OperationReason(str, enum.Enum):
     BLASTBOX = "blastbox"
     OTHER_GIVEAWAY = "other_giveaway"
     IDO_FARMING = "ido_farming"
+    BLP_STAKING = "blp_staking"
     BLASTBOX_BUY = "blastbox_buy"
 
 
@@ -392,3 +400,20 @@ class Refcode(Base):
     id = Column(BigIntegerType, primary_key=True)  # noqa
     address = Column(Text(), nullable=False, index=True)
     refcode = Column(Text(), nullable=False, index=True)
+
+
+class HistoryBlpStake(Base):
+    __tablename__ = "stake_blp_history"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+
+    type = Column(Enum(HistoryBlpStakeType), nullable=False)  # noqa
+    amount = Column(Text(), nullable=False)
+    user_address = Column(String, nullable=False, index=True)
+    pool_id = Column(Integer, nullable=False)
+
+    chain_id = Column(String, nullable=False)
+    txn_hash = Column(String, unique=True, nullable=True)
+    block_number = Column(BigIntegerType, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)

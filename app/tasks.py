@@ -7,6 +7,7 @@ from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
 from app.models import OperationType, OperationReason
+from app.services.blp_staking.jobs import AddBlpStakingPointsForProfile, AddBlpStakingPoints
 from app.services.ido_staking.jobs import (
     ProcessHistoryStakingEvent,
     AddIdoStakingPoints,
@@ -265,4 +266,90 @@ def add_referral_ido_staking_points_for_profile(
             raise e
 
         logger.error(f"ido_referral_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def add_blp_staking_points():
+    try:
+        result = run_command_and_get_result(AddBlpStakingPoints())
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            logger.info(f"add_blp_staking_points: retrying after {retry_after}")
+            add_blp_staking_points.apply_async(countdown=retry_after)
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(f"add_blp_staking_points Unhandled exception: {e}, {traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def add_blp_staking_points_for_profile(address: str, points_amount: int):
+    try:
+        result = run_command_and_get_result(
+            AddBlpStakingPointsForProfile(
+                address, points_amount, operation_type=OperationType.ADD_BLP_STAKING_POINTS
+            )
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            logger.info(f"blp_staking_points[{address}] retrying after {retry_after}")
+            add_blp_staking_points_for_profile.apply_async(
+                args=[address, points_amount], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(f"blp_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(max_retries=3, default_retry_delay=10)
+def add_referral_blp_staking_points_for_profile(
+    address: str,
+    points_amount: int,
+    referring_profile_id: int | None = None,
+):
+    try:
+        result = run_command_and_get_result(
+            AddBlpStakingPointsForProfile(
+                address,
+                points_amount,
+                referring_profile_id=referring_profile_id,
+                operation_type=OperationType.ADD_REF,
+                operation_reason=OperationReason.BLP_STAKING,
+            )
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            logger.info(f"blp_referral_staking_points[{address}] retrying after {retry_after}")
+            add_referral_blp_staking_points_for_profile.apply_async(
+                args=[address, points_amount, referring_profile_id], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+
+        logger.error(f"blp_referral_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
         raise Retry("", exc=e)

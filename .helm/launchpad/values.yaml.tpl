@@ -68,6 +68,17 @@ cron:
     args:
       - "-c"
       - "python3 console.py listen-staking-events"
+  schedule-listen-blp-staking-events:
+    enabled: true
+    schedule: "* * * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 console.py listen-blp-staking-events"
   schedule-monitor-onramp-balance:
     enabled: true
     schedule: "*/7 * * * *"
@@ -123,6 +134,17 @@ cron:
     args:
       - "-c"
       - "python3 -c 'from app.tasks import add_ido_staking_points; add_ido_staking_points.apply_async()'"
+  schedule-add-blp-staking-points:
+    enabled: true
+    schedule: "1 0 * * *"
+    concurrency_policy: Forbid
+    restart_policy: OnFailure
+    pass_env: true
+    command:
+      - /bin/sh
+    args:
+      - "-c"
+      - "python3 -c 'from app.tasks import add_blp_staking_points; add_blp_staking_points.apply_async()'"
   schedule-change-projects-status:
     enabled: true
     schedule: "* * * * *"

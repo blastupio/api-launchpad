@@ -83,6 +83,9 @@ class Settings(BaseSettings):
     staking_blp_contract_pool_2: str
     staking_blp_contract_pool_3: str
 
+    blp_balance_contract: str
+    locked_blp_balance_contract: str
+
 
 settings = Settings(_env_file=".env")
 

@@ -32,6 +32,8 @@ def get_launchpad_crypto() -> CryptoLaunchpad:
             "base": settings.contract_addr_base,
         },
         staking_oracle_contract=settings.staking_blp_oracle_contract,
+        blp_balance_contract=settings.blp_balance_contract,
+        locked_blp_balance_contract=settings.locked_blp_balance_contract,
     )
 
 

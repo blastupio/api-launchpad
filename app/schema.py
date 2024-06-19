@@ -248,6 +248,15 @@ class AddressBalanceResponse(BaseModel):
     data: AddressBalanceResponseData
 
 
+class BLPBalanceData(BaseModel):
+    balance: int
+
+
+class BLPBalanceResponse(BaseModel):
+    ok: bool
+    data: BLPBalanceData
+
+
 class PriceFeedResponseData(BaseModel):
     latest_answer: int = Field(alias="latestAnswer")
     decimals: int

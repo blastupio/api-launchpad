@@ -9,16 +9,26 @@ from app.abi import (
     PRICE_FEED_ABI,
     PRESALE_BLAST_ABI,
     BLP_STAKING_ORACLE_ABI,
+    BLP_BALANCE_ABI,
 )
 from app.base import logger
 from app.services.web3_nodes import web3_node, catch_web3_exceptions
 
 
 class Crypto:
-    def __init__(self, environment: str, contracts: dict[str, str], staking_oracle_contract: str):
+    def __init__(
+        self,
+        environment: str,
+        contracts: dict[str, str],
+        staking_oracle_contract: str,
+        blp_balance_contract: str,
+        locked_blp_balance_contract: str,
+    ):
         self.environment = environment
         self.contracts = contracts
         self.staking_oracle_contract = staking_oracle_contract
+        self.blp_balance_contract = blp_balance_contract
+        self.locked_blp_balance_contract = locked_blp_balance_contract
 
     @catch_web3_exceptions
     async def get_transaction_data(self, network: str, tx_hash: str):
@@ -39,7 +49,26 @@ class Crypto:
             c.functions.balances(address).call() for c in await self._legacy_contracts(network)
         ]
         res = await asyncio.gather(*tasks, return_exceptions=True)
-        balance = sum(int(x) for x in res if x and isinstance(x, int))
+        balance = sum(x for x in res if x and isinstance(x, int))
+        return balance
+
+    @catch_web3_exceptions
+    async def get_blp_balance(self, address: str) -> int:
+        web3 = await web3_node.get_web3("blast")
+        balance_contract_address = web3.to_checksum_address(self.blp_balance_contract)
+        balance_contract = web3.eth.contract(balance_contract_address, abi=BLP_BALANCE_ABI)
+        locked_balance_contract_address = web3.to_checksum_address(self.locked_blp_balance_contract)
+        locked_balance_contract = web3.eth.contract(
+            locked_balance_contract_address, abi=BLP_BALANCE_ABI
+        )
+
+        address = Web3.to_checksum_address(address)
+        tasks = [
+            balance_contract.functions.balanceOf(address).call(),
+            locked_balance_contract.functions.balanceOf(address).call(),
+        ]
+        res = await asyncio.gather(*tasks, return_exceptions=True)
+        balance = sum(x for x in res if x and isinstance(x, int))
         return balance
 
     @catch_web3_exceptions

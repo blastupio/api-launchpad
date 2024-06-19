@@ -21,7 +21,7 @@ from app.schema import (
     GetPointsResponse,
     InternalServerError,
 )
-from app.utils import get_data_with_cache
+from app.utils import get_data_with_cache, get_ip_from_request
 
 router = APIRouter(prefix="/proxy", tags=["proxy"])
 
@@ -34,18 +34,6 @@ async def fetch(api_url: str, timeout: float = 30.0) -> Response:
     async with httpx.AsyncClient(timeout=timeout) as client:
         response = await client.get(api_url)
         return response
-
-
-def get_ip_from_request(request: Request) -> str:
-    try:
-        ip = request.headers.get("cf-connecting-ip")
-        if not ip:
-            ip = request.headers.get("x-forwarded-for")
-        if not ip:
-            ip = request.client.host
-    except Exception as e:
-        raise RuntimeError("Cannot get ip from request: {}".format(e))
-    return ip
 
 
 @router.get("/{id_or_slug}/project-data", response_model=ProjectDataResponse | ErrorResponse)

@@ -385,9 +385,7 @@ class TierInfoResponse(BaseModel):
 class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
     blastup_balance: dict[ChainId, int] | None = None
-    balance: int = 0
-    balance_usd: str = ""
-    balance_change: str = ""
+
     points: int = 0
     terms_accepted: Optional[bool] = None
 

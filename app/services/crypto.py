@@ -69,6 +69,7 @@ class Crypto:
 
     @catch_web3_exceptions
     async def get_blp_staking_value(self, wallet_address):
+        wallet_address = Web3.to_checksum_address(wallet_address)
         contract = await self._blp_staking_oracle_contract()
         res = int(await contract.functions.balanceOf(wallet_address).call())
         return res

@@ -15,8 +15,7 @@ from app.dependencies import (
     RefcodesCrudDep,
     CryptoDep,
 )
-from app.env import settings
-from app.router.v1.proxy import fetch_data
+
 from app.schema import (
     TierInfoResponse,
     UserInfoResponse,
@@ -117,26 +116,6 @@ async def get_user_info(
         logger.error(f"Cannot get balance for {address}: {e}")
         return InternalServerError("Failed to get BLP balance")
 
-    # todo: get from db after migration of presale
-    url = f"{settings.presale_api_url}/users/profile/{address}"
-    presale_json = {}
-    try:
-        for _ in range(5):
-            presale_json = await fetch_data(url, timeout=5)
-            if presale_json["ok"]:
-                break
-            elif "not found" in presale_json["error"]:
-                presale_json = {
-                    "data": {"points": 0},
-                    "ok": True,
-                }
-                break
-    except Exception as e:
-        logger.error(f"Can't get presale profile for {address}, {url=}: {e}")
-        return InternalServerError(err="Can't get profile")
-
-    presale_data = presale_json.get("data", {})
-
     refcode, n_referrals, leaderboard_rank, ido_daily_reward = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
         get_n_referrals(address, profile_crud),
@@ -147,9 +126,6 @@ async def get_user_info(
     return UserInfoResponse(
         tier=user_tier,
         blastup_balance=balances_by_chain_id,
-        balance=presale_data.get("balance", 0),
-        balance_usd=str(presale_data.get("balance_usd", 0)),
-        balance_change=str(presale_data.get("balance_change", 0)),
         points=profile.points,
         terms_accepted=profile.terms_accepted,
         refcode=refcode.refcode,

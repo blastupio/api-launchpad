@@ -35,10 +35,10 @@ def get_tier_coef(locked_balance_wei: int) -> float:
         return 1.0
 
 
-def calculate_bp_daily_reward(locked_balance_wei: int, pool_id: int) -> int:
+def calculate_bp_daily_reward(locked_balance_wei: int, total_locked_blp: int, pool_id: int) -> int:
     pool = pool_by_id[pool_id]
     locked_balance = float(Web3.from_wei(locked_balance_wei, "ether"))
-    tier_coef = get_tier_coef(locked_balance_wei)
+    tier_coef = get_tier_coef(total_locked_blp)
 
     reward_for_period = (
         locked_balance * (pool.apr_percent / 100) * pool.booster_points_coef * tier_coef

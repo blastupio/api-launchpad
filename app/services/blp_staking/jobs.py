@@ -15,10 +15,11 @@ from app.dependencies import (
     get_profile_crud,
     get_lock,
     get_add_points,
+    get_launchpad_crypto,
 )
 from app.models import HistoryBlpStakeType, OperationType, OperationReason
 from app.schema import CreateBlpHistoryStake
-from app.services import Lock
+from app.services import Lock, Crypto
 from app.services.blp_staking.consts import pool_1, pool_2, pool_3, pool_by_id
 from app.services.blp_staking.multicall import get_staked_balance
 from app.services.blp_staking.redis_cli import stake_blp_history_redis
@@ -167,6 +168,7 @@ class AddBlpStakingPoints(Command):
         crud: HistoryBlpStakingCrud = Depends(get_staking_blp_history_crud),
         profile_crud: ProfilesCrud = Depends(get_profile_crud),
         lock: Lock = Depends(get_lock),
+        crypto: Crypto = Depends(get_launchpad_crypto),
     ) -> CommandResult:
         try:
             # get all users that staked some tokens
@@ -189,10 +191,14 @@ class AddBlpStakingPoints(Command):
                 await asyncio.sleep(0.001)
 
             for pool_id, balance_by_address in balance_by_pool_id_and_user_address.items():
-                for user_address, balance in balance_by_address.items():
-                    if balance == 0:
+                for user_address, pool_locked_balance in balance_by_address.items():
+                    if pool_locked_balance == 0:
                         continue
-                    points_amount = calculate_bp_daily_reward(balance, pool_id)
+
+                    staked_blp = await crypto.get_blp_staking_value(user_address)
+                    points_amount = calculate_bp_daily_reward(
+                        pool_locked_balance, staked_blp, pool_id
+                    )
                     profile, _ = await profile_crud.get_or_create_profile(user_address)
 
                     from app.tasks import (

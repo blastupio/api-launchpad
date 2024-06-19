@@ -58,7 +58,9 @@ async def check_if_user_is_participant_of_ido_farming(
     participated = False
     if await profile_crud.first_by_address(address) is None:
         return CheckIdoStakingParticipatedResponse(
-            data=CheckIdoStakingParticipantData(participant=participated, result=participated)
+            data=CheckIdoStakingParticipantData(
+                participant=participated, result=participated, is_ok=participated
+            )
         )
 
     if not (user_usd_tvl := await get_user_usd_tvl(address)):
@@ -70,6 +72,7 @@ async def check_if_user_is_participant_of_ido_farming(
         data=CheckIdoStakingParticipantData(
             participant=participated,
             result=participated,
+            is_ok=participated,
             user_tvl=user_usd_tvl,
         )
     )

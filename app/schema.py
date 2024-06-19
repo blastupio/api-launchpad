@@ -591,3 +591,10 @@ class CreateProfileResponse(BaseModel):
     ok: bool = True
     data: CreateProfileResponseData
     error: str | None = None
+
+
+class BlastBoxResponse(BaseModel):
+    description: str
+    external_url: str
+    image: str
+    name: str

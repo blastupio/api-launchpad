@@ -15,6 +15,7 @@ from app.dependencies import (
     RefcodesCrudDep,
     CryptoDep,
 )
+from app.limiter import limiter
 
 from app.schema import (
     TierInfoResponse,
@@ -33,6 +34,7 @@ from app.schema import (
     CreateProfilePayload,
     CreateProfileResponse,
     CreateProfileResponseData,
+    LeaderboardResponse,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
 from app.services.ido_staking.tvl import get_ido_staking_daily_reward_for_user
@@ -50,6 +52,7 @@ from app.services.tiers.consts import (
 from app.services.tiers.user_tier import get_user_tier
 from app.services.user_projects import get_user_registered_projects
 from app.services.yield_apr import get_native_yield, get_stablecoin_yield
+from fastapi import Request
 
 router = APIRouter(prefix="/info", tags=["info"])
 
@@ -234,3 +237,11 @@ async def get_supported_tokens(tokens_crud: SupportedTokensCrudDep):
         token_addresses_by_chain_id.setdefault(row.chain_id, []).append(row.token_address)
 
     return {"tokens": token_addresses_by_chain_id, "cache_updated_at": last_updated_at}
+
+
+@router.get("/leaderboard", response_model=LeaderboardResponse | ErrorResponse)
+@limiter.limit("10/minute")
+@limiter.limit("1/second")
+async def leaderboard(request: Request, profile_crud: ProfileCrudDep):
+    results = await profile_crud.get_top_by_points()
+    return LeaderboardResponse(data=results)

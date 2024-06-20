@@ -83,7 +83,9 @@ async def get_user_registered_projects(
 
     # get private multichain projects ids of user from proxy_url
     proxy_url_by_project_id = {
-        x.id: x.base_url for x in info if x.project_type == ProjectType.PRIVATE_PRESALE
+        x.id: x.base_url
+        for x in info
+        if x.project_type == ProjectType.PRIVATE_PRESALE and x.base_url is not None
     }
     multichain_project_ids = await get_multichain_project_ids_of_user(
         user_address, proxy_url_by_project_id

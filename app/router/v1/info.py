@@ -240,7 +240,7 @@ async def get_supported_tokens(tokens_crud: SupportedTokensCrudDep):
 
 
 @router.get("/leaderboard", response_model=LeaderboardResponse | ErrorResponse)
-@limiter.limit("10/minute")
+@limiter.limit("5/minute")
 @limiter.limit("1/second")
 async def leaderboard(request: Request, profile_crud: ProfileCrudDep):
     results = await profile_crud.get_top_by_points()

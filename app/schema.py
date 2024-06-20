@@ -47,7 +47,7 @@ class InternalServerError(JSONResponse):
 
 
 class BaseResponse(BaseModel):
-    ok: bool
+    ok: bool = True
     data: Dict
 
 
@@ -628,3 +628,14 @@ class BlastBoxResponse(BaseModel):
     external_url: str
     image: str
     name: str
+
+
+class LeaderboardData(BaseModel):
+    rank: int
+    address: str
+    users_invited: int
+    points: int
+
+
+class LeaderboardResponse(BaseResponse):
+    data: List[LeaderboardData]

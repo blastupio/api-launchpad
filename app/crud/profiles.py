@@ -1,12 +1,14 @@
 import json
 from datetime import datetime
-import dateutil.parser as dt
+from typing import Sequence
 
+import dateutil.parser as dt
 from sqlalchemy import select, func, update, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
 from app.models import Profile
+from app.schema import LeaderboardData
 
 
 class ProfilesCrud(BaseCrud[Profile]):
@@ -88,3 +90,34 @@ class ProfilesCrud(BaseCrud[Profile]):
         result = await self.session.execute(rank_query)
         rank = result.scalars().one_or_none()
         return rank or 0
+
+    async def get_top_by_points(self, limit: int = 100) -> Sequence[LeaderboardData]:
+        referral_subquery = (
+            select(Profile.referrer, func.count(Profile.id).label("users_invited"))
+            .group_by(Profile.referrer)
+            .subquery("referrals")
+        )
+        query = (
+            select(
+                func.dense_rank().over(order_by=Profile.points.desc()).label("rank"),
+                Profile.address,
+                referral_subquery.c.users_invited,
+                Profile.points,
+            )
+            .outerjoin(referral_subquery, Profile.address == referral_subquery.c.referrer)
+            .order_by(Profile.points.desc())
+            .limit(limit)
+        )
+        result = await self.session.execute(query)
+
+        leaderboard_data_results = []
+        for row in result.fetchall():
+            leaderboard_data_results.append(
+                LeaderboardData(
+                    rank=row.rank,
+                    address=row.address,
+                    users_invited=row.users_invited or 0,
+                    points=row.points,
+                )
+            )
+        return leaderboard_data_results

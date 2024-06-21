@@ -634,7 +634,7 @@ class LeaderboardData(BaseModel):
     rank: int
     address: str
     users_invited: int
-    points: int
+    points: float
 
 
 class LeaderboardResponse(BaseResponse):

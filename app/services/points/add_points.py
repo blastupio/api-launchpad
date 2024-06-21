@@ -1,3 +1,5 @@
+from decimal import Decimal, getcontext
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.crud.points import PointsHistoryCrud, ExtraPointsCrud
@@ -20,7 +22,7 @@ class AddPoints:
     async def add_points(
         self,
         address: str,
-        amount: int,
+        amount: float,
         operation_type: OperationType,
         project_id: str | None = None,
         referring_profile_id: int | None = None,
@@ -32,6 +34,8 @@ class AddPoints:
         browser: str | None = None,
         session: AsyncSession | None = None,
     ) -> Profile:
+        getcontext().prec = 12
+        amount = Decimal(amount)
         if create_profile_if_not_exists:
             await self.profile_crud.get_or_create_profile(
                 address=address,

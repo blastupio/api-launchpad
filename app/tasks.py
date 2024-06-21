@@ -236,7 +236,7 @@ def add_ido_staking_points_for_profile(address: str, points_amount: int):
 @app.task(max_retries=3, default_retry_delay=10)
 def add_referral_ido_staking_points_for_profile(
     address: str,
-    points_amount: int,
+    points_amount: float,
     referring_profile_id: int | None = None,
 ):
     try:
@@ -322,7 +322,7 @@ def add_blp_staking_points_for_profile(address: str, points_amount: int):
 @app.task(max_retries=3, default_retry_delay=10)
 def add_referral_blp_staking_points_for_profile(
     address: str,
-    points_amount: int,
+    points_amount: float,
     referring_profile_id: int | None = None,
 ):
     try:

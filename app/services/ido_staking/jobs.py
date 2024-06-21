@@ -1,5 +1,4 @@
 import asyncio
-import math
 import time
 import traceback
 from collections import defaultdict
@@ -217,7 +216,7 @@ class AddIdoStakingPoints(Command):
                 )
                 if referrer_address := profile.referrer:
                     referrer, _ = await profile_crud.get_or_create_profile(referrer_address)
-                    referrer_points_amount = math.ceil(points_amount * referrer.ref_percent / 100)
+                    referrer_points_amount = round(points_amount * referrer.ref_percent / 100, 2)
                     add_referral_ido_staking_points_for_profile.apply_async(
                         kwargs={
                             "address": referrer_address,

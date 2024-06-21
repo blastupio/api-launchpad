@@ -341,8 +341,8 @@ class Profile(Base):
     browser = Column(Text(), nullable=True)
     terms_accepted = Column(Boolean, default=False, nullable=False)
 
-    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
-    ref_points = Column(BigIntegerType, default=0, server_default=text("0::bigint"))
+    points = Column(DECIMAL(10, 2), default=0, server_default=text("0::decimal"))
+    ref_points = Column(DECIMAL(10, 2), default=0, server_default=text("0::decimal"))
     ref_percent = Column(Integer, default=20, server_default=text("20::int"))
     ref_bonus_used = Column(Boolean, default=False, server_default="false", nullable=False)
 
@@ -361,11 +361,11 @@ class PointsHistory(Base):
     operation_reason = Column(Enum(OperationReason), nullable=True)
 
     points_before = Column(
-        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+        DECIMAL(10, 2), default=0, server_default=text("0::decimal"), nullable=False
     )
-    amount = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    amount = Column(DECIMAL(10, 2), default=0, server_default=text("0::decimal"), nullable=False)
     points_after = Column(
-        BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False
+        DECIMAL(10, 2), default=0, server_default=text("0::decimal"), nullable=False
     )
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
@@ -384,7 +384,7 @@ class ExtraPoints(Base):
     profile_id = Column(BigIntegerType, ForeignKey("profiles.id"), nullable=False)
     project_id = Column(String(), ForeignKey("launchpad_project.id"), nullable=False)
 
-    points = Column(BigIntegerType, default=0, server_default=text("0::bigint"), nullable=False)
+    points = Column(DECIMAL(10, 2), default=0, server_default=text("0::decimal"), nullable=False)
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), default=func.now(), onupdate=func.now())

@@ -1,4 +1,5 @@
 import asyncio
+import math
 import time
 import traceback
 from collections import defaultdict
@@ -212,7 +213,9 @@ class AddBlpStakingPoints(Command):
                     )
                     if referrer_address := profile.referrer:
                         referrer, _ = await profile_crud.get_or_create_profile(referrer_address)
-                        referrer_points_amount = int(points_amount * referrer.ref_percent / 100)
+                        referrer_points_amount = math.ceil(
+                            points_amount * referrer.ref_percent / 100
+                        )
                         add_referral_blp_staking_points_for_profile.apply_async(
                             kwargs={
                                 "address": referrer_address,
@@ -230,7 +233,7 @@ class AddBlpStakingPointsForProfile(Command):
     def __init__(
         self,
         address: str,
-        points_amount: int,
+        points_amount: float,
         operation_type: OperationType = OperationType.ADD_BLP_STAKING_POINTS,
         referring_profile_id: int | None = None,
         operation_reason: OperationReason | None = None,

@@ -396,14 +396,14 @@ class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
     blastup_balance: dict[ChainId, int] | None = None
 
-    points: int = 0
+    points: float = 0
     terms_accepted: Optional[bool] = None
 
     leaderboard_rank: int = 0
     ido_daily_reward: int = 0
 
     refcode: str | None = None
-    ref_points: int = 0
+    ref_points: float = 0
     n_referrals: int = 0
     referrer: str | None = None
     ref_bonus_used: bool = False
@@ -418,9 +418,9 @@ class Any2AnyPriceResponse(BaseModel):
 
 
 class GetPointsData(BaseModel):
-    points: int
-    ref_points: int = 0
-    extra_points: int = 0
+    points: float
+    ref_points: float = 0
+    extra_points: float = 0
 
 
 class GetPointsResponse(BaseModel):

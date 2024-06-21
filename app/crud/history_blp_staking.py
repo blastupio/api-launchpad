@@ -30,7 +30,9 @@ class HistoryBlpStakingCrud(BaseCrud[HistoryBlpStake]):
 
     async def get_user_address_by_pool_id(self) -> dict[int, list[str]]:
         stmt = (
-            select(HistoryBlpStake.pool_id, func.array_agg(HistoryBlpStake.user_address))
+            select(
+                HistoryBlpStake.pool_id, func.array_agg(func.distinct(HistoryBlpStake.user_address))
+            )
             .where(HistoryBlpStake.type == HistoryBlpStakeType.STAKE.value)
             .group_by(HistoryBlpStake.pool_id)
         )

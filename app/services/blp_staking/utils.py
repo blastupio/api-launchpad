@@ -1,5 +1,3 @@
-import math
-
 from web3 import AsyncWeb3, Web3
 from web3.contract import AsyncContract
 
@@ -35,13 +33,13 @@ def get_tier_coef(locked_balance_wei: int) -> float:
         return 1.0
 
 
-def calculate_bp_daily_reward(locked_balance_wei: int, total_locked_blp: int, pool_id: int) -> int:
+def calculate_bp_daily_reward(
+    locked_balance_wei: int, total_locked_blp: int, pool_id: int
+) -> float:
     pool = pool_by_id[pool_id]
     locked_balance = float(Web3.from_wei(locked_balance_wei, "ether"))
     tier_coef = get_tier_coef(total_locked_blp)
 
-    reward_for_period = (
-        locked_balance * (pool.apr_percent / 100) * pool.booster_points_coef * tier_coef
-    )
-    daily_reward = math.ceil(reward_for_period / pool.lock_up_days)
+    yearly_reward = locked_balance * (pool.apr_percent / 100) * pool.booster_points_coef * tier_coef
+    daily_reward = round(yearly_reward / 360, 2)
     return daily_reward

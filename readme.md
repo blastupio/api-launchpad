@@ -50,4 +50,3 @@ make makemigrations m="new migration"
 ```shell
 make downgrade
 ```
-.

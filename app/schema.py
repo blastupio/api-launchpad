@@ -437,6 +437,16 @@ class GetPointsResponse(BaseModel):
     data: GetPointsData
 
 
+class GetTotalPointsData(BaseModel):
+    points: float
+
+
+class GetTotalPointsResponse(BaseModel):
+    ok: bool = True
+    data: GetTotalPointsData | None = None
+    error: str | None = None
+
+
 class GetHistoryStake(BaseModel):
     id: int  # noqa
     type: HistoryStakeType  # noqa

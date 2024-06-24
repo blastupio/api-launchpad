@@ -9,6 +9,7 @@ from app.dependencies import (
     LaunchpadProjectCrudDep,
     ProfileCrudDep,
     ExtraPointsCrudDep,
+    RedisDep,
 )
 from app.env import settings
 from app.schema import (
@@ -18,10 +19,30 @@ from app.schema import (
     GetPointsResponse,
     ErrorResponse,
     GetPointsData,
+    GetTotalPointsResponse,
+    GetTotalPointsData,
 )
-from app.utils import check_password
+from app.utils import check_password, get_data_with_cache
 
 router = APIRouter(prefix="/points", tags=["points"])
+
+
+@router.get("/total-points", response_model=GetTotalPointsResponse)
+async def get_total_points_for_all_profiles(
+    profiles_crud: ProfileCrudDep,
+    redis: RedisDep,
+):
+    try:
+        total_points = await get_data_with_cache(
+            key="total_profile_points",
+            func=profiles_crud.get_total_points,
+            redis=redis,
+        )
+        if total_points is None:
+            return GetTotalPointsResponse(error="Can't get total points")
+        return GetTotalPointsResponse(data=GetTotalPointsData(points=total_points))
+    except Exception as e:
+        return GetTotalPointsResponse(error=f"Can't get total points: {e}")
 
 
 @router.post("/add", include_in_schema=False, response_model=AddPointsResponse)

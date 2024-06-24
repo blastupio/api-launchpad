@@ -121,3 +121,7 @@ class ProfilesCrud(BaseCrud[Profile]):
                 )
             )
         return leaderboard_data_results
+
+    async def get_total_points(self) -> float:
+        query = await self.session.execute(select(func.sum(Profile.points)))
+        return float(query.scalars().one_or_none() or 0)

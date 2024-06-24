@@ -14,6 +14,7 @@ from app.dependencies import (
     ProfileCrudDep,
     RefcodesCrudDep,
     CryptoDep,
+    RedisDep,
 )
 from app.limiter import limiter
 
@@ -53,6 +54,8 @@ from app.services.tiers.user_tier import get_user_tier
 from app.services.user_projects import get_user_registered_projects
 from app.services.yield_apr import get_native_yield, get_stablecoin_yield
 from fastapi import Request
+
+from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/info", tags=["info"])
 
@@ -96,6 +99,7 @@ async def get_user_info(
     profile_crud: ProfileCrudDep,
     refcodes_crud: RefcodesCrudDep,
     crypto_launchpad: CryptoDep,
+    redis: RedisDep,
     address: str = Path(
         pattern="^(0x)[0-9a-fA-F]{40}$", example="0xE1784da2b8F42C31Fb729E870A4A8064703555c2"
     ),
@@ -105,19 +109,38 @@ async def get_user_info(
 
     # Retrieve user's tier based on BLP staking value
     # We check BLPStaking and LockedBLPStaking contracts
-    try:
-        blp_staked_balance = await crypto_launchpad.get_blp_staking_value(address)
-    except Exception as e:
-        logger.error(f"Cannot get balance for {address}: {e}")
-        return InternalServerError("Failed to get staked BLP data")
-    user_tier = get_user_tier(blp_staked_balance)
+    async def get_blp_staked():
+        try:
+            blp_staked_balance = await crypto_launchpad.get_blp_staking_value(address)
+        except Exception as e:
+            logger.error(f"Cannot get blp staked balance for {address}: {e}")
+            return None
+        return blp_staked_balance
 
-    # Retrieve user's BLP balance via all chains from Presale contracts
-    try:
-        balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
-    except Exception as e:
-        logger.error(f"Cannot get balance for {address}: {e}")
-        return InternalServerError("Failed to get BLP balance")
+    blp_staked_balance = await get_data_with_cache(
+        key=f"blp_staked_balance_{address.lower()}",
+        func=get_blp_staked,
+        redis=redis,
+    )
+    if blp_staked_balance is None:
+        return InternalServerError("Failed to get staked BLP data")
+
+    async def get_balance_by_chain_id():
+        # Retrieve user's BLP balance via all chains from Presale contracts
+        try:
+            balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
+        except Exception as e:
+            logger.error(f"Cannot get balance for {address}: {e}")
+            return None
+        return balances_by_chain_id
+
+    balances_by_chain_id = await get_data_with_cache(
+        key=f"balance_by_chain_id_{address.lower()}",
+        func=get_balance_by_chain_id,
+        redis=redis,
+    )
+    if blp_staked_balance is None:
+        return InternalServerError("Failed to get BLP balance by chain id")
 
     refcode, n_referrals, leaderboard_rank, ido_daily_reward = await asyncio.gather(
         refcodes_crud.generate_refcode_if_not_exists(address),
@@ -127,7 +150,7 @@ async def get_user_info(
     )
 
     return UserInfoResponse(
-        tier=user_tier,
+        tier=get_user_tier(blp_staked_balance),
         blastup_balance=balances_by_chain_id,
         points=profile.points,
         terms_accepted=profile.terms_accepted,

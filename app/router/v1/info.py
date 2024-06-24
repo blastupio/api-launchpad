@@ -122,7 +122,7 @@ async def get_user_info(
         func=partial(get_blastup_tokens_balance_for_chains, address),
         redis=redis,
     )
-    if blp_staked_balance is None:
+    if balances_by_chain_id is None:
         return InternalServerError("Failed to get BLP balance by chain id")
 
     refcode, n_referrals, leaderboard_rank, ido_daily_reward = await asyncio.gather(

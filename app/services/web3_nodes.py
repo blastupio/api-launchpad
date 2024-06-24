@@ -30,7 +30,7 @@ def catch_web3_exceptions(func):
         try:
             return await func(self, *args, **kwargs)
         except (Web3Exception, ValueError) as e:
-            if chain_id := chain_id_ctx.get() and not isinstance(e, TransactionNotFound):
+            if (chain_id := chain_id_ctx.get()) and not isinstance(e, TransactionNotFound):
                 logger.error(f"Caught web3 error: {e}\n\n{traceback.format_exc()}")
                 # Increment the error count for this chain_id
                 err_counts = await web3_node_redis.increment_web3_errors_count(chain_id)

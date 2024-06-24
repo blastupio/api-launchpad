@@ -5,7 +5,7 @@ from collections import defaultdict
 
 from fastapi import Depends
 from sqlalchemy.ext.asyncio import AsyncSession
-from web3 import AsyncWeb3, AsyncHTTPProvider, Web3
+from web3 import Web3
 
 from app import chains
 from app.base import logger, engine
@@ -28,6 +28,7 @@ from app.services.ido_staking.redis_cli import stake_history_redis
 from app.services.ido_staking.tvl import get_ido_staking_daily_reward
 from app.services.points.add_points import AddPoints
 from app.services.prices import get_tokens_price_for_chain
+from app.services.web3_nodes import web3_node
 
 
 class ProcessHistoryStakingEvent(Command):
@@ -88,7 +89,7 @@ class ProcessHistoryStakingEvent(Command):
             logger.error("Staking events: yield staking contract address is not set")
             return CommandResult(success=False, need_retry=False)
 
-        web3 = AsyncWeb3(AsyncHTTPProvider(settings.crypto_api_key_blast))
+        web3 = await web3_node.get_web3(network="blast")
         chain_id = await web3.eth.chain_id
         current_block = await web3.eth.block_number
         if (

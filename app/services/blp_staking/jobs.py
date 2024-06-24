@@ -22,8 +22,9 @@ from app.schema import CreateBlpHistoryStake
 from app.services import Lock, Crypto
 from app.services.blp_staking.consts import pool_1, pool_2, pool_3, pool_by_id
 from app.services.blp_staking.multicall import get_staked_balance
-from app.services.blp_staking.redis_cli import stake_blp_history_redis
-from app.services.blp_staking.utils import get_pool_contract, calculate_bp_daily_reward
+from app.services.blp_staking.cache import stake_blp_history_cache
+from app.services.blp_staking.utils import get_pool_contract
+from app.services.blp_staking.reward import calculate_bp_daily_reward
 from app.services.points.add_points import AddPoints
 from app.services.web3_nodes import web3_node
 
@@ -102,7 +103,7 @@ class ProcessBlpHistoryStakingEvent(Command):
         try:
             for pool, staking_contract in contract_by_pool.items():
                 if (
-                    last_checked_block := await stake_blp_history_redis.get_last_checked_block(
+                    last_checked_block := await stake_blp_history_cache.get_last_checked_block(
                         chain_id, pool.id
                     )
                 ) is None:
@@ -143,7 +144,7 @@ class ProcessBlpHistoryStakingEvent(Command):
                     await self._save_unstake_events(crud, chain_id, pool.id, unstake_events)
 
                     last_checked_block = to_block
-                    await stake_blp_history_redis.set_last_checked_block(
+                    await stake_blp_history_cache.set_last_checked_block(
                         chain_id, pool.id, to_block
                     )
                     time.sleep(0.5)

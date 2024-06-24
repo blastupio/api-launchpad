@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 from app.dependencies import get_redis
 
 
-class StakeBlpHistoryRedis:
+class StakeBlpHistoryCache:
     def __init__(self, redis_cli: Redis):
         self.redis_cli = redis_cli
 
@@ -26,4 +26,4 @@ class StakeBlpHistoryRedis:
         )
 
 
-stake_blp_history_redis = StakeBlpHistoryRedis(redis_cli=get_redis())
+stake_blp_history_cache = StakeBlpHistoryCache(redis_cli=get_redis())

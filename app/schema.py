@@ -392,6 +392,12 @@ class TierInfoResponse(BaseModel):
     tiers: list[TierInfo]
 
 
+class DailyReward(BaseModel):
+    ido_staking: float | None = 0
+    blp_staking: float | None = 0
+    total: float = 0
+
+
 class UserInfoResponse(BaseModel):
     tier: TierInfo | None = None
     blastup_balance: dict[ChainId, int] | None = None
@@ -400,7 +406,9 @@ class UserInfoResponse(BaseModel):
     terms_accepted: Optional[bool] = None
 
     leaderboard_rank: int = 0
+
     ido_daily_reward: int = 0
+    daily_reward: DailyReward | None = None
 
     refcode: str | None = None
     ref_points: float = 0

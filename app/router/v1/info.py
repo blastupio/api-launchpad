@@ -36,8 +36,10 @@ from app.schema import (
     CreateProfileResponse,
     CreateProfileResponseData,
     LeaderboardResponse,
+    DailyReward,
 )
 from app.services.balances.blastup_balance import get_blastup_tokens_balance_for_chains
+from app.services.blp_staking.reward import get_blp_staking_daily_reward_for_user
 from app.services.ido_staking.tvl import get_ido_staking_daily_reward_for_user
 from app.services.prices import get_tokens_price_for_chain, get_any2any_prices
 from app.services.prices.cache import token_price_cache
@@ -125,11 +127,22 @@ async def get_user_info(
     if balances_by_chain_id is None:
         return InternalServerError("Failed to get BLP balance by chain id")
 
-    refcode, n_referrals, leaderboard_rank, ido_daily_reward = await asyncio.gather(
-        refcodes_crud.generate_refcode_if_not_exists(address),
-        get_n_referrals(address, profile_crud),
-        profile_crud.get_leaderboard_rank(address),
-        get_ido_staking_daily_reward_for_user(address),
+    refcode, n_referrals, leaderboard_rank, ido_daily_reward, blp_daily_reward = (
+        await asyncio.gather(
+            refcodes_crud.generate_refcode_if_not_exists(address),
+            get_n_referrals(address, profile_crud),
+            profile_crud.get_leaderboard_rank(address),
+            get_data_with_cache(
+                key=f"ido_daily_reward_{address.lower()}",
+                func=partial(get_ido_staking_daily_reward_for_user, address),
+                redis=redis,
+            ),
+            get_data_with_cache(
+                key=f"blp_daily_reward_{address.lower()}",
+                func=partial(get_blp_staking_daily_reward_for_user, address),
+                redis=redis,
+            ),
+        )
     )
 
     return UserInfoResponse(
@@ -144,6 +157,11 @@ async def get_user_info(
         ref_bonus_used=profile.ref_bonus_used,
         leaderboard_rank=leaderboard_rank,
         ido_daily_reward=ido_daily_reward,
+        daily_reward=DailyReward(
+            ido_staking=ido_daily_reward,
+            blp_staking=blp_daily_reward,
+            total=ido_daily_reward or 0 + blp_daily_reward or 0,
+        ),
     )
 
 

@@ -144,6 +144,7 @@ async def get_user_info(
             ),
         )
     )
+    total_daily_reward = (ido_daily_reward or 0) + (blp_daily_reward or 0)
 
     return UserInfoResponse(
         tier=get_user_tier(blp_staked_balance),
@@ -160,7 +161,7 @@ async def get_user_info(
         daily_reward=DailyReward(
             ido_staking=ido_daily_reward,
             blp_staking=blp_daily_reward,
-            total=ido_daily_reward or 0 + blp_daily_reward or 0,
+            total=total_daily_reward,
         ),
     )
 

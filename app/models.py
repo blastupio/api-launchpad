@@ -135,6 +135,7 @@ class LaunchpadProject(Base):
     claim_end_at = Column(DateTime(), nullable=True)
 
     is_visible = Column(Boolean, server_default="true", default=True, nullable=False, index=True)
+    is_clickable = Column(Boolean, server_default="true", default=True, nullable=False)
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
     updated_at = Column(DateTime(), nullable=True)

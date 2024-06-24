@@ -19,7 +19,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 
 def upgrade() -> None:
-    op.execute("ALTER TYPE operationreason ADD VALUE 'BLASTBOX_BUY';")
+    op.execute("ALTER TYPE operationreason ADD VALUE IF NOT EXISTS 'BLASTBOX_BUY';")
 
 
 def downgrade() -> None:

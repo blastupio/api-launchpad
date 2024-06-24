@@ -106,6 +106,7 @@ class LaunchpadProjectList(BaseModel):
     slug: str
     name: str
     is_active: bool
+    is_clickable: bool
     status: ProjectStatusEnum
     project_type: ProjectTypeEnum
     short_description: str

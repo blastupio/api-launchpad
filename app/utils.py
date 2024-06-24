@@ -35,6 +35,7 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
             cached_data = cached_data.decode()
             cached_data = json.loads(cached_data)
             return cached_data
+
     try:
         cached_data = await func()
         if cached_data is None:
@@ -52,7 +53,6 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
 
         cached_data = cached_data.decode()
         cached_data = json.loads(cached_data) if cached_data is not None else None
-
     return cached_data
 
 

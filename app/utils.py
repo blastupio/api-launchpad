@@ -35,10 +35,11 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
             cached_data = cached_data.decode()
             cached_data = json.loads(cached_data)
             return cached_data
+
     try:
         cached_data = await func()
         if cached_data is None:
-            logger.info(f"Get none from main function {func.__name__} in get_data")
+            logger.info("Get none from main function in get_data")
             raise Exception
 
         await redis.setex(key, value=json.dumps(cached_data), time=timedelta(seconds=30))

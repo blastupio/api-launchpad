@@ -1,4 +1,5 @@
 import asyncio
+from functools import partial
 from math import ceil
 
 from fastapi import APIRouter, Path, Query, Body
@@ -6,7 +7,6 @@ from fastapi_pagination import Page
 from starlette.responses import JSONResponse
 from web3 import Web3
 
-from app.base import logger
 from app.consts import NATIVE_TOKEN_ADDRESS
 from app.dependencies import (
     LaunchpadProjectCrudDep,
@@ -109,34 +109,17 @@ async def get_user_info(
 
     # Retrieve user's tier based on BLP staking value
     # We check BLPStaking and LockedBLPStaking contracts
-    async def get_blp_staked():
-        try:
-            blp_staked_balance = await crypto_launchpad.get_blp_staking_value(address)
-        except Exception as e:
-            logger.error(f"Cannot get blp staked balance for {address}: {e}")
-            return None
-        return blp_staked_balance
-
     blp_staked_balance = await get_data_with_cache(
         key=f"blp_staked_balance_{address.lower()}",
-        func=get_blp_staked,
+        func=partial(crypto_launchpad.get_blp_staking_value, address),
         redis=redis,
     )
     if blp_staked_balance is None:
         return InternalServerError("Failed to get staked BLP data")
 
-    async def get_balance_by_chain_id():
-        # Retrieve user's BLP balance via all chains from Presale contracts
-        try:
-            balances_by_chain_id = await get_blastup_tokens_balance_for_chains(address)
-        except Exception as e:
-            logger.error(f"Cannot get balance for {address}: {e}")
-            return None
-        return balances_by_chain_id
-
     balances_by_chain_id = await get_data_with_cache(
         key=f"balance_by_chain_id_{address.lower()}",
-        func=get_balance_by_chain_id,
+        func=partial(get_blastup_tokens_balance_for_chains, address),
         redis=redis,
     )
     if blp_staked_balance is None:

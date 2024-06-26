@@ -179,6 +179,9 @@ class AddIdoStakingPoints(Command):
             elif len(price_for_tokens) < len(token_addresses):
                 logger.error(f"IDO points: no price for some of staked tokens: {price_for_tokens=}")
                 return CommandResult(success=False, need_retry=True)
+            if price_for_tokens[settings.blast_usdb_address] < 1:
+                logger.debug("IDO points: usdb price is less than 1")
+                price_for_tokens[settings.blast_usdb_address] = 1
 
             # calculate total usd balance for users locked balance
             usd_balance_by_user_address = defaultdict(float)
@@ -186,10 +189,10 @@ class AddIdoStakingPoints(Command):
                 token_address,
                 token_balance_by_user_address,
             ) in balance_by_token_address_and_user_address.items():
-                for user_address, usd_balance in token_balance_by_user_address.items():
+                for user_address, token_balance in token_balance_by_user_address.items():
                     usd_balance = round(
                         price_for_tokens[token_address]
-                        * float(Web3.from_wei(usd_balance, "ether")),
+                        * float(Web3.from_wei(token_balance, "ether")),
                         2,
                     )
                     usd_balance_by_user_address[user_address] += usd_balance

@@ -77,7 +77,7 @@ class ProcessBlpHistoryStakingEvent(Command):
         return CommandResult(success=True, need_retry=False)
 
 
-class MonitorLogsAndSave(Command):
+class MonitorBlpStakingLogsAndSave(Command):
     def __init__(self, from_block: int, to_block: int, chain_id: int, pool_id: int) -> None:
         self.from_block = from_block
         self.to_block = to_block

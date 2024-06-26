@@ -10,12 +10,13 @@ from app.models import OperationType, OperationReason
 from app.services.blp_staking.jobs import (
     AddBlpStakingPointsForProfile,
     AddBlpStakingPoints,
-    MonitorLogsAndSave,
+    MonitorBlpStakingLogsAndSave,
 )
 from app.services.ido_staking.jobs import (
     ProcessHistoryStakingEvent,
     AddIdoStakingPoints,
     AddIdoStakingPointsForProfile,
+    MonitorIdoStakingLogsAndSave,
 )
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.tg_notifications.jobs import (
@@ -88,7 +89,7 @@ def monitor_and_save_blp_staking_events(
 ):
     try:
         result = run_command_and_get_result(
-            MonitorLogsAndSave(from_block, to_block, chain_id, pool_id)
+            MonitorBlpStakingLogsAndSave(from_block, to_block, chain_id, pool_id)
         )
 
         if result.need_retry:
@@ -106,6 +107,39 @@ def monitor_and_save_blp_staking_events(
             raise e
         logger.error(
             f"monitor_and_save_blp_staking_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def monitor_and_save_ido_staking_events(
+    from_block: int,
+    to_block: int,
+    chain_id: int,
+):
+    try:
+        result = run_command_and_get_result(
+            MonitorIdoStakingLogsAndSave(from_block, to_block, chain_id)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            monitor_and_save_ido_staking_events.apply_async(
+                args=[from_block, to_block, chain_id], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"monitor_and_save_ido_staking_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
         )
         raise Retry("", exc=e)
 

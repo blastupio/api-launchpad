@@ -28,7 +28,13 @@ def validation_error(error_message: str, location: tuple[str, str]) -> RequestVa
     )
 
 
-async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redis: Redis):
+async def get_data_with_cache(
+    key: str,
+    func: Callable[[], Awaitable[Any]],
+    redis: Redis,
+    short_key_exp_seconds: int = 30,
+    long_key_exp_minutes: int = 20,
+):
     if await redis.exists(key):
         cached_data = await redis.get(key)
         if cached_data:
@@ -42,8 +48,16 @@ async def get_data_with_cache(key: str, func: Callable[[], Awaitable[Any]], redi
             logger.info("Get none from main function in get_data")
             raise Exception
 
-        await redis.setex(key, value=json.dumps(cached_data), time=timedelta(seconds=30))
-        await redis.setex(key + ":long", value=json.dumps(cached_data), time=timedelta(minutes=20))
+        await redis.setex(
+            key,
+            timedelta(seconds=short_key_exp_seconds),
+            json.dumps(cached_data),
+        )
+        await redis.setex(
+            f"{key}:long",
+            timedelta(minutes=long_key_exp_minutes),
+            json.dumps(cached_data),
+        )
     except Exception:
         cached_data = await redis.get(key + ":long")
 

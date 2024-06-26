@@ -228,9 +228,20 @@ async def get_all_tiers():
 
 
 @router.get("/yield-percentage", response_model=YieldPercentageResponse)
-async def get_yield_percentage() -> YieldPercentageResponse:
+async def get_yield_percentage(redis: RedisDep) -> YieldPercentageResponse:
     native_yield, stablecoin_yield = await asyncio.gather(
-        get_native_yield(), get_stablecoin_yield()
+        get_data_with_cache(
+            key="native_yield_apr",
+            func=get_native_yield,
+            redis=redis,
+            short_key_exp_seconds=60 * 5,
+        ),
+        get_data_with_cache(
+            key="stablecoin_yield_apr",
+            func=get_stablecoin_yield,
+            redis=redis,
+            short_key_exp_seconds=60 * 5,
+        ),
     )
     return YieldPercentageResponse(native=native_yield, stablecoin=stablecoin_yield)
 

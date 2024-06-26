@@ -7,7 +7,11 @@ from app.base import logger
 from app.common import run_command_and_get_result
 from app.env import settings
 from app.models import OperationType, OperationReason
-from app.services.blp_staking.jobs import AddBlpStakingPointsForProfile, AddBlpStakingPoints
+from app.services.blp_staking.jobs import (
+    AddBlpStakingPointsForProfile,
+    AddBlpStakingPoints,
+    MonitorLogsAndSave,
+)
 from app.services.ido_staking.jobs import (
     ProcessHistoryStakingEvent,
     AddIdoStakingPoints,
@@ -71,6 +75,37 @@ def process_history_staking_event():
 
         logger.error(
             f"process_history_staking_event. Unhandled exception: {e}, {traceback.format_exc()}"
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def monitor_and_save_blp_staking_events(
+    from_block: int, to_block: int, chain_id: int, pool_id: int
+):
+    try:
+        result = run_command_and_get_result(
+            MonitorLogsAndSave(from_block, to_block, chain_id, pool_id)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            monitor_and_save_blp_staking_events.apply_async(
+                args=[from_block, to_block, chain_id, pool_id], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"monitor_and_save_blp_staking_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
         )
         raise Retry("", exc=e)
 

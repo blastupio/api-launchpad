@@ -20,71 +20,15 @@ from app.dependencies import (
 from app.models import HistoryBlpStakeType, OperationType, OperationReason
 from app.schema import CreateBlpHistoryStake
 from app.services import Lock, Crypto
-from app.services.blp_staking.consts import pool_1, pool_2, pool_3, pool_by_id
+from app.services.blp_staking.consts import pool_by_id, get_blp_staking_contract
 from app.services.blp_staking.multicall import get_staked_balance
 from app.services.blp_staking.cache import stake_blp_history_cache
-from app.services.blp_staking.utils import get_pool_contract
 from app.services.blp_staking.reward import calculate_bp_daily_reward
 from app.services.points.add_points import AddPoints
 from app.services.web3_nodes import web3_node
 
 
 class ProcessBlpHistoryStakingEvent(Command):
-    async def _save_stake_events(
-        self,
-        crud: HistoryBlpStakingCrud,
-        profile_crud: ProfilesCrud,
-        chain_id: int,
-        pool_id: int,
-        events,
-    ) -> None:
-        for event in events:
-            await crud.add_history(
-                params=CreateBlpHistoryStake(
-                    type=HistoryBlpStakeType.STAKE,
-                    amount=str(event.args["amount"]),
-                    txn_hash=event.transactionHash.hex(),
-                    block_number=event.blockNumber,
-                    chain_id=str(chain_id),
-                    user_address=event.args["user"],
-                    pool_id=pool_id,
-                )
-            )
-            # save new profile if not exists
-            await profile_crud.get_or_create_profile(address=event.args["user"])
-
-    async def _save_claim_rewards_events(
-        self, crud: HistoryBlpStakingCrud, chain_id: int, pool_id: int, events
-    ) -> None:
-        for event in events:
-            await crud.add_history(
-                params=CreateBlpHistoryStake(
-                    type=HistoryBlpStakeType.CLAIM_REWARDS,
-                    amount=str(event.args["amount"]),
-                    txn_hash=event.transactionHash.hex(),
-                    block_number=event.blockNumber,
-                    chain_id=str(chain_id),
-                    user_address=event.args["user"],
-                    pool_id=pool_id,
-                )
-            )
-
-    async def _save_unstake_events(
-        self, crud: HistoryBlpStakingCrud, chain_id: int, pool_id: int, events
-    ) -> None:
-        for event in events:
-            await crud.add_history(
-                params=CreateBlpHistoryStake(
-                    type=HistoryBlpStakeType.UNSTAKE,
-                    amount=str(event.args["amount"]),
-                    user_address=event.args["user"],
-                    txn_hash=event.transactionHash.hex(),
-                    block_number=event.blockNumber,
-                    chain_id=str(chain_id),
-                    pool_id=pool_id,
-                )
-            )
-
     async def command(
         self,
         crud: HistoryBlpStakingCrud = Depends(get_staking_blp_history_crud),
@@ -94,72 +38,148 @@ class ProcessBlpHistoryStakingEvent(Command):
         chain_id = await web3.eth.chain_id
         current_block = await web3.eth.block_number
 
-        contract_by_pool = {
-            pool_1: get_pool_contract(web3, pool_1),
-            pool_2: get_pool_contract(web3, pool_2),
-            pool_3: get_pool_contract(web3, pool_3),
-        }
-        n_stakes, n_claim_rewards, n_unstake = 0, 0, 0
+        for pool_id, pool in pool_by_id.items():
+            if (
+                last_checked_block := await stake_blp_history_cache.get_last_checked_block(
+                    chain_id, pool_id
+                )
+            ) is None:
+                last_checked_block = current_block - 100_000
+
+            while True:
+                from_block = last_checked_block + 1
+                # 3000 is limit, can't set larger than that
+                to_block = min(current_block, from_block + 3000)
+                logger.info(
+                    f"BlpStaking events: monitoring {pool.staking_contract_address} {from_block=} {to_block=}"  # noqa
+                )
+
+                if from_block > to_block:
+                    logger.info(f"BlpStaking events: no events {from_block=} {to_block=}")
+                    break
+
+                from app.tasks import monitor_and_save_blp_staking_events
+
+                monitor_and_save_blp_staking_events.apply_async(
+                    kwargs={
+                        "from_block": from_block,
+                        "to_block": to_block,
+                        "pool_id": pool_id,
+                        "chain_id": chain_id,
+                    },
+                    countdown=1,
+                )
+
+                last_checked_block = to_block
+                await stake_blp_history_cache.set_last_checked_block(chain_id, pool_id, to_block)
+                time.sleep(0.5)
+
+        return CommandResult(success=True, need_retry=False)
+
+
+class MonitorLogsAndSave(Command):
+    def __init__(self, from_block: int, to_block: int, chain_id: int, pool_id: int) -> None:
+        self.from_block = from_block
+        self.to_block = to_block
+        self.chain_id = chain_id
+        self.pool_id = pool_id
+
+    async def _save_stake_events(
+        self,
+        crud: HistoryBlpStakingCrud,
+        profile_crud: ProfilesCrud,
+        events,
+    ) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateBlpHistoryStake(
+                    type=HistoryBlpStakeType.STAKE,
+                    amount=str(event.args["amount"]),
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(self.chain_id),
+                    user_address=event.args["user"],
+                    pool_id=self.pool_id,
+                )
+            )
+            # save new profile if not exists
+            await profile_crud.get_or_create_profile(address=event.args["user"])
+
+    async def _save_claim_rewards_events(self, crud: HistoryBlpStakingCrud, events) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateBlpHistoryStake(
+                    type=HistoryBlpStakeType.CLAIM_REWARDS,
+                    amount=str(event.args["amount"]),
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(self.chain_id),
+                    user_address=event.args["user"],
+                    pool_id=self.pool_id,
+                )
+            )
+
+    async def _save_unstake_events(self, crud: HistoryBlpStakingCrud, events) -> None:
+        for event in events:
+            await crud.add_history(
+                params=CreateBlpHistoryStake(
+                    type=HistoryBlpStakeType.UNSTAKE,
+                    amount=str(event.args["amount"]),
+                    user_address=event.args["user"],
+                    txn_hash=event.transactionHash.hex(),
+                    block_number=event.blockNumber,
+                    chain_id=str(self.chain_id),
+                    pool_id=self.pool_id,
+                )
+            )
+
+    async def command(
+        self,
+        crud: HistoryBlpStakingCrud = Depends(get_staking_blp_history_crud),
+        profile_crud: ProfilesCrud = Depends(get_profile_crud),
+    ) -> CommandResult:
+        web3 = await web3_node.get_web3(network="blast")
+        staking_contract = get_blp_staking_contract(web3, pool=pool_by_id[self.pool_id])
+
         try:
-            for pool, staking_contract in contract_by_pool.items():
-                if (
-                    last_checked_block := await stake_blp_history_cache.get_last_checked_block(
-                        chain_id, pool.id
-                    )
-                ) is None:
-                    last_checked_block = current_block - 100_000
+            stake_events = await staking_contract.events.Staked().get_logs(
+                fromBlock=self.from_block, toBlock=self.to_block
+            )
+            n_stakes = len(stake_events)
+            await self._save_stake_events(crud, profile_crud, stake_events)
 
-                while True:
-                    from_block = last_checked_block + 1
-                    # 3000 is limit, can't set larger than that
-                    to_block = min(current_block, from_block + 3000)
-                    logger.info(
-                        f"BlpStaking events: monitoring {staking_contract.address} {from_block=} {to_block=}"  # noqa
-                    )
+            claim_reward_events = await staking_contract.events.Claimed().get_logs(
+                fromBlock=self.from_block, toBlock=self.to_block
+            )
+            n_claim_rewards = len(claim_reward_events)
+            await self._save_claim_rewards_events(crud, claim_reward_events)
 
-                    if from_block > to_block:
-                        logger.info(f"BlpStaking events: no events {from_block=} {to_block=}")
-                        break
-
-                    stake_events = await staking_contract.events.Staked().get_logs(
-                        fromBlock=from_block, toBlock=to_block
-                    )
-                    n_stakes += len(stake_events)
-                    await self._save_stake_events(
-                        crud, profile_crud, chain_id, pool.id, stake_events
-                    )
-
-                    claim_reward_events = await staking_contract.events.Claimed().get_logs(
-                        fromBlock=from_block, toBlock=to_block
-                    )
-                    n_claim_rewards += len(claim_reward_events)
-                    await self._save_claim_rewards_events(
-                        crud, chain_id, pool.id, claim_reward_events
-                    )
-
-                    unstake_events = await staking_contract.events.Withdrawn().get_logs(
-                        fromBlock=from_block, toBlock=to_block
-                    )
-                    n_unstake += len(unstake_events)
-                    await self._save_unstake_events(crud, chain_id, pool.id, unstake_events)
-
-                    last_checked_block = to_block
-                    await stake_blp_history_cache.set_last_checked_block(
-                        chain_id, pool.id, to_block
-                    )
-                    time.sleep(0.5)
+            unstake_events = await staking_contract.events.Withdrawn().get_logs(
+                fromBlock=self.from_block, toBlock=self.to_block
+            )
+            n_unstake = len(unstake_events)
+            await self._save_unstake_events(crud, unstake_events)
 
             if any((n_stakes, n_claim_rewards, n_unstake)):
-                # one needs to commit only ones after while cycle
-                # don't commit inside add_history
                 logger.info(
-                    f"BlpStaking events: saving {n_stakes=}, {n_claim_rewards=}, {n_unstake=}"
+                    f"BlpStaking events[{self.pool_id}]: saving {n_stakes=}, {n_claim_rewards=}, {n_unstake=}",  # noqa
+                    extra={
+                        "from_block": self.from_block,
+                        "to_block": self.to_block,
+                        "pool_id": self.pool_id,
+                    },
                 )
                 await crud.session.commit()
         except Exception as e:
-            logger.error(f"BlpStaking events: error with processing:\n{e} {traceback.format_exc()}")
+            logger.error(
+                f"BlpStaking events[{self.pool_id}]: saving error:\n{e} {traceback.format_exc()}",
+                extra={
+                    "from_block": self.from_block,
+                    "to_block": self.to_block,
+                    "pool_id": self.pool_id,
+                },
+            )
             return CommandResult(success=False, need_retry=True)
-
         return CommandResult(success=True, need_retry=False)
 
 

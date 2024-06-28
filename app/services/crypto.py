@@ -2,6 +2,7 @@ import asyncio
 
 from web3 import Web3
 from web3.contract import AsyncContract
+from web3.types import TxData, TxReceipt
 
 from app.abi import (
     PRESALE_ABI,
@@ -36,6 +37,25 @@ class Crypto:
             return None
         web3 = await web3_node.get_web3(network)
         return await web3.eth.get_transaction(tx_hash)
+
+    @catch_web3_exceptions
+    async def get_txn_data(self, chain_id: int, tx_hash: str) -> TxData:
+        web3 = await web3_node.get_web3(chain_id=chain_id)
+        return await web3.eth.get_transaction(tx_hash)
+
+    @catch_web3_exceptions
+    async def get_txn_receipt(self, chain_id: int, tx_hash: str) -> TxReceipt:
+        web3 = await web3_node.get_web3(chain_id=chain_id)
+        return await web3.eth.get_transaction_receipt(tx_hash)
+
+    @catch_web3_exceptions
+    async def wait_for_txn_receipt(
+        self, chain_id: int, tx_hash: str, timeout: int = 10, poll_latency: float = 0.5
+    ) -> TxReceipt:
+        web3 = await web3_node.get_web3(chain_id=chain_id)
+        return await web3.eth.wait_for_transaction_receipt(
+            tx_hash, timeout=timeout, poll_latency=poll_latency
+        )
 
     @catch_web3_exceptions
     async def get_blastup_token_balance(self, network: str, address: str) -> int:

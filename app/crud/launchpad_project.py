@@ -54,7 +54,15 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
             .where(or_(LaunchpadProject.id == id_or_slug, LaunchpadProject.slug == id_or_slug))
         )
         query = await self.session.scalars(st)
+        return query.first()
 
+    async def find_by_contract_project_id(
+        self, contract_project_id: int
+    ) -> LaunchpadProject | None:
+        st = select(LaunchpadProject).where(
+            LaunchpadProject.contract_project_id == contract_project_id
+        )
+        query = await self.session.scalars(st)
         return query.first()
 
     async def get_data_for_total_raised_recalculating(self) -> Sequence[Row]:

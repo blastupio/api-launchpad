@@ -80,6 +80,17 @@ class OperationReason(str, enum.Enum):
     BLASTBOX_BUY = "blastbox_buy"
 
 
+class TransactionPaymentMethod(str, enum.Enum):
+    CRYPTO = "crypto"
+    FIAT = "fiat"
+    CRP = "crp"
+
+
+class TransactionInvalidReason(str, enum.Enum):
+    TXN_FAILED = "txn_failed"
+    BAD_TX_RECIPIENT = "bad_tx_recipient"
+
+
 ONRAMP_STATUS_NEW = "new"
 ONRAMP_STATUS_COMPLETE = "complete"
 ONRAMP_STATUS_ERROR = "error"
@@ -418,3 +429,45 @@ class HistoryBlpStake(Base):
     block_number = Column(BigIntegerType, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class Transaction(Base):
+    __tablename__ = "transactions"
+
+    id = Column(BigIntegerType, primary_key=True)  # noqa
+    project_id = Column(String(), ForeignKey("launchpad_project.id"), nullable=False)
+
+    user_address = Column(Text(), nullable=False, index=True)
+    chain_id = Column(BigIntegerType, nullable=True)
+    hash = Column(Text(), nullable=True, unique=True)  # noqa
+    payment_token_address = Column(String(), nullable=True)
+    payment_amount = Column(Text(), nullable=False)
+    payment_amount_usd = Column(Text(), nullable=True)
+    amount_project_token = Column(Text(), nullable=True)
+    token2usd_rate = Column(Text(), nullable=True)
+
+    currency = Column(Text(), nullable=True)
+    payment_currency = Column(Text(), nullable=True)
+    currency2usd_rate = Column(Text(), nullable=True)
+
+    method = Column(
+        Text(),
+        server_default=TransactionPaymentMethod.CRYPTO.value,
+        default=TransactionPaymentMethod.CRYPTO.value,
+    )  # noqa
+
+    points_paid_at = Column(DateTime(), nullable=True)
+    points_amount = Column(
+        DECIMAL(10, 2), nullable=False, default=0, server_default=text("0::decimal")
+    )
+    ref_points_amount = Column(
+        DECIMAL(10, 2), nullable=False, default=0, server_default=text("0::decimal")
+    )
+
+    confirmed_at = Column(DateTime(), nullable=True)
+    is_valid = Column(Boolean, default=True, nullable=False, server_default=text("true"))
+    invalid_reason = Column(Enum(TransactionInvalidReason), nullable=True)
+
+    onramp_order_id = Column(Text(), nullable=True)
+
+    created_at = Column(DateTime(), nullable=False, default=func.now())

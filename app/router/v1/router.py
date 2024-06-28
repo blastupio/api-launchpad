@@ -9,6 +9,7 @@ from .staking import router as staking_router
 from .blp_staking import router as blp_staking_router
 from .points import router as points_router
 from .blastboxes import router as blastboxes_router
+from .transactions import router as transactions_router
 
 router = APIRouter(prefix="/v1")
 router.include_router(project_router)
@@ -20,3 +21,4 @@ router.include_router(staking_router)
 router.include_router(points_router)
 router.include_router(blp_staking_router)
 router.include_router(blastboxes_router)
+router.include_router(transactions_router)

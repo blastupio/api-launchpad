@@ -14,6 +14,7 @@ from app.crud.profiles import ProfilesCrud
 from app.crud.project_whitelist import ProjectWhitelistCrud
 from app.crud.refcodes import RefcodesCrud
 from app.crud.supported_tokens import SupportedTokensCrud
+from app.crud.transactions import TransactionsCrud
 from app.env import settings
 from app.redis import redis_cli
 from app.services import Lock, Crypto as CryptoLaunchpad
@@ -113,6 +114,12 @@ async def get_supported_tokens_crud(
 async def get_refcodes_crud(session: AsyncSession = Depends(get_session)) -> RefcodesCrud:
     return RefcodesCrud(session)
 
+
+async def get_transactions_crud(session: AsyncSession = Depends(get_session)) -> TransactionsCrud:
+    return TransactionsCrud(session)
+
+
+TransactionsCrudDep = Annotated[TransactionsCrud, Depends(get_transactions_crud)]
 
 RefcodesCrudDep = Annotated[RefcodesCrud, Depends(get_refcodes_crud)]
 

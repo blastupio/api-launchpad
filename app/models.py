@@ -78,6 +78,7 @@ class OperationReason(str, enum.Enum):
     IDO_FARMING = "ido_farming"
     BLP_STAKING = "blp_staking"
     BLASTBOX_BUY = "blastbox_buy"
+    AIRDROP_TASK = "airdrop_task"
 
 
 ONRAMP_STATUS_NEW = "new"

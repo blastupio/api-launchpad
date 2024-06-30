@@ -419,3 +419,17 @@ class HistoryBlpStake(Base):
     block_number = Column(BigIntegerType, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+
+class BalanceSync(Base):
+    __tablename__ = "balances_sync"
+
+    address = Column(Text(), primary_key=True)  # noqa
+    locked_balance = Column(Text())
+    staking_balance = Column(Text())
+    staking_percent = Column(Text(), index=True)
+
+    synced_at = Column(DateTime())
+    should_be_synced = Column(
+        Boolean, server_default="true", default=True, nullable=False, index=True
+    )

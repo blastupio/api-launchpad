@@ -521,7 +521,7 @@ class GetUserProjectsResponse(BaseModel):
 
 class AddPointsOperation(BaseModel):
     address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
-    amount: int
+    amount: float
     operation_type: OperationType | None = OperationType.ADD
     project_slug: str | None = None
     operation_reason: OperationReason | None = None

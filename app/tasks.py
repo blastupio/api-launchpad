@@ -21,6 +21,8 @@ from app.services.ido_staking.jobs import (
 from app.services.launchpad.jobs import (
     MonitorLaunchpadLogsAndSave,
     SaveLaunchpadTransactionAndAddPoints,
+    SaveLaunchpadMultichainTransactionAndAddPoints,
+    MonitorMultichainLaunchpadLogAndSave,
 )
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.tg_notifications.jobs import (
@@ -432,10 +434,12 @@ def add_referral_blp_staking_points_for_profile(
     max_retries=5,
     default_retry_delay=15,
 )
-def monitor_and_save_launchpad_events(from_block: int, to_block: int, chain_id: int):
+def monitor_and_save_launchpad_events(
+    from_block: int, to_block: int, chain_id: int, project_id: str
+):
     try:
         result = run_command_and_get_result(
-            MonitorLaunchpadLogsAndSave(from_block, to_block, chain_id)
+            MonitorLaunchpadLogsAndSave(from_block, to_block, chain_id, project_id)
         )
 
         if result.need_retry:
@@ -445,7 +449,7 @@ def monitor_and_save_launchpad_events(from_block: int, to_block: int, chain_id: 
                 else settings.celery_retry_after
             )
             monitor_and_save_launchpad_events.apply_async(
-                args=[from_block, to_block, chain_id], countdown=retry_after
+                args=[from_block, to_block, chain_id, project_id], countdown=retry_after
             )
             return
     except Exception as e:
@@ -453,6 +457,40 @@ def monitor_and_save_launchpad_events(from_block: int, to_block: int, chain_id: 
             raise e
         logger.error(
             f"monitor_and_save_launchpad_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def monitor_and_save_multichain_launchpad_events(
+    from_block: int, to_block: int, chain_id: int, contract_address: str, project_id: str
+):
+    try:
+        result = run_command_and_get_result(
+            MonitorMultichainLaunchpadLogAndSave(
+                from_block, to_block, chain_id, contract_address, project_id
+            )
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            monitor_and_save_multichain_launchpad_events.apply_async(
+                args=[from_block, to_block, chain_id, contract_address, project_id],
+                countdown=retry_after,
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"monitor_and_save_multichain_launchpad_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
         )
         raise Retry("", exc=e)
 
@@ -487,5 +525,59 @@ def save_launchpad_txn_and_add_points(
             raise e
         logger.error(
             f"save_launchpad_txn_and_add_points. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def save_multichain_launchpad_txn_and_add_points(
+    user_address: str,
+    txn_hash: str,
+    project_id: str,
+    token_amount: int,
+    chain_id: int,
+    usd_rate: float,
+    presale_contract_address: str,
+):
+    try:
+        result = run_command_and_get_result(
+            SaveLaunchpadMultichainTransactionAndAddPoints(
+                user_address,
+                txn_hash,
+                project_id,
+                token_amount,
+                chain_id,
+                usd_rate,
+                presale_contract_address,
+            )
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            save_multichain_launchpad_txn_and_add_points.apply_async(
+                args=[
+                    user_address,
+                    txn_hash,
+                    project_id,
+                    token_amount,
+                    chain_id,
+                    usd_rate,
+                    presale_contract_address,
+                ],
+                countdown=retry_after,
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"save_multichain_launchpad_txn_and_add_points. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
         )
         raise Retry("", exc=e)

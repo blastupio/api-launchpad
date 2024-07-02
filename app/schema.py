@@ -16,6 +16,7 @@ from app.models import (
     OperationReason,
     HistoryBlpStakeType,
     TransactionInvalidReason,
+    LaunchpadEventProjectType,
 )
 from app.types import BadgeType
 from app.utils import validation_error
@@ -487,10 +488,15 @@ class YieldPercentageResponse(BaseModel):
 
 class CreateLaunchpadEvent(BaseModel):
     user_address: str
-    token_address: str
-    contract_project_id: int | None
+    token_address: str | None = None
+
+    contract_project_id: int | None = None
+    project_id: str | None = None
+    project_type: LaunchpadEventProjectType = LaunchpadEventProjectType.DEFAULT
+
     txn_hash: str
     block_number: int
+    chain_id: int | None = None
     event_type: LaunchpadContractEventType
     extra: dict[Any, Any] = Field(default_factory=dict)
 

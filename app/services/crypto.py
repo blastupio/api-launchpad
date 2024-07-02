@@ -4,6 +4,7 @@ from web3 import Web3
 from web3.contract import AsyncContract
 from web3.types import TxData, TxReceipt
 
+from app import chains
 from app.abi import (
     PRESALE_ABI,
     PRESALE_BSC_ABI,
@@ -13,6 +14,7 @@ from app.abi import (
     BLP_BALANCE_ABI,
 )
 from app.base import logger
+from app.services.launchpad.abi import AMOUNT_AND_USD_ABI
 from app.services.web3_nodes import web3_node, catch_web3_exceptions
 
 
@@ -30,6 +32,20 @@ class Crypto:
         self.staking_oracle_contract = staking_oracle_contract
         self.blp_balance_contract = blp_balance_contract
         self.locked_blp_balance_contract = locked_blp_balance_contract
+
+    @staticmethod
+    def get_network_by_chain_id(chain_id: int) -> str | None:
+        _network_by_chain_id = {
+            chains.ethereum.id: "eth",
+            chains.ethereum_sepolia.id: "eth",
+            chains.bsc.id: "bsc",
+            chains.bsc_testnet.id: "bsc",
+            chains.polygon.id: "polygon",
+            chains.polygon_mumbai.id: "polygon",
+            chains.blast.id: "blast",
+            chains.blast_sepolia.id: "blast",
+        }
+        return _network_by_chain_id.get(chain_id)
 
     @catch_web3_exceptions
     async def get_transaction_data(self, network: str, tx_hash: str):
@@ -63,7 +79,7 @@ class Crypto:
             logger.warning(f"get_blastup_token_balance: no contract for {network}")
             return 0
 
-        contract = await self._contract(network)
+        contract = await self.presale_contract(network)
         address = Web3.to_checksum_address(address)
         tasks = [contract.functions.balances(address).call()] + [
             c.functions.balances(address).call() for c in await self._legacy_contracts(network)
@@ -115,7 +131,7 @@ class Crypto:
             "weth_base": "base",
         }[token.lower()]
 
-        contract = await self._contract(network)
+        contract = await self.presale_contract(network)
         price_feed_addr = await contract.functions.COIN_PRICE_FEED().call()
 
         web3 = await web3_node.get_web3(network)
@@ -136,7 +152,7 @@ class Crypto:
         res = int(await contract.functions.balanceOf(wallet_address).call())
         return res
 
-    async def _contract(self, network) -> AsyncContract:
+    async def presale_contract(self, network, contract_address: str | None = None) -> AsyncContract:
         abi = {
             "eth": PRESALE_ABI,
             "polygon": PRESALE_ABI,
@@ -145,8 +161,16 @@ class Crypto:
             "base": PRESALE_ABI,
         }[network]
         web3 = await web3_node.get_web3(network)
-        contract_address = web3.to_checksum_address(self.contracts[network])
-        return web3.eth.contract(contract_address, abi=abi)
+        if contract_address:
+            address = web3.to_checksum_address(contract_address)
+        else:
+            address = web3.to_checksum_address(self.contracts[network])
+        return web3.eth.contract(address, abi=abi)
+
+    async def amount_and_usd_contract(self, network: str, address: str) -> AsyncContract:
+        web3 = await web3_node.get_web3(network)
+        address = web3.to_checksum_address(address)
+        return web3.eth.contract(address, abi=AMOUNT_AND_USD_ABI)
 
     async def _legacy_contracts(self, network) -> list[AsyncContract]:
         if self.environment == "testnet":

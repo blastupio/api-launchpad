@@ -1,5 +1,4 @@
 import asyncio
-import time
 import traceback
 from collections import defaultdict
 
@@ -72,7 +71,7 @@ class ProcessBlpHistoryStakingEvent(Command):
 
                 last_checked_block = to_block
                 await stake_blp_history_cache.set_last_checked_block(chain_id, pool_id, to_block)
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
 
         return CommandResult(success=True, need_retry=False)
 

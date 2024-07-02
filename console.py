@@ -6,7 +6,10 @@ import sys
 import sentry_sdk
 
 from app.env import settings
-from app.services.launchpad.jobs import ProcessLaunchpadContractEvents
+from app.services.launchpad.jobs import (
+    ProcessLaunchpadContractEvents,
+    ProcessMultichainLaunchpadContractEvents,
+)
 from app.services.balances.jobs import SyncBalances
 from app.services.blp_staking.jobs import ProcessBlpHistoryStakingEvent, AddBlpStakingPoints
 from app.services.prices.jobs import UpdateSupportedTokensCache
@@ -31,6 +34,7 @@ async def main():
         "monitor-onramp-balance",
         "update-project-total-raised",
         "process-launchpad-contract-events",
+        "process-launchpad-multichain-contract-events",
         "update-supported-tokens-cache",
         "change-projects-status",
         "add-ido-staking-points",
@@ -51,6 +55,8 @@ async def main():
             command = RecalculateProjectsTotalRaised()
         case "process-launchpad-contract-events":
             command = ProcessLaunchpadContractEvents()
+        case "process-launchpad-multichain-contract-events":
+            command = ProcessMultichainLaunchpadContractEvents()
         case "update-supported-tokens-cache":
             command = UpdateSupportedTokensCache()
         case "add-ido-staking-points":

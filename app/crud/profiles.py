@@ -4,6 +4,7 @@ from typing import Sequence
 
 import dateutil.parser as dt
 from sqlalchemy import select, func, update, desc
+from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.base import BaseCrud
@@ -58,7 +59,16 @@ class ProfilesCrud(BaseCrud[Profile]):
                     }
                 )
 
-            profile = await self.persist(Profile(**data), session)
+            st = (
+                insert(Profile)
+                .values(data)
+                .on_conflict_do_nothing(index_elements=["address"])
+                .returning(Profile)
+            )
+            session = session or self.session
+            await session.execute(st)
+            await session.flush()
+            profile = Profile(**data)
         return profile, is_new
 
     async def get_by_id(self, id_: int, session: AsyncSession | None = None) -> Profile | None:

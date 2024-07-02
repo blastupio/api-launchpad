@@ -1,5 +1,4 @@
 import asyncio
-import time
 import traceback
 from collections import defaultdict
 
@@ -77,7 +76,7 @@ class ProcessHistoryStakingEvent(Command):
 
                 last_checked_block = to_block
                 await stake_history_redis.set_last_checked_block(chain_id, to_block)
-                time.sleep(0.5)
+                await asyncio.sleep(0.5)
 
         except Exception as e:
             logger.error(f"Staking events: error with processing:\n{e} {traceback.format_exc()}")

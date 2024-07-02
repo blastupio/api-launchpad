@@ -349,11 +349,10 @@ class SaveLaunchpadMultichainTransactionAndAddPoints(Command):
 
 
 class MonitorLaunchpadLogsAndSave(Command):
-    def __init__(self, from_block: int, to_block: int, chain_id: int, project_id: str) -> None:
+    def __init__(self, from_block: int, to_block: int, chain_id: int) -> None:
         self.from_block = from_block
         self.to_block = to_block
         self.chain_id = chain_id
-        self.project_id = project_id
 
     async def command(
         self,
@@ -429,7 +428,6 @@ class MonitorLaunchpadLogsAndSave(Command):
                     user_address=event.args["user"],
                     txn_hash=event.transactionHash.hex(),
                     chain_id=chain_id,
-                    project_id=self.project_id,
                     contract_project_id=event.args["id"],
                     extra={"tier": event.args["tier"]},
                     block_number=event.blockNumber,
@@ -451,7 +449,6 @@ class MonitorLaunchpadLogsAndSave(Command):
                     token_address=event.args["token"],
                     user_address=user_address,
                     txn_hash=txn_hash,
-                    project_id=self.project_id,
                     chain_id=chain_id,
                     contract_project_id=contract_project_id,
                     extra={"amount": token_amount},

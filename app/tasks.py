@@ -434,12 +434,10 @@ def add_referral_blp_staking_points_for_profile(
     max_retries=5,
     default_retry_delay=15,
 )
-def monitor_and_save_launchpad_events(
-    from_block: int, to_block: int, chain_id: int, project_id: str
-):
+def monitor_and_save_launchpad_events(from_block: int, to_block: int, chain_id: int):
     try:
         result = run_command_and_get_result(
-            MonitorLaunchpadLogsAndSave(from_block, to_block, chain_id, project_id)
+            MonitorLaunchpadLogsAndSave(from_block, to_block, chain_id)
         )
 
         if result.need_retry:
@@ -449,7 +447,7 @@ def monitor_and_save_launchpad_events(
                 else settings.celery_retry_after
             )
             monitor_and_save_launchpad_events.apply_async(
-                args=[from_block, to_block, chain_id, project_id], countdown=retry_after
+                args=[from_block, to_block, chain_id], countdown=retry_after
             )
             return
     except Exception as e:

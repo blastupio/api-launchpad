@@ -84,6 +84,7 @@ class OperationReason(str, enum.Enum):
     IDO_FARMING = "ido_farming"
     BLP_STAKING = "blp_staking"
     BLASTBOX_BUY = "blastbox_buy"
+    AIRDROP_TASK = "airdrop_task"
 
 
 class TransactionPaymentMethod(str, enum.Enum):
@@ -487,3 +488,17 @@ class Transaction(Base):
     onramp_order_id = Column(Text(), nullable=True)
 
     created_at = Column(DateTime(), nullable=False, default=func.now())
+
+
+class BalanceSync(Base):
+    __tablename__ = "balances_sync"
+
+    address = Column(Text(), primary_key=True)  # noqa
+    locked_balance = Column(Text())
+    staking_balance = Column(Text())
+    staking_percent = Column(Text(), index=True)
+
+    synced_at = Column(DateTime())
+    should_be_synced = Column(
+        Boolean, server_default="true", default=True, nullable=False, index=True
+    )

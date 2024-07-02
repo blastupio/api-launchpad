@@ -22,7 +22,11 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
         super().__init__(session, LaunchpadProject)
 
     async def all(  # noqa
-        self, limit: int = 100, offset: int = 0, status: StatusProject = None
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        status: StatusProject = None,
+        project_type: ProjectType | None = None,
     ) -> Sequence[LaunchpadProject]:
         st = (
             select(LaunchpadProject)
@@ -37,6 +41,8 @@ class LaunchpadProjectCrud(BaseCrud[LaunchpadProject]):
         )
         if status:
             st = st.where(LaunchpadProject.status == status)
+        if project_type:
+            st = st.where(LaunchpadProject.project_type == project_type)
 
         result = await self.session.scalars(st)
 

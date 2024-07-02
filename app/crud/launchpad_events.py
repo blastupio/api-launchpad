@@ -19,7 +19,8 @@ class LaunchpadContractEventsCrud(BaseCrud[LaunchpadContractEvents]):
     async def add_event(self, params: CreateLaunchpadEvent):
         values = params.dict()
         values["user_address"] = values["user_address"].lower()
-        values["token_address"] = values["token_address"].lower()
+        if values.get("token_address") is not None:
+            values["token_address"] = values["token_address"].lower()
         st = (
             insert(LaunchpadContractEvents)
             .values(values)

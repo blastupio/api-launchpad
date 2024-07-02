@@ -17,6 +17,7 @@ from sqlalchemy import (
     text,
     Integer,
     Boolean,
+    Float,
 )
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
@@ -57,6 +58,11 @@ class StatusProject(enum.Enum):
 class LaunchpadContractEventType(enum.Enum):
     TOKENS_BOUGHT = "tokens_bought"
     USER_REGISTERED = "user_registered"
+
+
+class LaunchpadEventProjectType(enum.Enum):
+    DEFAULT = "default"
+    MULTICHAIN = "multichain"
 
 
 class OperationType(enum.Enum):
@@ -113,6 +119,7 @@ class LaunchpadProject(Base):
     token_address = Column(String, nullable=True)
 
     contract_project_id = Column(BigIntegerType, nullable=True)
+    bonus_for_ido_purchase = Column(Float, nullable=False, default=2.0, server_default="2.0")
 
     approve_for_registration_is_required = Column(Boolean, nullable=True)
     kys_required = Column(Boolean, server_default="false", default=False, nullable=False)
@@ -292,12 +299,21 @@ class LaunchpadContractEvents(Base):
 
     event_type = Column(Enum(LaunchpadContractEventType), nullable=False)
     user_address = Column(String, index=True, nullable=False)
-    token_address = Column(String, nullable=False)
+    token_address = Column(String, nullable=True)
 
     contract_project_id = Column(BigIntegerType, nullable=True)
+    project_id = Column(String, ForeignKey("launchpad_project.id"), nullable=True)
+    project_type = Column(
+        Enum(LaunchpadEventProjectType),
+        nullable=False,
+        server_default=LaunchpadEventProjectType.DEFAULT.name,
+        default=LaunchpadEventProjectType.DEFAULT,
+    )
+
     extra = Column(JSON, default={}, server_default=text("'{}'::json"))
     txn_hash = Column(String, unique=True, nullable=False)
     block_number = Column(BigIntegerType, nullable=True)
+    chain_id = Column(BigIntegerType, nullable=True)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 

@@ -1,12 +1,19 @@
+from functools import partial
+
 from fastapi import APIRouter, Body
 from web3.exceptions import TransactionNotFound, TimeExhausted
 
 from app.base import logger
-from app.dependencies import CryptoDep, LaunchpadProjectCrudDep, TransactionsCrudDep
+from app.dependencies import CryptoDep, LaunchpadProjectCrudDep, TransactionsCrudDep, RedisDep
 from app.env import settings
 from app.models import ProjectType
 from app.schema import StoreTransactionRequest, StoreTransactionResponse
-from app.tasks import monitor_and_save_launchpad_events
+from app.services.launchpad.utils import get_crypto_contracts
+from app.tasks import (
+    monitor_and_save_launchpad_events,
+    monitor_and_save_multichain_launchpad_events,
+)
+from app.utils import get_data_with_cache
 
 router = APIRouter(prefix="/transactions", tags=["transactions"])
 
@@ -16,6 +23,7 @@ async def store_transaction(
     transactions_crud: TransactionsCrudDep,
     projects_crud: LaunchpadProjectCrudDep,
     crypto: CryptoDep,
+    redis: RedisDep,
     payload: StoreTransactionRequest = Body(),
 ):
     if await transactions_crud.get_by_hash(payload.txn_hash):
@@ -35,12 +43,6 @@ async def store_transaction(
     except KeyError:
         return StoreTransactionResponse(ok=False, error="Invalid chain_id")
 
-    if project.project_type == ProjectType.DEFAULT:
-        if receipt["to"].lower() != settings.launchpad_contract_address.lower():
-            return StoreTransactionResponse(ok=False, error="Invalid recipient")
-    elif project.project_type == ProjectType.PRIVATE_PRESALE:
-        pass
-
     if receipt["from"].lower() != payload.user_address.lower():
         return StoreTransactionResponse(ok=False, error="Invalid sender")
 
@@ -54,13 +56,54 @@ async def store_transaction(
             return StoreTransactionResponse(ok=False, error="Transaction failed")
 
     block_number = receipt["blockNumber"]
-    monitor_and_save_launchpad_events.apply_async(
-        kwargs={
-            "from_block": block_number - 10,
-            "to_block": block_number + 10,
-            "chain_id": payload.chain_id,
-        },
-        countdown=1,
-    )
+
+    if project.project_type == ProjectType.DEFAULT:
+        if receipt["to"].lower() != settings.launchpad_contract_address.lower():
+            return StoreTransactionResponse(ok=False, error="Invalid recipient")
+
+        monitor_and_save_launchpad_events.apply_async(
+            kwargs={
+                "from_block": block_number,
+                "to_block": block_number,
+                "chain_id": payload.chain_id,
+                "project_id": project.id,
+            },
+            countdown=1,
+        )
+    elif project.project_type == ProjectType.PRIVATE_PRESALE:
+        if not (project_proxy_url := project.proxy_link.base_url):
+            logger.error(f"Project {project.slug} has no proxy_url to store transaction")
+            return StoreTransactionResponse(ok=False, error="Invalid proxy_url")
+        project_contracts: dict[str, str] | None = await get_data_with_cache(
+            key=f"project_contracts_{project.slug}",
+            func=partial(get_crypto_contracts, project_proxy_url),
+            redis=redis,
+            short_key_exp_seconds=60,
+            long_key_exp_minutes=60,
+        )
+        if not project_contracts:
+            return StoreTransactionResponse(ok=False, error="Invalid proxy_url")
+        str_network = crypto.get_network_by_chain_id(payload.chain_id)
+        if not str_network:
+            return StoreTransactionResponse(ok=False, error="Invalid chain_id")
+
+        contract = project_contracts.get(str_network)
+        if not contract:
+            return StoreTransactionResponse(
+                ok=False, error=f"Invalid chain_id, can't get contract from {project_contracts=}"
+            )
+        if receipt["to"].lower() != contract.lower():
+            return StoreTransactionResponse(ok=False, error="Invalid recipient")
+
+        monitor_and_save_multichain_launchpad_events.apply_async(
+            kwargs={
+                "from_block": block_number,
+                "to_block": block_number,
+                "chain_id": payload.chain_id,
+                "contract_address": contract,
+                "project_id": project.id,
+            },
+            countdown=1,
+        )
 
     return StoreTransactionResponse(ok=True)

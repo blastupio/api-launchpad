@@ -566,3 +566,31 @@ LAUNCHPAD_CONTRACT_ADDRESS_ABI = [
         "type": "function",
     },
 ]
+
+AMOUNT_AND_USD_ABI = [
+    {
+        "anonymous": False,
+        "inputs": [
+            {
+                "indexed": True,
+                "internalType": "address",
+                "name": "user",
+                "type": "address",
+            },
+            {
+                "indexed": False,
+                "internalType": "uint256",
+                "name": "amount",
+                "type": "uint256",
+            },
+            {
+                "indexed": False,
+                "internalType": "int256",
+                "name": "usd",
+                "type": "int256",
+            },
+        ],
+        "name": "AmountAndUSD",
+        "type": "event",
+    }
+]

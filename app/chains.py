@@ -22,9 +22,19 @@ bsc = ChainInfo(
     id=ChainId(56),
     name="Binance Smart Chain",
 )
+bsc_testnet = ChainInfo(
+    id=ChainId(97),
+    name="Binance Smart Chain Testnet",
+    is_testnet=True,
+)
 polygon = ChainInfo(
     id=ChainId(137),
     name="Polygon",
+)
+polygon_mumbai = ChainInfo(
+    id=ChainId(80001),
+    name="Polygon Mumbai",
+    is_testnet=True,
 )
 base = ChainInfo(
     id=ChainId(8453),

@@ -1,5 +1,4 @@
 import asyncio
-import time
 import traceback
 from collections import defaultdict
 
@@ -147,7 +146,7 @@ class ProcessBlpHistoryStakingEvent(Command):
                     await stake_blp_history_cache.set_last_checked_block(
                         chain_id, pool.id, to_block
                     )
-                    time.sleep(0.5)
+                    await asyncio.sleep(0.5)
 
             if any((n_stakes, n_claim_rewards, n_unstake)):
                 # one needs to commit only ones after while cycle

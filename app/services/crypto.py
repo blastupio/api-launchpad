@@ -73,7 +73,18 @@ class Crypto:
         return balance
 
     @catch_web3_exceptions
-    async def get_blp_balance(self, address: str) -> int:
+    async def get_locked_blp_balance(self, address: str) -> int:
+        web3 = await web3_node.get_web3("blast")
+        locked_balance_contract_address = web3.to_checksum_address(self.locked_blp_balance_contract)
+        locked_balance_contract = web3.eth.contract(
+            locked_balance_contract_address, abi=BLP_BALANCE_ABI
+        )
+
+        address = Web3.to_checksum_address(address)
+        return int(await locked_balance_contract.functions.balanceOf(address).call())
+
+    @catch_web3_exceptions
+    async def get_total_blp_balance(self, address: str) -> int:
         web3 = await web3_node.get_web3("blast")
         balance_contract_address = web3.to_checksum_address(self.blp_balance_contract)
         balance_contract = web3.eth.contract(balance_contract_address, abi=BLP_BALANCE_ABI)

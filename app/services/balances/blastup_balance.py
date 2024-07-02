@@ -44,7 +44,7 @@ async def get_blastup_tokens_balance_for_chains(address: str) -> dict[ChainId, i
 async def get_blp_balance(address: str) -> int:
     if (balance := await blp_balance_redis.get(address)) is None:
         crypto = get_launchpad_crypto()
-        balance = await crypto.get_blp_balance(address)
+        balance = await crypto.get_total_blp_balance(address)
         await blp_balance_redis.set(address, balance)
 
     return int(Web3.from_wei(balance, "ether"))

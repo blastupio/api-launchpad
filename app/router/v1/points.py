@@ -1,6 +1,6 @@
 from typing import Annotated
 
-from fastapi import APIRouter, Body, Header, HTTPException, Path
+from fastapi import APIRouter, Header, HTTPException, Path, Request
 from sqlalchemy.exc import NoResultFound
 from starlette.status import HTTP_403_FORBIDDEN
 
@@ -12,6 +12,7 @@ from app.dependencies import (
     RedisDep,
 )
 from app.env import settings
+from app.limiter import limiter
 from app.schema import (
     AddPointsRequest,
     AddPointsResponse,
@@ -46,13 +47,16 @@ async def get_total_points_for_all_profiles(
 
 
 @router.post("/add", include_in_schema=False, response_model=AddPointsResponse)
+@limiter.limit("5/second")
 async def add_points(
+    request: Request,
     service: AddPointsDep,
     projects_crud: LaunchpadProjectCrudDep,
     x_sender_name: Annotated[str, Header()],
     x_sender_token: Annotated[str, Header()],
-    request: AddPointsRequest = Body(embed=False),
 ):
+    request = AddPointsRequest.validate(await request.json())
+
     if (sender := await projects_crud.find_by_id_or_slug(x_sender_name)) is None:
         return AddPointsResponse(ok=False, error="Not authorized")
 

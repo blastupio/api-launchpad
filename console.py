@@ -7,6 +7,7 @@ import sentry_sdk
 
 from app.env import settings
 from app.services.launchpad.jobs import ProcessLaunchpadContractEvents
+from app.services.balances.jobs import SyncBalances
 from app.services.blp_staking.jobs import ProcessBlpHistoryStakingEvent, AddBlpStakingPoints
 from app.services.prices.jobs import UpdateSupportedTokensCache
 from app.services.ido_staking.jobs import ProcessHistoryStakingEvent, AddIdoStakingPoints
@@ -34,6 +35,7 @@ async def main():
         "change-projects-status",
         "add-ido-staking-points",
         "add-blp-staking-points",
+        "sync-balances",
     ]:
         subparsers.add_parser(command)
 
@@ -57,6 +59,8 @@ async def main():
             command = AddBlpStakingPoints()
         case "change-projects-status":
             command = ChangeProjectsStatus()
+        case "sync-balances":
+            command = SyncBalances()
         case _:
             command = None
 

@@ -6,7 +6,7 @@ from redis.asyncio import Redis
 from app.dependencies import get_redis
 
 
-class RegisteredUserAndAllocationsRedis:
+class LaunchpadEventsCache:
     def __init__(self, redis_cli: Redis):
         self.redis_cli = redis_cli
 
@@ -22,4 +22,4 @@ class RegisteredUserAndAllocationsRedis:
         )
 
 
-reg_users_and_allocation_redis = RegisteredUserAndAllocationsRedis(redis_cli=get_redis())
+launchpad_events_cache = LaunchpadEventsCache(redis_cli=get_redis())

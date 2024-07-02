@@ -6,7 +6,7 @@ import sys
 import sentry_sdk
 
 from app.env import settings
-from app.services.analytics.jobs import ProcessLaunchpadContractEvents
+from app.services.launchpad.jobs import ProcessLaunchpadContractEvents
 from app.services.balances.jobs import SyncBalances
 from app.services.blp_staking.jobs import ProcessBlpHistoryStakingEvent, AddBlpStakingPoints
 from app.services.prices.jobs import UpdateSupportedTokensCache

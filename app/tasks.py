@@ -18,6 +18,10 @@ from app.services.ido_staking.jobs import (
     AddIdoStakingPointsForProfile,
     MonitorIdoStakingLogsAndSave,
 )
+from app.services.launchpad.jobs import (
+    MonitorLaunchpadLogsAndSave,
+    SaveLaunchpadTransactionAndAddPoints,
+)
 from app.services.total_raised.jobs import RecalculateProjectsTotalRaised
 from app.services.tg_notifications.jobs import (
     TelegramNotifyCompletedOnrampTransaction,
@@ -421,4 +425,67 @@ def add_referral_blp_staking_points_for_profile(
             raise e
 
         logger.error(f"blp_referral_staking_points[{address}] error:{e}\n{traceback.format_exc()}")
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def monitor_and_save_launchpad_events(from_block: int, to_block: int, chain_id: int):
+    try:
+        result = run_command_and_get_result(
+            MonitorLaunchpadLogsAndSave(from_block, to_block, chain_id)
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            monitor_and_save_launchpad_events.apply_async(
+                args=[from_block, to_block, chain_id], countdown=retry_after
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"monitor_and_save_launchpad_events. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
+        )
+        raise Retry("", exc=e)
+
+
+@app.task(
+    max_retries=5,
+    default_retry_delay=15,
+)
+def save_launchpad_txn_and_add_points(
+    user_address: str, txn_hash: str, contract_project_id: int, token_amount: int, chain_id: int
+):
+    try:
+        result = run_command_and_get_result(
+            SaveLaunchpadTransactionAndAddPoints(
+                user_address, txn_hash, contract_project_id, token_amount, chain_id
+            )
+        )
+
+        if result.need_retry:
+            retry_after = (
+                result.retry_after
+                if result.retry_after is not None
+                else settings.celery_retry_after
+            )
+            save_launchpad_txn_and_add_points.apply_async(
+                args=[user_address, txn_hash, contract_project_id, token_amount, chain_id],
+                countdown=retry_after,
+            )
+            return
+    except Exception as e:
+        if isinstance(e, Retry):
+            raise e
+        logger.error(
+            f"save_launchpad_txn_and_add_points. Unhandled exception: {e}, {traceback.format_exc()}"  # noqa
+        )
         raise Retry("", exc=e)

@@ -15,6 +15,7 @@ from app.models import (
     OperationType,
     OperationReason,
     HistoryBlpStakeType,
+    TransactionInvalidReason,
 )
 from app.types import BadgeType
 from app.utils import validation_error
@@ -494,6 +495,36 @@ class CreateLaunchpadEvent(BaseModel):
     extra: dict[Any, Any] = Field(default_factory=dict)
 
 
+class CreateLaunchpadTransactionParams(BaseModel):
+    project_id: str
+
+    user_address: str
+    chain_id: int | None = None
+    hash: str | None = None  # noqa
+    payment_token_address: str | None = None
+    payment_amount: str
+    payment_amount_usd: str | None = None
+
+    amount_project_token: str | None = None
+    token2usd_rate: str | None = None
+
+    currency: str | None = None
+    payment_currency: str | None = None
+    currency2usd_rate: str | None = None
+
+    method: str
+
+    points_paid_at: datetime | None = None
+    points_amount: float = 0
+    ref_points_amount: float = 0
+
+    confirmed_at: datetime | None = None
+    is_valid: bool = True
+    invalid_reason: TransactionInvalidReason | None = None
+
+    onramp_order_id: str | None = None
+
+
 class UserProject(BaseModel):
     id: str  # noqa
     slug: str
@@ -658,3 +689,15 @@ class LeaderboardData(BaseModel):
 
 class LeaderboardResponse(BaseResponse):
     data: List[LeaderboardData]
+
+
+class StoreTransactionRequest(BaseModel):
+    txn_hash: str = Field(pattern="^0x[0-9a-fA-F]{64}$")
+    user_address: str = Field(pattern="^(0x)[0-9a-fA-F]{40}$")
+    project_id: str
+    chain_id: int
+
+
+class StoreTransactionResponse(BaseModel):
+    ok: bool = True
+    error: str | None = None

@@ -10,8 +10,8 @@ from app.services.prices.cache import token_price_cache
 
 
 async def get_tokens_price_for_chain(
-    chain_id: ChainId, token_addresses: list[str | Address]
-) -> dict[Address, float]:
+    chain_id: ChainId | int, token_addresses: list[str | Address]
+) -> dict[Address | str, float]:
     """
     Get prices from cache and coingecko.
     """
